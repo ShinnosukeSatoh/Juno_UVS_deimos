@@ -48,8 +48,6 @@ class ShareXaxis():
         self.figsize = (6, 4)  # required
         self.dpi = 100  # required
         self.height_ratios = None  # required
-        self.hspace = 0   # default 0.2
-        self.wspace = 0   # default 0.3
         self.rcParamsUpdate(1.0)
 
         return None
@@ -474,41 +472,42 @@ class ShareXaxis():
 
         return None
 
+    def draw_panel_name(self, ax, panelname, a=1, background=True):
+        if background:
+            path_effects = [pe.PathPatchEffect(offset=(0.75, -0.75), linewidth=0.75, facecolor='k'),
+                            pe.withStroke(linewidth=1., foreground='k')]
+            ax.annotate(panelname,
+                        xy=(0.5*(1-a), 1), xycoords='axes fraction',
+                        xytext=(a*0.16*20/self.panelname_fontsize,
+                                -0.16*20/self.panelname_fontsize),
+                        textcoords='offset fontsize',
+                        fontweight='bold',
+                        color='w',
+                        fontsize=self.panelname_fontsize,
+                        verticalalignment='top',
+                        horizontalalignment=self.panelname_xposition,
+                        path_effects=path_effects,
+                        bbox=dict(fc='k', ec='k', alpha=0.8, pad=2.6, lw=0.), zorder=99)
+        else:
+            path_effects = [pe.PathPatchEffect(offset=(0.8, -0.8), linewidth=0.8, facecolor='k'),
+                            pe.withStroke(linewidth=1.25, foreground='k')]
+            ax.annotate(panelname,
+                        xy=(0.5*(1-a), 1), xycoords='axes fraction',
+                        xytext=(a*0.17*20/self.panelname_fontsize,
+                                -0.24*20/self.panelname_fontsize),
+                        textcoords='offset fontsize',
+                        fontweight='bold',
+                        color='w',
+                        fontsize=self.panelname_fontsize,
+                        verticalalignment='top',
+                        horizontalalignment='left',
+                        path_effects=path_effects,
+                        bbox=dict(fc='none', ec='none', pad=2.6, lw=0.), zorder=99)
+
+        return None
+
     # Locally used
     def set_panelname(self, ax_idx=0, background=True, coef=1.0):
-        def _draw_panel_name(ax, panelname):
-            if background:
-                path_effects = [pe.PathPatchEffect(offset=(0.75, -0.75), linewidth=0.75, facecolor='k'),
-                                pe.withStroke(linewidth=1., foreground='k')]
-                ax.annotate(panelname,
-                            xy=(0.5*(1-a), 1), xycoords='axes fraction',
-                            xytext=(a*0.16*20/self.panelname_fontsize,
-                                    -0.16*20/self.panelname_fontsize),
-                            textcoords='offset fontsize',
-                            fontweight='bold',
-                            color='w',
-                            fontsize=self.panelname_fontsize,
-                            verticalalignment='top',
-                            horizontalalignment=self.panelname_xposition,
-                            path_effects=path_effects,
-                            bbox=dict(fc='k', ec='k', alpha=0.8, pad=2.6, lw=0.), zorder=99)
-            else:
-                path_effects = [pe.PathPatchEffect(offset=(0.8, -0.8), linewidth=0.8, facecolor='k'),
-                                pe.withStroke(linewidth=1.25, foreground='k')]
-                ax.annotate(panelname,
-                            xy=(0.5*(1-a), 1), xycoords='axes fraction',
-                            xytext=(a*0.17*20/self.panelname_fontsize,
-                                    -0.24*20/self.panelname_fontsize),
-                            textcoords='offset fontsize',
-                            fontweight='bold',
-                            color='w',
-                            fontsize=self.panelname_fontsize,
-                            verticalalignment='top',
-                            horizontalalignment='left',
-                            path_effects=path_effects,
-                            bbox=dict(fc='none', ec='none', pad=2.6, lw=0.), zorder=99)
-
-            return None
 
         a = 1
         if self.panelname_xposition == 'right':
@@ -520,12 +519,12 @@ class ShareXaxis():
                 ax = self.ax
             else:
                 ax = self.ax[ax_idx]
-            _draw_panel_name(ax, panelname)
+            self.draw_panel_name(ax, panelname, a, background)
         else:
             for i in range(self.ncols):
                 panelname = self.panelname[self.nrows*i + ax_idx]
                 ax = self.ax[ax_idx, i]
-                _draw_panel_name(ax, panelname)
+                self.draw_panel_name(ax, panelname, a, background)
 
         return None
 
@@ -609,8 +608,7 @@ class ShareXaxis():
                     ptick.AutoMinorLocator(minor_num))  # minor ticks
             return None
 
-        if self.nrows > 1:
-            print('More then 2 rows.')
+        if self.nrows > 2:
             for i in range(ax.size):
                 ax1 = ax[i]
                 _set_ticks(ax1)
@@ -746,11 +744,16 @@ class ShareXaxis():
                               fontsize, titleweight)
 
         # get plot colors
-        if textcolor:
+        if textcolor is True:
             for line, text in zip(legend.get_lines(), legend.get_texts()):
                 text.set_color(line.get_color())
+        elif textcolor is False:
+            None
+        else:
+            for text in legend.get_texts():
+                text.set_color(textcolor)
 
-        linewidth = plt.rcParams['axes.linewidth']*0.75
+        linewidth = plt.rcParams['axes.linewidth']*0.7
         legend.get_frame().set_linewidth(linewidth)
         legend.set_zorder(zorder)
 

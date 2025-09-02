@@ -1,5 +1,6 @@
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
 
 
 def legend_shadow_old(fig, ax, legend, d=0.75):
@@ -24,7 +25,7 @@ def legend_shadow_old(fig, ax, legend, d=0.75):
     return None
 
 
-def legend_shadow(fig, ax, legend, d=1.0):
+def legend_shadow_old2(fig, ax, legend, d=1.0, color='k'):
 
     frame = legend.get_window_extent()
     fig_frame = fig.get_window_extent()
@@ -38,11 +39,29 @@ def legend_shadow(fig, ax, legend, d=1.0):
     shift_y = shift_x/(fig_frame.ymax/fig_frame.xmax)
     rect = patches.Rectangle((xmin+shift_x, ymin-shift_y),
                              xmax-xmin, ymax-ymin,
-                             facecolor='k', edgecolor='k',
+                             facecolor=color, edgecolor=color,
                              linewidth=linewidth,
                              transform=fig.transFigure,
                              clip_on=False, zorder=99)
 
     ax.add_patch(rect)
+
+    return None
+
+
+def legend_shadow(fig, ax, legend, d=0.0, color='k'):
+    # Axesの枠線の80%に設定
+    # leg.get_frame().set_linewidth(ax_linewidth*2)
+
+    # 凡例の背景パッチを取得
+    patch = legend.legendPatch
+
+    # パスエフェクトを設定（影の色、オフセット、アルファなどを指定）
+    patch.set_path_effects([
+        pe.SimplePatchShadow(offset=(4, -4),
+                             shadow_rgbFace=color,
+                             alpha=1.0),
+        pe.Normal(),
+    ])
 
     return None

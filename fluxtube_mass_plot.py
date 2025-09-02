@@ -997,10 +997,10 @@ F.ax.text(0.98, 0.03,
 
 legend = F.legend(ax_idx=0,
                   handles=[sc, (lsigma, lmean)],
-                  labels=['Estimated', r'Best fit + 3$\sigma$'],
+                  labels=['Estimated', r'$M_{fit} \pm 3\sigma$'],
                   bbox_to_anchor=(1.0, 1.02),
                   ncol=3, markerscale=3,
-                  fontsize_scale=0.6, textcolor=True, handletextpad=0.2)
+                  fontsize_scale=0.65, textcolor=True, handletextpad=0.2)
 legend_shadow(fig=F.fig, ax=F.ax, legend=legend)
 
 F.ax.set_title(r'Flux tube mass contents ('+target_moon+')',
