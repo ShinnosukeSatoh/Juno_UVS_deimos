@@ -1,0 +1,40 @@
+IDL> help, FP_INFO
+** Structure <de8bc808>, 32 tags, length=76008, data length=76002, refs=1:
+   COUNTER         INT              8
+   HEMISPHERE      STRING    Array[500]
+   MIDTIME_ET      DOUBLE    Array[500]
+   SPIN_NUMBER     STRING    Array[500]
+   LAT_MAW         FLOAT     Array[500]
+   LAT_MAW_ERROR   FLOAT     Array[500]
+   LON_MAW         FLOAT     Array[500]
+   LON_MAW_ERROR   FLOAT     Array[500]
+   DISTANCE_JUNO_TO_MAW
+                   FLOAT     Array[500]
+   INCIDENCE_ANGLE_MAW
+                   FLOAT     Array[500]
+   LAT_TEB         FLOAT     Array[500]
+   LAT_TEB_ERROR   FLOAT     Array[500]
+   LON_TEB         FLOAT     Array[500]
+   LON_TEB_ERROR   FLOAT     Array[500]
+   DISTANCE_JUNO_TO_TEB
+                   FLOAT     Array[500]
+   INCIDENCE_ANGLE_TEB
+                   FLOAT     Array[500]
+   LAT_RAW         FLOAT     Array[500]
+   LAT_RAW_ERROR   FLOAT     Array[500]
+   LON_RAW         FLOAT     Array[500]
+   LON_RAW_ERROR   FLOAT     Array[500]
+   DISTANCE_JUNO_TO_RAW
+                   FLOAT     Array[500]
+   INCIDENCE_ANGLE_RAW
+                   FLOAT     Array[500]
+   IMAGE_FP        POINTER   Array[500]
+   XIMAGE          POINTER   Array[500]
+   YIMAGE          POINTER   Array[500]
+   LAT_IMAGE       POINTER   Array[500]
+   LON_IMAGE       POINTER   Array[500]
+   DPERP_IMAGE     POINTER   Array[500]
+   DPARA_IMAGE     POINTER   Array[500]
+   SIII_LON        FLOAT     Array[500]
+   SUBSC_LAT       FLOAT     Array[500]
+   SUBSC_LON       FLOAT     Array[500]
