@@ -40,7 +40,7 @@ UC.set_palette()
 
 # %% Settings
 exdate = '003/20250516'
-target_moon = 'Europa'
+target_moon = 'Io'
 target_fp = ['MAW', 'TEB']
 thres_scaleheight = False
 fit = True
@@ -1228,6 +1228,7 @@ y_err_arr = y_sigma_arr
 
 sort = np.argsort(x_arr)[::-1]
 x_arr, y_arr, x_err_arr, y_err_arr = x_arr[sort], y_arr[sort], x_err_arr[sort], y_err_arr[sort]
+q05_arr, q95_arr = q05_arr[sort], q95_arr[sort]
 
 # ODR 用データとモデルの設定
 data = RealData(x_arr, y_arr, sx=x_err_arr, sy=y_err_arr)
@@ -1474,12 +1475,13 @@ if fit is True:
                       label='95% CI', zorder=0.01)
 
 for ii in range(2):
-    F.ax.scatter(x_arr+24.0*ii, y_arr, s=16, marker='o',
+    F.ax.scatter(x_arr+24.0*ii, y_arr, s=14, marker='o',
                  edgecolor='k', facecolor='w', linewidth=0.7,
                  zorder=5)
     F.ax.errorbar(x_arr+24.0*ii, y_arr,
                   xerr=x_err_arr,
-                  yerr=y_err_arr,
+                  yerr=np.array(
+                      [np.abs(y_arr-q05_arr), np.abs(q95_arr-y_arr)]),
                   ecolor=UC.blue,
                   elinewidth=1.0,
                   linestyle='none',
