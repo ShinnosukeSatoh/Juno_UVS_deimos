@@ -608,7 +608,7 @@ class ShareXaxis():
                     ptick.AutoMinorLocator(minor_num))  # minor ticks
             return None
 
-        if self.nrows > 2:
+        if self.nrows > 1:
             for i in range(ax.size):
                 ax1 = ax[i]
                 _set_ticks(ax1)
