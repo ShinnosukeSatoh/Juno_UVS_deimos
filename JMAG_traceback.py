@@ -32,7 +32,7 @@ F.set_default()
 
 
 # %% Input about Juno observation
-TARGET_MOON = 'Io'
+TARGET_MOON = 'Ganymede'
 TARGET_FP = ['MAW', 'TEB']
 PJ_LIST = [1, 3]+np.arange(4, 68+1, 1).tolist()
 
@@ -110,7 +110,7 @@ elif TARGET_MOON == 'Ganymede':
 
 
 # %% Data load
-for PJ in PJ_LIST[0:5]:
+for PJ in PJ_LIST:
     wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, moon_S3wlon, et_fp, hem_fp, pj_fp = Obsresults(
         [PJ], TARGET_MOON, TARGET_FP, TARGET_HEM='both', FLIP=False
     )

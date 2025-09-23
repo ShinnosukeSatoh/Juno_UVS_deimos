@@ -226,6 +226,17 @@ def read1savfile(PJnum: int, target_moon: str, target_fp: str, target_hem='both'
     return wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, wlon_moon, et, hem
 
 
+# %% Read the backtraced data
+def read2backtraced():
+    dir = 'data/Backtraced/PJ' + \
+        str(PJ_LIST[0]).zfill(2)+'/'+TARGET_MOON[0]+'FP_info_v900km_fixed.txt'
+    f = np.loadtxt(dir)
+    rho_arr = f[0, :]
+    phi_arr = f[1, :]
+    et_fp = f[2, :]
+    return rho_arr, phi_arr, et_fp
+
+
 # %% Read the viewing angle
 def viewingangle(PJnum: int, target_moon: str, target_fp: str, target_hem='both', FLIP=False):
     """
@@ -376,10 +387,21 @@ def calc_eqlead(wlon_fp,
     eqlead_fp_1 = np.zeros(wlon_fp.shape)
     wlon_fp_eq = np.zeros(wlon_fp.shape)
 
+    # Backtraced data
+    if USE_BACKTRACED:
+        _, wlon_fp_back, et_fp = read2backtraced()
+
     for i in range(wlon_fp.size):
         wlon_fp_eq[i] = S3EQ(wlon_fp[i],
                              lat_fp[i],
                              hem_fp[i], target_moon)
+
+        # Backtraced data
+        if USE_BACKTRACED:
+            # print(wlon_fp_eq[i] - wlon_fp_back[i])
+            # print('---', et_fp[i])
+            wlon_fp_eq[i] = wlon_fp_back[i]
+
         wlon_fp_eq_0 = S3EQ(wlon_fp[i]+err_wlon_fp[i],
                             lat_fp[i],
                             hem_fp[i], target_moon)
@@ -784,14 +806,15 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_163'
+    exname = '005/20250923_002'
 
     # Input about Juno observation
     TARGET_MOON = 'Europa'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [18]
+    PJ_LIST = [4]
     TARGET_HEM = 'both'   # 'both', 'N', or 'S'
-    FLIP = True       # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
+    FLIP = False       # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
+    USE_BACKTRACED = True
 
     # Input about the paremeter space
     Ai_0, Ai_1, Ai_num, Ai_scale = 16.0, 20.0, 3, 'linear'
