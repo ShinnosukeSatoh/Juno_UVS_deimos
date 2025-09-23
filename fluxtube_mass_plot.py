@@ -924,12 +924,6 @@ lsigma = F.ax.fill_between(x_fit, y_fit_up, y_fit_dw,
                            label='2',
                            zorder=0.01)
 
-"""# System III longitude
-ax2 = F.ax.twinx()
-ax2.set_ylim(0, 1700)
-ax2.set_yticks(np.linspace(0, 360, 3))
-ax2.set_yticklabels(np.linspace(0, 360, 3))"""
-
 jj = 0
 median_arr = np.zeros(len(exnum))
 for ii in range(2):
@@ -1017,6 +1011,164 @@ F.fig.savefig(save_dir+save_name+'.pdf', bbox_inches='tight')
 print('Median average [10^-9 kg m-2]:', np.average(median_arr))
 
 
+#
+#
+#
+#
+# %% 横軸LT(48時間) 散布図 ベストフィット付き (時期を前半と後半に分ける)
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(7, 4), dpi='L')
+F.initialize()
+
+F.set_xaxis(label=target_moon+' local time [hour]',
+            min=0, max=48,
+            ticks=np.arange(0, 48+1, 3),
+            ticklabels=np.arange(0, 48+1, 3),
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label=r'$M$ [10$^{-9}$ kg m$^{-2}$]',
+            min=0, max=ymax,
+            ticks=ticks,
+            ticklabels=ticks,
+            minor_num=5)
+F.ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+
+first_half = np.where(np.array(PJ_list) <= 22)
+latter_half = np.where(np.array(PJ_list) > 22)
+for half in [first_half, latter_half]:
+    x_arr = medians_x[half]
+    y_arr = medians_arr[half]
+    x_err_arr = medians_x_err[half]/2
+    y_err_arr = y_sigma_arr[half]
+
+    sort = np.argsort(x_arr)[::-1]
+    x_arr, y_arr, x_err_arr, y_err_arr = x_arr[sort], y_arr[sort], x_err_arr[sort], y_err_arr[sort]
+
+    # ODR 用データとモデルの設定
+    data = RealData(x_arr, y_arr, sx=x_err_arr, sy=y_err_arr)
+    model = Model(fit_func2)
+
+    # ODR 実行
+    odr_instance = ODR(data, model, beta0=[1.0, 1.0, 1.0])
+    output = odr_instance.run()
+
+    # フィッティング結果
+    popt = output.beta
+    perr = output.sd_beta
+    # perr = np.sqrt(np.diag(output.cov_beta)) # maybe wrong
+
+    # ベストフィット
+    nstd = 3  # 95% 信頼区間
+    x_fit = np.linspace(0.0, 48.0, 120)
+    y_fit = fit_func2(popt, x_fit)
+    lmean, = F.ax.plot(x_fit, y_fit, zorder=0.1, label='1', color='k')
+
+# 予測区間の計算
+y_fit_err2 = ((np.pi*popt[0]/12.0)*np.sin(np.pi*(x_fit-popt[1])/12.0)**2)*(
+    perr[1]**2) + (np.cos(np.pi*(x_fit-popt[1])/12.0)*perr[0])**2 + perr[2]**2
+y_fit_err = np.sqrt(y_fit_err2)
+y_fit_up = y_fit + nstd * y_fit_err
+y_fit_dw = y_fit - nstd * y_fit_err
+lsigma = F.ax.fill_between(x_fit, y_fit_up, y_fit_dw,
+                           color=UC.gray, alpha=0.2,
+                           label='2',
+                           zorder=0.01)
+
+jj = 0
+median_arr = np.zeros(len(exnum))
+for ii in range(2):
+    for i in range(len(exnum)):
+        # %% Load the data
+        exname = exdate+'_'+exnum[i]
+        column_mass, chi2r, moon_et, _ = data_load(exname)     # [kg m-2]
+        column_mass *= 1E+9  # [10^-9 kg m-2]
+
+        # Local time
+        lt_arr = np.zeros(moon_et.size)
+        s3_arr = np.zeros(moon_et.size)
+        for k in range(moon_et.size):
+            lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+            _, _, _, _, _, _, s3_arr[k] = spice_moonS3(moon_et[k], target_moon)
+
+        lt_center = ((lt_arr[0]+lt_arr[-1])/2)+24.0*ii
+        lt_range = abs(lt_arr[0]-lt_arr[-1])
+
+        q25, medians, q75 = np.percentile(
+            column_mass, [25, 50, 75], axis=0)
+        q05, medians, q95 = np.percentile(
+            column_mass, [5, 50, 95], axis=0)
+        if PJ_list[i] <= 21:
+            F.ax.scatter(lt_center*np.ones(column_mass.size),
+                         column_mass,
+                         s=0.6, color=UC.blue, alpha=0.11)
+        else:
+            F.ax.scatter(lt_center*np.ones(column_mass.size),
+                         column_mass,
+                         s=0.6, color=UC.red, alpha=0.11)
+
+        F.ax.scatter(lt_center, medians, s=15, marker='o',
+                     edgecolor='k', facecolor='w', linewidth=0.5,
+                     zorder=4)
+
+        if abs(PJ_list[i]-round(PJ_list[i])) < 0.1:
+            F.ax.errorbar(lt_center, medians,
+                          xerr=np.array([[abs(lt_arr[0]+(24.0*ii)-lt_center)],
+                                         [abs(lt_arr[-1]+(24.0*ii)-lt_center)]]),
+                          color='k', linewidth=0.4, elinewidth=0.4,
+                          capsize=8.0*half_width,
+                          capthick=0.4,
+                          zorder=5)
+
+        if jj < len(exnum):
+            jj += 1
+
+        median_arr[i] = medians
+
+# Dummy
+sc = F.ax.scatter(-5, 1, s=2, color=UC.blue, label='3', zorder=4)
+
+# LT=24.0
+F.ax.axvline(x=24.0, color=UC.gray, linewidth=0.75)
+
+# Repeated for clarity
+F.ax.text(0.98, 0.03,
+          '2400-4800LT is repeated for clarity.',
+          color='k',
+          horizontalalignment='right',
+          verticalalignment='bottom',
+          transform=F.ax.transAxes,
+          fontsize=F.fontsize*0.5)
+
+legend = F.legend(ax_idx=0,
+                  handles=[sc, (lsigma, lmean)],
+                  labels=['Estimated', r'$M_{fit} \pm 3\sigma$'],
+                  bbox_to_anchor=(1.0, 1.02),
+                  ncol=3, markerscale=3,
+                  fontsize_scale=0.65, textcolor=True, handletextpad=0.2)
+legend_shadow(fig=F.fig, ax=F.ax, legend=legend)
+
+F.ax.set_title(r'Flux tube mass contents ('+target_moon+')',
+               fontsize=F.fontsize, weight='bold')
+save_dir = 'img/column_mass/'+exdate+'_'+target_moon+'/'
+save_name = 'LT48'
+if thres_scaleheight:
+    save_name += '_H_thres'
+save_name += '_sc'
+save_name += '_ODRfit'
+F.fig.savefig(save_dir+save_name+'_half.jpg', bbox_inches='tight')
+F.fig.savefig(save_dir+save_name+'_half.pdf', bbox_inches='tight')
+
+print('Median average [10^-9 kg m-2]:', np.average(median_arr))
+print(
+    f"Fitting result: a = {popt[0]:.2f},  c = {popt[1]:.2f}, d = {popt[2]:.2f}")
+print(
+    f"Parameter uncertainty: a_err={perr[0]:.2f}, c_err={perr[1]:.2f}, d_err={perr[2]:.2f}")
+
+
+"""
 #
 #
 #
@@ -1194,6 +1346,7 @@ save_name += '_ODRfit'
 save_name += '_Nerney'
 F.fig.savefig(save_dir+save_name+'.jpg', bbox_inches='tight')
 F.fig.savefig(save_dir+save_name+'.pdf', dpi=F.dpi, bbox_inches='tight')
+"""
 
 
 #
@@ -1259,12 +1412,6 @@ lsigma = F.ax.fill_between(x_fit, y_fit_up, y_fit_dw,
                            color=UC.gray, alpha=0.2,
                            label='2',
                            zorder=0.01)
-
-"""# System III longitude
-ax2 = F.ax.twinx()
-ax2.set_ylim(0, 1700)
-ax2.set_yticks(np.linspace(0, 360, 3))
-ax2.set_yticklabels(np.linspace(0, 360, 3))"""
 
 jj = 0
 for ii in range(2):
@@ -1517,6 +1664,7 @@ print(
     f"Parameter uncertainty: a_err={perr[0]:.2f}, c_err={perr[1]:.2f}, d_err={perr[2]:.2f}")
 
 
+"""
 #
 #
 #
@@ -1598,8 +1746,10 @@ print(
     f"Fitting result: a = {popt[0]:.2f},  c = {popt[1]:.2f}, d = {popt[2]:.2f}")
 print(
     f"Parameter uncertainty: a_err={perr[0]:.2f}, c_err={perr[1]:.2f}, d_err={perr[2]:.2f}")
+"""
 
 
+"""
 #
 #
 #
@@ -1679,3 +1829,4 @@ if thres_scaleheight:
 save_name += '_sc_residual'
 F.fig.savefig(save_dir+save_name+'.jpg', bbox_inches='tight')
 F.close()
+"""
