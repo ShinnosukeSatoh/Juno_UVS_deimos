@@ -226,6 +226,69 @@ def read1savfile(PJnum: int, target_moon: str, target_fp: str, target_hem='both'
     return wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, wlon_moon, et, hem
 
 
+# %% Read the viewing angle
+def viewingangle(PJnum: int, target_moon: str, target_fp: str, target_hem='both', FLIP=False):
+    """
+    Args:
+        `PJnum` (int): Perijove number \\
+        `moon` (str): Name of the target (Io/Europa/Ganymede) \\
+        `footprint` (str): `MAW` or `TEB` \\
+
+    Returns:
+        `incident_angle` (ndarray): incident angles \\
+    """
+
+    # Look for the file named
+    # `IFP_info_v900km_fixed.sav` for Io footprint
+    savpath = 'data/Output_v2_PJ01_PJ68/' + 'PJ' + \
+        str(PJnum).zfill(2)+'/'+target_moon[0]+'FP_info_v900km_fixed.sav'
+
+    # Read
+    savdata = readsav(savpath)
+
+    var = savdata['fp_info']
+
+    # 'MIDTIME_ET'を用いてスライス位置を決定する
+    MIDTIME_ET = np.array(var['MIDTIME_ET'][0])
+    idx = np.where(MIDTIME_ET > 0)
+
+    # INCIDENCE_ANGLE_TEB
+    incident_angle = np.array(var['INCIDENCE_ANGLE_'+target_fp][0])[idx]
+    hem = var['HEMISPHERE'][0][idx]
+    wlon_fp = np.array(var['LON_'+target_fp][0])[idx]
+
+    # Extract MAWs (exclude values -999.)
+    fpvalues = np.where((wlon_fp > -100))
+    incident_angle = incident_angle[fpvalues]
+    hem = hem[fpvalues]
+
+    # MAWとTEBの判別
+    hem_N = np.where(hem == b'North')
+    hem_S = np.where(hem == b'South')
+    if target_fp == 'MAW':
+        hem[hem_N] = -1
+        hem[hem_S] = 1
+        if FLIP is True:
+            hem[hem_N] = -101
+            hem[hem_S] = 101
+    elif target_fp == 'TEB':
+        hem[hem_N] = -101
+        hem[hem_S] = 101
+        if FLIP is True:
+            hem[hem_N] = -1
+            hem[hem_S] = -1
+
+    # 北半球もしくは南半球だけを取り出す
+    if target_hem == 'N':
+        incident_angle = incident_angle[hem_N]
+        hem = hem[hem_N]
+    elif target_hem == 'S':
+        incident_angle = incident_angle[hem_S]
+        hem = hem[hem_S]
+
+    return incident_angle
+
+
 # %% Footprint position will be mapped on the equatorial plane
 def S3EQ(fpwlon: float, fplat: float, hemisphere, MOON: str):
     """
