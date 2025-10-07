@@ -227,14 +227,70 @@ def read1savfile(PJnum: int, target_moon: str, target_fp: str, target_hem='both'
 
 
 # %% Read the backtraced data
-def read2backtraced():
-    dir = 'data/Backtraced/PJ' + \
-        str(PJ_LIST[0]).zfill(2)+'/'+TARGET_MOON[0]+'FP_info_v900km_fixed.txt'
-    f = np.loadtxt(dir)
-    rho_arr = f[0, :]
-    phi_arr = f[1, :]
-    et_fp = f[2, :]
-    return rho_arr, phi_arr, et_fp
+def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both', FLIP=False):
+    # 初期化
+    rho_arr = np.zeros(3)
+    phi_arr = np.zeros(3)
+    et_fp = np.zeros(3)
+    hem_arr = np.zeros(3)
+
+    for i in range(len(pj_list)):
+        dir = 'data/Backtraced/PJ' + \
+            str(pj_list[i]).zfill(2)+'/' + \
+            target_moon[0]+'FP_info_v900km_fixed.txt'
+        f = np.loadtxt(dir)
+        # print(pj_list[i])
+
+        if f.ndim == 1:
+            rho_arr = np.append(rho_arr, f[0])
+            phi_arr = np.append(phi_arr, f[1])
+            et_fp = np.append(et_fp, f[2])
+            hem_arr = np.append(hem_arr, f[3])
+        else:
+            rho_arr = np.append(rho_arr, f[0, :])
+            phi_arr = np.append(phi_arr, f[1, :])
+            et_fp = np.append(et_fp, f[2, :])
+            hem_arr = np.append(hem_arr, f[3, :])
+
+    # 余計な部分を削除
+    rho_arr = rho_arr[3:]
+    phi_arr = phi_arr[3:]
+    et_fp = et_fp[3:]
+    hem_arr = hem_arr[3:]
+
+    # 半球で場合分け
+    if target_hem == 'N':
+        hem_idx = np.where((hem_arr == -1) | (hem_arr == -101))
+        rho_arr = rho_arr[hem_idx]
+        phi_arr = phi_arr[hem_idx]
+        et_fp = et_fp[hem_idx]
+        hem_arr = hem_arr[hem_idx]
+    elif target_hem == 'S':
+        hem_idx = np.where((hem_arr == 1) | (hem_arr == 101))
+        rho_arr = rho_arr[hem_idx]
+        phi_arr = phi_arr[hem_idx]
+        et_fp = et_fp[hem_idx]
+        hem_arr = hem_arr[hem_idx]
+
+    # フットプリントの種類で場合分け
+    if target_fp == 'MAW':
+        fp_idx = np.where(np.abs(hem_arr) == 1)
+        if FLIP is True:
+            fp_idx = np.where(np.abs(hem_arr) == 101)
+        rho_arr = rho_arr[fp_idx]
+        phi_arr = phi_arr[fp_idx]
+        et_fp = et_fp[fp_idx]
+        hem_arr = hem_arr[fp_idx]
+    elif target_fp == 'TEB':
+        fp_idx = np.where(np.abs(hem_arr) == 101)
+        if FLIP is True:
+            fp_idx = np.where(np.abs(hem_arr) == 1)
+        rho_arr = rho_arr[fp_idx]
+        phi_arr = phi_arr[fp_idx]
+        et_fp = et_fp[fp_idx]
+        hem_arr = hem_arr[fp_idx]
+
+    return rho_arr, phi_arr, et_fp, hem_arr
 
 
 # %% Read the viewing angle
@@ -382,59 +438,29 @@ def calc_eqlead(wlon_fp,
                 moon_S3wlon0,
                 target_moon: str):
 
+    # 初期化
     eqlead_fp = np.zeros(wlon_fp.shape)
     eqlead_fp_0 = np.zeros(wlon_fp.shape)
     eqlead_fp_1 = np.zeros(wlon_fp.shape)
-    wlon_fp_eq = np.zeros(wlon_fp.shape)
 
-    # Backtraced data
-    if USE_BACKTRACED:
-        _, wlon_fp_back, et_fp = read2backtraced()
+    wlon_fp_eq = calc_eqmapping(
+        wlon_fp, lat_fp, hem_fp, target_moon)
+    wlon_fp_eq_0 = calc_eqmapping(
+        wlon_fp+err_wlon_fp, lat_fp, hem_fp, target_moon)
+    wlon_fp_eq_1 = calc_eqmapping(
+        wlon_fp-err_wlon_fp, lat_fp, hem_fp, target_moon)
+    wlon_fp_eq_2 = calc_eqmapping(
+        wlon_fp+err_wlon_fp, lat_fp+err_lat_fp, hem_fp, target_moon)
+    wlon_fp_eq_3 = calc_eqmapping(
+        wlon_fp-err_wlon_fp, lat_fp-err_lat_fp, hem_fp, target_moon)
 
     for i in range(wlon_fp.size):
-        wlon_fp_eq[i] = S3EQ(wlon_fp[i],
-                             lat_fp[i],
-                             hem_fp[i], target_moon)
-
-        # Backtraced data
-        if USE_BACKTRACED:
-            # print(wlon_fp_eq[i] - wlon_fp_back[i])
-            # print('---', et_fp[i])
-            wlon_fp_eq[i] = wlon_fp_back[i]
-
-        wlon_fp_eq_0 = S3EQ(wlon_fp[i]+err_wlon_fp[i],
-                            lat_fp[i],
-                            hem_fp[i], target_moon)
-        wlon_fp_eq_1 = S3EQ(wlon_fp[i]-err_wlon_fp[i],
-                            lat_fp[i],
-                            hem_fp[i], target_moon)
-        wlon_fp_eq_2 = S3EQ(wlon_fp[i]+err_wlon_fp[i],
-                            lat_fp[i]+err_lat_fp[i],
-                            hem_fp[i], target_moon)
-        wlon_fp_eq_3 = S3EQ(wlon_fp[i]-err_wlon_fp[i],
-                            lat_fp[i]-err_lat_fp[i],
-                            hem_fp[i], target_moon)
-
-        delta0 = abs(wlon_fp_eq[i] - wlon_fp_eq_0)
-        delta1 = abs(wlon_fp_eq[i] - wlon_fp_eq_1)
-        delta2 = abs(wlon_fp_eq[i] - wlon_fp_eq_2)
-        delta3 = abs(wlon_fp_eq[i] - wlon_fp_eq_3)
-        if delta0 > 345.0:
-            delta0 = abs(delta0-360.0)
-        if delta1 > 345.0:
-            delta1 = abs(delta1-360.0)
-        if delta2 > 345.0:
-            delta2 = abs(delta2-360.0)
-        if delta3 > 345.0:
-            delta3 = abs(delta3-360.0)
+        eqlead_fp_0[i], _ = calc_eqerrors(
+            wlon_fp_eq[i], wlon_fp_eq_0[i], wlon_fp_eq_1[i], wlon_fp_eq_2[i], wlon_fp_eq_3[i]
+        )
 
         # Equatorial lead angle
         eqlead_fp[i] = moon_S3wlon0[i] - wlon_fp_eq[i]
-
-        # Errors in the observed lead angle
-        eqlead_fp_1[i] = wlon_fp_eq[i] - wlon_fp_eq_1
-        # eqlead_fp_0[i] = wlon_fp_eq_0 - wlon_fp_eq[i]
-        eqlead_fp_0[i] = np.max([delta0, delta1, delta2, delta3])
 
         if eqlead_fp[i] < 0:
             eqlead_fp[i] += 360.
@@ -443,6 +469,41 @@ def calc_eqlead(wlon_fp,
             wlon_fp_eq[i] += 360.
 
     return eqlead_fp, eqlead_fp_0, eqlead_fp_1, wlon_fp_eq
+
+
+# %% Equatorial mapping using the table
+def calc_eqmapping(wlon_fp, lat_fp, hem_fp, target_moon):
+    wlon_fp_eq = np.zeros(wlon_fp.shape)
+
+    for i in range(wlon_fp.size):
+        wlon_fp_eq[i] = S3EQ(wlon_fp[i],
+                             lat_fp[i],
+                             hem_fp[i], target_moon)
+
+    return wlon_fp_eq
+
+
+# %%
+def calc_eqerrors(center, wlon_fp_eq_0, wlon_fp_eq_1, wlon_fp_eq_2, wlon_fp_eq_3):
+    delta0 = abs(center - wlon_fp_eq_0)
+    delta1 = abs(center - wlon_fp_eq_1)
+    delta2 = abs(center - wlon_fp_eq_2)
+    delta3 = abs(center - wlon_fp_eq_3)
+
+    if delta0 >= 360.0:
+        delta0 = abs(delta0-360.0)
+    if delta1 >= 360.0:
+        delta1 = abs(delta1-360.0)
+    if delta2 >= 360.0:
+        delta2 = abs(delta2-360.0)
+    if delta3 >= 360.0:
+        delta3 = abs(delta3-360.0)
+
+    # Errors in the observed lead angle
+    eqlead_fp_1 = 0   # unused !
+    eqlead_fp_0 = np.max([delta0, delta1, delta2, delta3])
+
+    return eqlead_fp_0, eqlead_fp_1
 
 
 # %% System III position of the target moon from et_fp array.
@@ -573,6 +634,33 @@ def Obsresults(PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP):
     return wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, wlon_moon_fp, et_fp, hem_fp, pj_fp
 
 
+# %%
+def Obsresults_back(PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP):
+    # 初期化
+    rho_arr = np.zeros(3)
+    phi_arr = np.zeros(3)
+    et_fp = np.zeros(3)
+    hem_arr = np.zeros(3)
+
+    for i in PJ_LIST:
+        for j in TARGET_FP:
+            rho_arr1, phi_arr1, et_fp1, hem_arr1 = read2backtraced(
+                [i], target_moon=TARGET_MOON, target_fp=j, target_hem=TARGET_HEM, FLIP=FLIP)
+
+            rho_arr = np.append(rho_arr, rho_arr1)
+            phi_arr = np.append(phi_arr, phi_arr1)
+            et_fp = np.append(et_fp, et_fp1)
+            hem_arr = np.append(hem_arr, hem_arr1)
+
+    # 余計な部分を削除
+    rho_arr = rho_arr[3:]
+    phi_arr = phi_arr[3:]
+    et_fp = et_fp[3:]
+    hem_arr = hem_arr[3:]
+
+    return rho_arr, phi_arr, et_fp, hem_arr
+
+
 # %% Calculate the error for west longitude of the moon
 def eqwlong_err(Psyn, dt):
 
@@ -688,6 +776,7 @@ def main():
 
     # Time: t0, the observation time
     _, _, _, _, _, _, moon_S3wlon = moonS3wlon_arr(et_fp, TARGET_MOON)
+
     eqlead_fp, eqlead_fp_0, _, wlon_fp_eq = calc_eqlead(wlon_fp,
                                                         err_wlon_fp,
                                                         lat_fp,
@@ -695,6 +784,21 @@ def main():
                                                         hem_fp,
                                                         moon_S3wlon,
                                                         TARGET_MOON)
+
+    if USE_BACKTRACED:
+        _, phi_arr, et_fp2, hem_arr = Obsresults_back(PJ_LIST,
+                                                      TARGET_MOON,
+                                                      TARGET_FP,
+                                                      TARGET_HEM,
+                                                      FLIP)
+
+        eqlead_fp = moon_S3wlon - phi_arr
+        for i in range(eqlead_fp.size):
+            if eqlead_fp[i] < 0:
+                eqlead_fp[i] += 360.
+
+        print('hem_arr:', hem_arr)
+        print('Eq map diff.: ', wlon_fp_eq-phi_arr)
 
     # Moon position when the Alfven waves launched (Time: t0-tau_A)
     _, _, z_A0, r_A0, _, _, S3wlon_A0 = Alfven_launch_site(et_fp,
@@ -806,12 +910,12 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '005/20250923_002'
+    exname = '005/20250923_006'
 
     # Input about Juno observation
     TARGET_MOON = 'Europa'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [4]
+    PJ_LIST = [9]
     TARGET_HEM = 'both'   # 'both', 'N', or 'S'
     FLIP = False       # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True
@@ -822,7 +926,7 @@ if __name__ == '__main__':
     Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 5000.0, 60, 'log'
 
     # Number of parallel processes
-    parallel = 30
+    parallel = 20
 
     main()
 

@@ -1,23 +1,13 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.patheffects as pe
 from SharedX import ShareXaxis
 from UniversalColor import UniversalColor
-from legend_shadow import legend_shadow
-from scipy.io import readsav
-import spiceypy as spice
-
-from scipy.odr import ODR, Model, Data, RealData
 
 import JupiterMag as jm
-import Leadangle_wave as LeadA
 
 from Leadangle_fit_JunoUVS import Obsresults
-from Leadangle_fit_JunoUVS import viewingangle
 from Leadangle_fit_JunoUVS import calc_eqlead
-from Leadangle_fit_JunoUVS import local_time_moon
 
 import os
 from IPython.display import clear_output
@@ -40,7 +30,7 @@ PJ_LIST = [1, 3]+np.arange(4, 68+1, 1).tolist()
 # %% Constants
 MU0 = 1.26E-6            # 真空中の透磁率
 AMU2KG = 1.66E-27        # 原子質量をkgに変換するファクタ [kg]
-RJ = 71492E+3            # JUPITER RADIUS [m]
+RJ = 71492.0E+3            # JUPITER RADIUS [m]
 MJ = 1.90E+27            # JUPITER MASS [kg]
 C = 2.99792E+8           # LIGHT SPEED [m/s]
 G = 6.67E-11             # 万有引力定数  [m^3 kg^-1 s^-2]
@@ -48,6 +38,19 @@ G = 6.67E-11             # 万有引力定数  [m^3 kg^-1 s^-2]
 Psyn_io = (12.89)*3600      # Moon's synodic period [sec]
 Psyn_eu = (11.22)*3600      # Moon's synodic period [sec]
 Psyn_ga = (10.53)*3600      # Moon's synodic period [sec]
+
+
+# %% Jupiter's surface radius at a given latitude
+def calc_r_surf(lat):
+    """
+    `lat` ... latitude [rad]
+    """
+    r0 = RJ
+    r1 = (14.4/15.4)*RJ
+
+    rs = r0*r1/np.sqrt((r0*np.sin(lat))**2+(r1*np.cos(lat))**2)  # [m]
+
+    return rs
 
 
 # %% Select moon synodic orbital period
@@ -115,13 +118,13 @@ for PJ in PJ_LIST:
         [PJ], TARGET_MOON, TARGET_FP, TARGET_HEM='both', FLIP=False
     )
 
-    eqlead_fp, eqlead_fp_0, eqlead_fp_1, wlon_fp_eq = calc_eqlead(wlon_fp,
-                                                                  err_wlon_fp,
-                                                                  lat_fp,
-                                                                  err_lat_fp,
-                                                                  hem_fp,
-                                                                  moon_S3wlon,
-                                                                  TARGET_MOON)
+    _, _, _, wlon_fp_eq = calc_eqlead(wlon_fp,
+                                      err_wlon_fp,
+                                      lat_fp,
+                                      err_lat_fp,
+                                      hem_fp,
+                                      moon_S3wlon,
+                                      TARGET_MOON)
 
     # %% Backtraced field line position on the equatorial plane
     rho_arr = np.zeros(wlon_fp.size)
@@ -136,8 +139,7 @@ for PJ in PJ_LIST:
         phi = np.radians(360.0-wlon_fp[i])
 
         # radius of surface
-        rs = np.sqrt((RJ*np.cos(np.radians(latitude))) **
-                     2 + (RJ*np.sin(np.radians(latitude))*14.4/15.4)**2)
+        rs = calc_r_surf(np.radians(latitude))
         r = rs/RJ+(900.0E+3/RJ)   # [RJ]
 
         x0 = r*np.sin(theta)*np.cos(phi)
@@ -183,11 +185,13 @@ for PJ in PJ_LIST:
     savefile = np.array([rho_arr,
                          phi_arr,
                          et_fp,
+                         hem_fp,
                          ])
     print(savefile.shape)  # -> (3, N)
     # savefile[0,:] -> rho_arr [RJ]
     # savefile[1,:] -> phi_arr [deg] (west longitude)
     # savefile[2,:] -> et_fp [et]
+    # savefile[3,:] -> hemisphere & type of footprints (+/-1, +/-101)
 
     np.savetxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
                TARGET_MOON[0]+'FP_info_v900km_fixed.txt', savefile)
