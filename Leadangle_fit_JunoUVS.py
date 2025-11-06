@@ -910,23 +910,23 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '005/20250923_006'
+    exname = '003/20250516_166'
 
     # Input about Juno observation
-    TARGET_MOON = 'Europa'
+    TARGET_MOON = 'Io'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [9]
+    PJ_LIST = [3]
     TARGET_HEM = 'both'   # 'both', 'N', or 'S'
     FLIP = False       # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
-    USE_BACKTRACED = True
+    USE_BACKTRACED = False
 
     # Input about the paremeter space
-    Ai_0, Ai_1, Ai_num, Ai_scale = 16.0, 20.0, 3, 'linear'
-    ni_0, ni_1, ni_num, ni_scale = 10.0, 1000.0, 50, 'log'
-    Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 5000.0, 60, 'log'
+    Ai_0, Ai_1, Ai_num, Ai_scale = 20.0, 24.0, 3, 'linear'
+    ni_0, ni_1, ni_num, ni_scale = 500.0, 7500.0, 75, 'log'
+    Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 1000.0, 60, 'log'
 
     # Number of parallel processes
-    parallel = 20
+    parallel = 50
 
     main()
 
