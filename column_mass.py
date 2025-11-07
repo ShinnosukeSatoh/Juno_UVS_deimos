@@ -167,7 +167,7 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_Io_ext2'
+    exname = '003/20250516_Io_ext3'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
@@ -176,7 +176,7 @@ if __name__ == '__main__':
 
     # Input about the paremeter space
     Ai_0, Ai_1, Ai_num, Ai_scale = 20.0, 24.0, 3, 'linear'
-    ni_0, ni_1, ni_num, ni_scale = 5000.0, 7500.0, 50, 'log'
+    ni_0, ni_1, ni_num, ni_scale = 500.0, 7500.0, 75, 'log'
     Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 1000.0, 60, 'log'
 
     # Number of parallel processes
