@@ -548,6 +548,28 @@ class ShareXaxis():
                 _logticklocate(ax0)
             return None
 
+        def _set_ticks(ax0, direction='out'):
+            ax0.set_xscale(xscale)
+            ax0.set_xlim(min, max)
+            ax0.tick_params(axis='x', labelsize=self.fontsize)
+            if direction == 'inout':
+                ax0.tick_params(axis='x', which='major',
+                                direction='inout', length=10,)
+                ax0.tick_params(axis='x', which='minor',
+                                direction='inout', length=7,)
+                ax0.tick_params(axis='x', labelbottom=False)  # ラベルを消す
+            if ticks is not None:
+                ax0.set_xticks(ticks)
+                ax0.set_xticklabels(ticklabels,
+                                    fontsize=self.fontsize,
+                                    linespacing=1.1)
+                if xscale == 'linear':
+                    ax0.xaxis.set_minor_locator(
+                        ptick.AutoMinorLocator(minor_num))  # minor ticks
+            if xscale == 'log':
+                _logticklocate(ax0)
+            return None
+
         def _logticklocate(ax0):
             ax0.xaxis.set_major_locator(ptick.LogLocator(numticks=999))
             ax0.xaxis.set_minor_locator(
@@ -561,28 +583,21 @@ class ShareXaxis():
         else:
             for i in range(ax.size):
                 ax0 = ax[i]
-                _bottom_xaxis(ax0)
+                # _bottom_xaxis(ax0)
+                _set_ticks(ax0)
 
                 if self.hspace == 0:
-                    if i != 0:
-                        ax2 = ax0.secondary_xaxis('top')
-                        if ticks is not None:
-                            _bottom_xaxis(ax2)
-                            ax2.tick_params(axis='x', which='major',
-                                            length=10, direction='inout')
-                            ax2.tick_params(axis='x', which='minor',
-                                            length=7, direction='inout')
-                        plt.setp(ax2.get_xticklabels(),
-                                 visible=False)  # ラベルを消す
-                        ax2.set_zorder(ax0.get_zorder()+5)
                     if i != ax.size-1:
-                        ax0.xaxis.set_visible(False)
-                        plt.setp(ax0.get_xticklabels(),
-                                 visible=False)  # ラベルを消す
+                        _set_ticks(ax0, direction='inout')
                 else:
                     fig.tight_layout()
                     if i != ax.size-1:
                         ax0.tick_params(labelbottom=False)
+
+            if self.hspace == 0:
+                for i in range(ax.size-1):
+                    i += 1
+                    ax[ax.size-i-1].set_zorder(ax[ax.size-i].get_zorder()+5)
 
         ax0.set_xlabel(label, fontsize=self.fontsize, color=labelcolor)
 
@@ -594,8 +609,15 @@ class ShareXaxis():
         fig.subplots_adjust(hspace=self.hspace)
         fig.subplots_adjust(wspace=self.wspace)
 
-        def _set_ticks(ax0):
+        def _set_ticks(ax0, direction='out'):
             ax0.set_xlim(min, max)
+            ax0.tick_params(axis='x', labelsize=self.fontsize)
+            if direction == 'inout':
+                ax0.tick_params(axis='x', which='major',
+                                direction='inout', length=10,)
+                ax0.tick_params(axis='x', which='minor',
+                                direction='inout', length=7,)
+                ax0.tick_params(axis='x', labelbottom=False)  # ラベルを消す
             if ticks is None:
                 ax0.xaxis.set_major_formatter(mdates.DateFormatter(format))
                 ax0.xaxis.set_major_locator(mdates.MinuteLocator())
@@ -611,29 +633,23 @@ class ShareXaxis():
         if self.nrows > 1:
             for i in range(ax.size):
                 ax1 = ax[i]
-                _set_ticks(ax1)
-                ax1.tick_params(axis='both', labelsize=self.fontsize)
 
                 if self.hspace == 0:
-                    if i != 0:
-                        ax2 = ax1.secondary_xaxis('top')
-                        _set_ticks(ax2)
-                        ax2.tick_params(axis='x', which='major',
-                                        length=8, direction='inout')
-                        ax2.tick_params(axis='x', which='minor',
-                                        length=6, direction='inout')
-
-                        plt.setp(ax2.get_xticklabels(),
-                                 visible=False)  # ラベルを消す
-                        ax2.set_zorder(ax1.get_zorder()+5)
                     if i != ax.size-1:
-                        ax1.xaxis.set_visible(False)
-                        plt.setp(ax1.get_xticklabels(),
-                                 visible=False)  # ラベルを消す
+                        print('ax idx:', i)
+                        _set_ticks(ax1, direction='inout')
+                    elif i == ax.size-1:
+                        _set_ticks(ax1)
                 else:
+                    _set_ticks(ax1)
                     fig.tight_layout()
                     if i != ax.size-1:
                         ax1.tick_params(labelbottom=False)
+
+            if self.hspace == 0:
+                for i in range(ax.size-1):
+                    i += 1
+                    ax[ax.size-i-1].set_zorder(ax[ax.size-i].get_zorder()+5)
 
         elif self.nrows == 1:
             ax1 = ax
