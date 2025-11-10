@@ -474,7 +474,8 @@ xticks = [datetime.datetime.strptime('2013-01-01', '%Y-%m-%d'),
           datetime.datetime.strptime('2023-01-01', '%Y-%m-%d'),
           datetime.datetime.strptime('2024-01-01', '%Y-%m-%d')]
 xticklabels = ['2013', '2014', '2015', '2016', '2017',
-               '2018', '2019', '2020', '2021', '2022', '2023', '2024']
+               '2018', '2019', '2020', '2021', '2022',
+               '2023', '2024']
 F.set_xaxis(label='Date',
             min=xmin, max=xmax,
             ticks=xticks,
@@ -766,5 +767,5 @@ for i in range(4):
 
 save_dir = 'img/'
 save_name = 'ftmc_hisaki'
-F.fig.savefig(save_dir+save_name+'_2.jpg', bbox_inches='tight')
+F.fig.savefig(save_dir+save_name+'_2.pdf', bbox_inches='tight')
 F.close()
