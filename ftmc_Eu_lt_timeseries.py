@@ -28,8 +28,8 @@ UC = UniversalColor()
 UC.set_palette()
 
 
-exdate = '003/20250516'
-target_moon = 'Europa'
+exdate = '005/20250923'
+target_moon = 'Ganymede'
 target_fp = ['MAW', 'TEB']
 
 exnum = ['050', '056']
@@ -311,12 +311,12 @@ F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=3, figsize=(6.5, 7.5), dpi='L')
+F.set_figparams(nrows=3, figsize=(8.0, 7.5), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
 sxmin = '2016-01-01'
-sxmax = '2023-01-01'
+sxmax = '2024-09-30'
 xmin = datetime.datetime.strptime(sxmin, '%Y-%m-%d')
 xmax = datetime.datetime.strptime(sxmax, '%Y-%m-%d')
 xticks = [datetime.datetime.strptime('2016-01-01', '%Y-%m-%d'),
@@ -326,8 +326,10 @@ xticks = [datetime.datetime.strptime('2016-01-01', '%Y-%m-%d'),
           datetime.datetime.strptime('2020-01-01', '%Y-%m-%d'),
           datetime.datetime.strptime('2021-01-01', '%Y-%m-%d'),
           datetime.datetime.strptime('2022-01-01', '%Y-%m-%d'),
-          datetime.datetime.strptime('2023-01-01', '%Y-%m-%d'),]
-xticklabels = ['2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023']
+          datetime.datetime.strptime('2023-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-01-01', '%Y-%m-%d')]
+xticklabels = ['2016', '2017', '2018', '2019', '2020',
+               '2021', '2022', '2023', '2024']
 F.set_xaxis(label='Date',
             min=xmin, max=xmax,
             ticks=xticks,
@@ -413,6 +415,76 @@ elif (exdate == '003/20250516') and (target_moon == 'Ganymede'):
                 'S', 'S', 'N', 'N']
     Psyn = Psyn_ga
     ymax = 0.24
+    ticks = np.arange(0, 0.30, 0.10)
+
+elif (exdate == '005/20250923') and (target_moon == 'Europa'):
+    exnum = ['024', '025', '003', '004', '008',
+             '009', '007', '010', '011', '012',
+             '051', '053', '014', '015',
+             # '016', '017',    # ここは本当に使わない
+             '018', '020', '021', '022',
+             '023', '026', '029', '030', '052',
+             # '032',   # ここは本当に使わない
+             '033', '034', '035', '036', '037', '040',
+             '041', '042', '043', '044', '045', '046',
+             # '047',   # ここは本当に使わない
+             '048', '050',
+             ]
+    PJ_list = [3, 4, 5, 7, 8,
+               8, 9, 10, 11, 11,
+               12, 12, 13, 14,
+               # 15, 16,    # ここは本当に使わない
+               17, 18, 19, 20,
+               21, 22, 23, 25, 26,
+               # 27,    # ここは本当に使わない
+               28, 29, 30, 31, 32, 33,
+               34, 35, 36, 38, 40, 41,
+               # 45,    # ここは本当に使わない
+               48, 62,
+               ]
+    FTMC_HEM = ['S', 'S', 'N', 'S', 'N',
+                'S', 'S', 'N', 'N', 'S',
+                'N', 'S', 'N', 'S',
+                # 'S', 'S',    # ここは本当に使わない
+                'both', 'S', 'both', 'both',
+                'S', 'both', 'S', 'S', 'S',
+                # 'N',    # ここは本当に使わない
+                'N', 'both', 'S', 'S', 'both', 'S',
+                'S', 'S', 'N', 'S', 'S', 'S',
+                # 'S',    # ここは本当に使わない
+                'S', 'S',
+                ]
+    Psyn = Psyn_eu
+    ymax = 3.0
+    ticks = np.arange(0, 3+1, 1)
+
+elif (exdate == '005/20250923') and (target_moon == 'Ganymede'):
+    exnum = ['054', '055', '056', '057', '058',
+             '059', '063', '065', '068', '070',
+             '071', '072', '073', '075', '076',
+             '078', '079', '081', '082', '083',
+             '084', '085', '086', '087', '088',
+             '089', '090', '091', '092', '093',
+             '094',
+             ]
+    PJ_list = [3, 4, 5, 6, 7,
+               8, 11, 12, 13, 14,
+               15, 16, 17, 19, 20,
+               21, 21, 22, 23, 25,
+               26, 27, 29, 30, 32,
+               32, 33, 34, 34, 35,
+               37,
+               ]
+    FTMC_HEM = ['both', 'both', 'S', 'both', 'S',
+                'both', 'N', 'both', 'both', 'S',
+                'N', 'S', 'S', 'S', 'N',
+                'N', 'S', 'N', 'both', 'S',
+                'S', 'both', 'S', 'S', 'N',
+                'S', 'both', 'N', 'S', 'both',
+                'S',
+                ]
+    Psyn = Psyn_ga
+    ymax = 0.2
     ticks = np.arange(0, 0.30, 0.10)
 
 column_mass_1dN = np.loadtxt(
@@ -696,8 +768,28 @@ xticks = [datetime.datetime.strptime('2016-08-27', '%Y-%m-%d'),
           datetime.datetime.strptime('2022-07-05', '%Y-%m-%d'),
           datetime.datetime.strptime('2022-08-17', '%Y-%m-%d'),
           datetime.datetime.strptime('2022-09-29', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-11-06', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-12-15', '%Y-%m-%d'),]
+          datetime.datetime.strptime('2022-11-06', '%Y-%m-%d'),  # PJ46
+          datetime.datetime.strptime('2022-12-15', '%Y-%m-%d'),  # PJ47
+          datetime.datetime.strptime('2023-01-22', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-03-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-04-08', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-05-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-06-23', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-07-31', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-09-07', '%Y-%m-%d'),  # PJ54
+          datetime.datetime.strptime('2023-10-15', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-11-22', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-12-30', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-02-04', '%Y-%m-%d'),  # PJ58
+          datetime.datetime.strptime('2024-03-07', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-04-09', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-05-12', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-06-14', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-07-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-08-18', '%Y-%m-%d'),  # PJ64
+          datetime.datetime.strptime('2024-09-20', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-10-23', '%Y-%m-%d'),  # PJ66
+          ]
 xticklabels = ['PJ1', '', '', '', '',
                '6', '', '', '', '',
                '11', '', '', '', '',
@@ -707,7 +799,11 @@ xticklabels = ['PJ1', '', '', '', '',
                '31', '', '', '', '',
                '36', '', '', '', '',
                '41', '', '', '', '',
-               '46', '',]
+               '46', '', '', '', '',
+               '51', '', '', '', '',
+               '56', '', '', '', '',
+               '61', '', '', '', '',
+               '66']
 PJax.set_xlim(xmin, xmax)
 PJax.set_xticks(xticks[::5])
 PJax.set_xticklabels(xticklabels[::5])
@@ -716,11 +812,12 @@ PJax.tick_params('y', grid_zorder=-10)
 
 # Shades in each 5 perijove
 for i in range(3):
-    F.ax[i].axvspan(xticks[0], xticks[5], fc=UC.gray, ec=None, alpha=0.15)
-    F.ax[i].axvspan(xticks[10], xticks[15], fc=UC.gray, ec=None, alpha=0.15)
-    F.ax[i].axvspan(xticks[20], xticks[25], fc=UC.gray, ec=None, alpha=0.15)
-    F.ax[i].axvspan(xticks[30], xticks[35], fc=UC.gray, ec=None, alpha=0.15)
-    F.ax[i].axvspan(xticks[40], xticks[45], fc=UC.gray, ec=None, alpha=0.15)
+    F.ax[i].axvspan(xticks[0], xticks[5], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[10], xticks[15], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[20], xticks[25], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[30], xticks[35], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[40], xticks[45], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[50], xticks[55], fc=UC.gray, ec=None, alpha=0.10)
 
 savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
 F.fig.savefig(savedir+'/ftmc_lt_'+target_moon[0:2]+'_r.jpg',
@@ -748,101 +845,34 @@ F.set_figparams(nrows=1, figsize=(6.5, 5.5), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
-
-PJ_LIST = [1, 3]+np.arange(4, 43+1, 1).tolist()
-if target_moon == 'Io':
-    Psyn = Psyn_io
-elif target_moon == 'Europa':
-    Psyn = Psyn_eu
-    PJ_LIST.pop(24-2)
-    PJ_LIST.pop(43-3)
-elif target_moon == 'Ganymede':
-    Psyn = Psyn_ga
-    PJ_LIST.pop(24-2)
-    PJ_LIST.pop(31-3)
-    PJ_LIST.pop(39-4)
-    PJ_LIST.pop(43-5)
-
-if (exdate == '003/20250516') and (target_moon == 'Europa'):
-    exnum = ['001', '002', '005', '006',
-             '007', '010', '011',
-             '012', '013', '014', '015', '016',
-             '017', '018', '019', '020', '021',
-             '022', '023', '024', '025', '026',
-             '027', '028', '029', '030', '031',
-             '032', '034', '035', '036',
-             '037', '038',
-             '039', '040', '041', '042'
-             ]
-    PJ_list = [3, 4, 8, 9,
-               10, 13, 14,
-               15, 16, 17, 18, 19,
-               20, 21, 22, 23, 25,
-               26, 27, 28, 29, 30,
-               31, 32, 33, 34, 35,
-               36, 38, 40, 41,
-               7, 7,
-               11, 11, 12, 12,
-               ]
-    FTMC_HEM = ['S', 'S', 'both', 'S',
-                'N', 'N', 'S',
-                'S', 'S', 'both', 'S', 'both',
-                'both', 'S', 'both', 'S', 'S',
-                'both', 'N', 'N', 'both', 'S',
-                'S', 'both', 'S', 'S', 'S',
-                'N', 'S', 'S', 'S',
-                'N', 'S',
-                'N', 'S', 'N', 'S']
-    Psyn = Psyn_eu
-    ymax = 4.1
-    ticks = np.arange(0, 4+1, 1)
-
-elif (exdate == '003/20250516') and (target_moon == 'Ganymede'):
-    exnum = ['100', '104', '105', '106', '107',
-             '108', '109', '110', '111', '112',
-             '113', '118', '119', '120', '121',
-             '123', '124', '125', '126', '127',
-             '128', '129', '131', '132', '134',
-             '133', '136', '137', '138', '139',
-             '140', '141', '142', '143',
-             ]
-    PJ_list = [3, 4, 5, 6, 7,
-               8, 11, 12, 13, 14,
-               15, 16, 17, 18, 19,
-               20, 21, 22, 23, 25,
-               26, 27, 29, 30, 32,
-               33, 34, 34, 35, 37,
-               38, 40, 41, 42,
-               ]
-    FTMC_HEM = ['both', 'both', 'S', 'both', 'S',
-                'both', 'both', 'both', 'both', 'both',
-                'N', 'S', 'S', 'S', 'both',
-                'both', 'both', 'both', 'both', 'S',
-                'both', 'both', 'S', 'both', 'both',
-                'both', 'N', 'S', 'both', 'both',
-                'S', 'S', 'N', 'N']
-    Psyn = Psyn_ga
-    ymax = 0.24
-    ticks = np.arange(0, 0.30, 0.10)
-
-F.set_xaxis(label='FTMC [10$^{-9}$ kg m$^{-2}$]',
-            min=0, max=ymax,
-            ticks=ticks,
-            ticklabels=ticks,
-            minor_num=5)
-
 if target_moon == 'Europa':
+    xmin = 0
+    xmax = 3
     ymin = 8
     ymax = 12
+    xticks = np.arange(xmin, xmax+1, 1)
+    xticklabels = np.arange(xmin, xmax+1, 1)
     yticks = np.arange(8, 12+1, 1)
     yticklabels = np.arange(8, 12+1, 1)
     minor_num = 5
+    boxplot_width = 0.05
 elif target_moon == 'Ganymede':
+    xmin = 0
+    xmax = 0.24
     ymin = 11
     ymax = 27
+    xticks = np.arange(xmin, xmax, 0.1)
+    xticklabels = np.arange(xmin, xmax, 0.1)
     yticks = np.arange(11, 27+1, 2)
     yticklabels = np.arange(11, 27+1, 2)
     minor_num = 2
+    boxplot_width = 0.20
+
+F.set_xaxis(label='FTMC [10$^{-9}$ kg m$^{-2}$]',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'M shell',
             min=ymin, max=ymax,
@@ -951,10 +981,10 @@ for i in range(len(exnum)):
     q1, medians, q3 = weighted_percentile(data=column_mass,
                                           perc=[0.25, 0.5, 0.75],
                                           weights=weight)
-    width = 0.20
+
     weighted_boxplot_h2(F.ax, rho_ave_arr[i], q1, medians, q3,
                         np.min(column_mass),
-                        np.max(column_mass), width=width,
+                        np.max(column_mass), width=boxplot_width,
                         ec=plotcolor, lw=1.1)
 
     F.ax.errorbar(x=medians, y=rho_ave_arr[i],
@@ -978,6 +1008,7 @@ cax.ax.set_yticklabels(np.linspace(0, 360, 10, dtype=int),
 # cax.ax.yaxis.set_minor_locator(ptick.AutoMinorLocator(3))
 cax.ax.set_ylabel(r'SIII longitude [deg]', fontsize=F.fontsize*0.8)
 
+# ここでまず画像保存
 F.ax.set_title(target_moon,
                fontsize=F.fontsize, weight='bold')
 savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
@@ -986,11 +1017,11 @@ F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_Mshell.jpg',
 
 # 相関係数
 isnan = np.isnan(rho_ave_arr)
-correlation, pvalue = spearmanr(medians_arr[~isnan], rho_ave_arr[~isnan])
+correlation, pvalue = spearmanr(median_arr[~isnan], rho_ave_arr[~isnan])
 print('Correlation coeff: ', correlation)
 
 # t検定
-n_data = medians_arr[~isnan].size
+n_data = median_arr[~isnan].size
 t_value = correlation*math.sqrt((n_data-2)/(1-correlation**2))
 print('t value:', t_value)
 print('n_data:', n_data)
@@ -1000,7 +1031,7 @@ p_two_sided = 2*t.cdf(t_value, n_data-2)
 print('p value:', p_two_sided)
 
 # ODR 用データとモデルの設定
-data = RealData(medians_arr[~isnan],
+data = RealData(median_arr[~isnan],
                 rho_ave_arr[~isnan],
                 sx=median_error[~isnan],
                 sy=rho_1_ave_arr[~isnan]
@@ -1018,12 +1049,13 @@ popt_li = output.beta
 perr_li = output.sd_beta
 
 print("Parameters:", popt_li)
-x_fit = np.linspace(0, 0.3, 10)
+x_fit = np.linspace(-1, 20, 10)
 y_fit = fit_linear(popt_li, x_fit)
 label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
 label_tvalue = r'$t =$'+str(round(t_value, 2))
 label_pvalue = r'$p =$'+str(round(p_two_sided, 4))
-label_linearfit = r'$y=$'+str(round(popt[0], 2))+r'$x+$'+str(round(popt[1], 2))
+label_linearfit = r'$y=$' + \
+    str(round(popt_li[0], 2))+r'$x+$'+str(round(popt_li[1], 2))
 F.ax.plot(x_fit, y_fit, color='k',
           label=label_linearfit, zorder=0.1)
 
@@ -1070,100 +1102,34 @@ F.set_figparams(nrows=1, figsize=(6.5, 5.5), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
-PJ_LIST = [1, 3]+np.arange(4, 43+1, 1).tolist()
-if target_moon == 'Io':
-    Psyn = Psyn_io
-elif target_moon == 'Europa':
-    Psyn = Psyn_eu
-    PJ_LIST.pop(24-2)
-    PJ_LIST.pop(43-3)
-elif target_moon == 'Ganymede':
-    Psyn = Psyn_ga
-    PJ_LIST.pop(24-2)
-    PJ_LIST.pop(31-3)
-    PJ_LIST.pop(39-4)
-    PJ_LIST.pop(43-5)
-
-if (exdate == '003/20250516') and (target_moon == 'Europa'):
-    exnum = ['001', '002', '005', '006',
-             '007', '010', '011',
-             '012', '013', '014', '015', '016',
-             '017', '018', '019', '020', '021',
-             '022', '023', '024', '025', '026',
-             '027', '028', '029', '030', '031',
-             '032', '034', '035', '036',
-             '037', '038',
-             '039', '040', '041', '042'
-             ]
-    PJ_list = [3, 4, 8, 9,
-               10, 13, 14,
-               15, 16, 17, 18, 19,
-               20, 21, 22, 23, 25,
-               26, 27, 28, 29, 30,
-               31, 32, 33, 34, 35,
-               36, 38, 40, 41,
-               7, 7,
-               11, 11, 12, 12,
-               ]
-    FTMC_HEM = ['S', 'S', 'both', 'S',
-                'N', 'N', 'S',
-                'S', 'S', 'both', 'S', 'both',
-                'both', 'S', 'both', 'S', 'S',
-                'both', 'N', 'N', 'both', 'S',
-                'S', 'both', 'S', 'S', 'S',
-                'N', 'S', 'S', 'S',
-                'N', 'S',
-                'N', 'S', 'N', 'S']
-    Psyn = Psyn_eu
-    ymax = 4.1
-    ticks = np.arange(0, 4+1, 1)
-
-elif (exdate == '003/20250516') and (target_moon == 'Ganymede'):
-    exnum = ['100', '104', '105', '106', '107',
-             '108', '109', '110', '111', '112',
-             '113', '118', '119', '120', '121',
-             '123', '124', '125', '126', '127',
-             '128', '129', '131', '132', '134',
-             '133', '136', '137', '138', '139',
-             '140', '141', '142', '143',
-             ]
-    PJ_list = [3, 4, 5, 6, 7,
-               8, 11, 12, 13, 14,
-               15, 16, 17, 18, 19,
-               20, 21, 22, 23, 25,
-               26, 27, 29, 30, 32,
-               33, 34, 34, 35, 37,
-               38, 40, 41, 42,
-               ]
-    FTMC_HEM = ['both', 'both', 'S', 'both', 'S',
-                'both', 'both', 'both', 'both', 'both',
-                'N', 'S', 'S', 'S', 'both',
-                'both', 'both', 'both', 'both', 'S',
-                'both', 'both', 'S', 'both', 'both',
-                'both', 'N', 'S', 'both', 'both',
-                'S', 'S', 'N', 'N']
-    Psyn = Psyn_ga
-    ymax = 0.24
-    ticks = np.arange(0, 0.30, 0.10)
-
-F.set_xaxis(label='FTMC [10$^{-9}$ kg m$^{-2}$]',
-            min=0, max=ymax,
-            ticks=ticks,
-            ticklabels=ticks,
-            minor_num=5)
-
 if target_moon == 'Europa':
+    xmin = 0
+    xmax = 3
     ymin = 8
     ymax = 12
+    xticks = np.arange(xmin, xmax+1, 1)
+    xticklabels = np.arange(xmin, xmax+1, 1)
     yticks = np.arange(8, 12+1, 1)
     yticklabels = np.arange(8, 12+1, 1)
     minor_num = 5
+    boxplot_width = 0.05
 elif target_moon == 'Ganymede':
+    xmin = 0
+    xmax = 0.24
     ymin = 11
     ymax = 27
+    xticks = np.arange(xmin, xmax+0.1, 0.2)
+    xticklabels = np.arange(xmin, xmax+0.1, 0.2)
     yticks = np.arange(11, 27+1, 2)
     yticklabels = np.arange(11, 27+1, 2)
     minor_num = 2
+    boxplot_width = 0.20
+
+F.set_xaxis(label='FTMC [10$^{-9}$ kg m$^{-2}$]',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'M shell',
             min=ymin, max=ymax,
@@ -1273,7 +1239,7 @@ for i in range(len(exnum)):
     width = 0.20
     weighted_boxplot_h2(F.ax, rho_ave_arr[i], q1, medians, q3,
                         np.min(column_mass),
-                        np.max(column_mass), width=width,
+                        np.max(column_mass), width=boxplot_width,
                         ec=plotcolor, lw=1.1)
 
     F.ax.errorbar(x=medians, y=rho_ave_arr[i],
@@ -1321,100 +1287,34 @@ F.set_figparams(nrows=1, figsize=(6.5, 5.5), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
-PJ_LIST = [1, 3]+np.arange(4, 43+1, 1).tolist()
-if target_moon == 'Io':
-    Psyn = Psyn_io
-elif target_moon == 'Europa':
-    Psyn = Psyn_eu
-    PJ_LIST.pop(24-2)
-    PJ_LIST.pop(43-3)
-elif target_moon == 'Ganymede':
-    Psyn = Psyn_ga
-    PJ_LIST.pop(24-2)
-    PJ_LIST.pop(31-3)
-    PJ_LIST.pop(39-4)
-    PJ_LIST.pop(43-5)
-
-if (exdate == '003/20250516') and (target_moon == 'Europa'):
-    exnum = ['001', '002', '005', '006',
-             '007', '010', '011',
-             '012', '013', '014', '015', '016',
-             '017', '018', '019', '020', '021',
-             '022', '023', '024', '025', '026',
-             '027', '028', '029', '030', '031',
-             '032', '034', '035', '036',
-             '037', '038',
-             '039', '040', '041', '042'
-             ]
-    PJ_list = [3, 4, 8, 9,
-               10, 13, 14,
-               15, 16, 17, 18, 19,
-               20, 21, 22, 23, 25,
-               26, 27, 28, 29, 30,
-               31, 32, 33, 34, 35,
-               36, 38, 40, 41,
-               7, 7,
-               11, 11, 12, 12,
-               ]
-    FTMC_HEM = ['S', 'S', 'both', 'S',
-                'N', 'N', 'S',
-                'S', 'S', 'both', 'S', 'both',
-                'both', 'S', 'both', 'S', 'S',
-                'both', 'N', 'N', 'both', 'S',
-                'S', 'both', 'S', 'S', 'S',
-                'N', 'S', 'S', 'S',
-                'N', 'S',
-                'N', 'S', 'N', 'S']
-    Psyn = Psyn_eu
-    ymax = 4.1
-    ticks = np.arange(0, 4+1, 1)
-
-elif (exdate == '003/20250516') and (target_moon == 'Ganymede'):
-    exnum = ['100', '104', '105', '106', '107',
-             '108', '109', '110', '111', '112',
-             '113', '118', '119', '120', '121',
-             '123', '124', '125', '126', '127',
-             '128', '129', '131', '132', '134',
-             '133', '136', '137', '138', '139',
-             '140', '141', '142', '143',
-             ]
-    PJ_list = [3, 4, 5, 6, 7,
-               8, 11, 12, 13, 14,
-               15, 16, 17, 18, 19,
-               20, 21, 22, 23, 25,
-               26, 27, 29, 30, 32,
-               33, 34, 34, 35, 37,
-               38, 40, 41, 42,
-               ]
-    FTMC_HEM = ['both', 'both', 'S', 'both', 'S',
-                'both', 'both', 'both', 'both', 'both',
-                'N', 'S', 'S', 'S', 'both',
-                'both', 'both', 'both', 'both', 'S',
-                'both', 'both', 'S', 'both', 'both',
-                'both', 'N', 'S', 'both', 'both',
-                'S', 'S', 'N', 'N']
-    Psyn = Psyn_ga
-    ymax = 0.24
-    ticks = np.arange(0, 0.30, 0.10)
-
-F.set_xaxis(label='$\Delta M$ [10$^{-9}$ kg m$^{-2}$]',
-            min=-1, max=ymax-1,
-            ticks=ticks-1,
-            ticklabels=ticks-1,
-            minor_num=5)
-
 if target_moon == 'Europa':
+    xmin = -1
+    xmax = 2
     ymin = 8
     ymax = 12
+    xticks = np.arange(xmin, xmax+1, 1)
+    xticklabels = np.arange(xmin, xmax+1, 1)
     yticks = np.arange(8, 12+1, 1)
     yticklabels = np.arange(8, 12+1, 1)
     minor_num = 5
+    boxplot_width = 0.05
 elif target_moon == 'Ganymede':
+    xmin = -2
+    xmax = 0.2
     ymin = 11
     ymax = 27
+    xticks = np.arange(xmin, xmax+0.1, 0.5)
+    xticklabels = np.arange(xmin, xmax+0.1, 0.5)
     yticks = np.arange(11, 27+1, 2)
     yticklabels = np.arange(11, 27+1, 2)
     minor_num = 2
+    boxplot_width = 0.20
+
+F.set_xaxis(label=r'$\Delta_{\rm FTMC}$ [10$^{-9}$ kg m$^{-2}$]',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'M shell',
             min=ymin, max=ymax,
@@ -1498,6 +1398,8 @@ for i in range(N_color):
 cmap = mplcolors.ListedColormap(color_list)
 norm = mplcolors.Normalize(vmin=0, vmax=360)
 
+median_arr = np.zeros(len(exnum))
+median_error = np.zeros(len(exnum))
 for i in range(len(exnum)):
     # %% Load the data
     exname = exdate+'_'+exnum[i]
@@ -1523,16 +1425,20 @@ for i in range(len(exnum)):
     q1, medians, q3 = weighted_percentile(data=column_mass-y_fit,
                                           perc=[0.25, 0.5, 0.75],
                                           weights=weight)
-    width = 0.20
     weighted_boxplot_h2(F.ax, rho_ave_arr[i], q1, medians, q3,
                         np.min(column_mass)-y_fit,
-                        np.max(column_mass)-y_fit, width=width,
+                        np.max(column_mass)-y_fit, width=boxplot_width,
                         ec=plotcolor, lw=1.1)
 
     eb = F.ax.errorbar(x=medians, y=rho_ave_arr[i],
                        yerr=rho_1_ave_arr[i],
                        elinewidth=1.1, linewidth=0., markersize=0,
                        color=plotcolor)
+
+    median_arr[i] = medians
+    median_error[i] = q3-q1
+    if q3-q1 == 0.:
+        median_error[i] = 0.001
 
 # Dummy
 sc = F.ax.scatter(-999, -999, s=1.0, c=90.0, cmap=cmap, vmin=0, vmax=360)
@@ -1545,11 +1451,77 @@ cax.ax.set_yticklabels(np.linspace(0, 360, 10, dtype=int),
 # cax.ax.yaxis.set_minor_locator(ptick.AutoMinorLocator(3))
 cax.ax.set_ylabel(r'SIII longitude [deg]', fontsize=F.fontsize*0.8)
 
+# ここでまず画像保存
 F.ax.set_title(target_moon,
                fontsize=F.fontsize, weight='bold')
-
 savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
 F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_Mshell_3.jpg',
               bbox_inches='tight')
+
+# 相関係数
+isnan = np.isnan(rho_ave_arr)
+correlation, pvalue = spearmanr(median_arr[~isnan], rho_ave_arr[~isnan])
+print('Correlation coeff: ', correlation)
+
+# t検定
+n_data = median_arr[~isnan].size
+t_value = correlation*math.sqrt((n_data-2)/(1-correlation**2))
+print('t value:', t_value)
+print('n_data:', n_data)
+
+# 両側p値
+p_two_sided = 2*t.cdf(t_value, n_data-2)
+print('p value:', p_two_sided)
+
+# ODR 用データとモデルの設定
+data = RealData(median_arr[~isnan],
+                rho_ave_arr[~isnan],
+                sx=median_error[~isnan],
+                sy=rho_1_ave_arr[~isnan]
+                )
+model = Model(fit_linear)
+print(median_error[~isnan])
+print(rho_1_ave_arr[~isnan])
+
+# ODR 実行
+odr_instance = ODR(data, model, beta0=[1.0, 1.0])
+output = odr_instance.run()
+
+# フィッティング結果
+popt_li = output.beta
+perr_li = output.sd_beta
+
+print("Parameters:", popt_li)
+x_fit = np.linspace(-1, 20, 10)
+y_fit = fit_linear(popt_li, x_fit)
+label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
+label_tvalue = r'$t =$'+str(round(t_value, 2))
+label_pvalue = r'$p =$'+str(round(p_two_sided, 4))
+label_linearfit = r'$y=$' + \
+    str(round(popt_li[0], 2))+r'$x+$'+str(round(popt_li[1], 2))
+F.ax.plot(x_fit, y_fit, color='k',
+          label=label_linearfit, zorder=0.1)
+
+# Dummy
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_corrcoef)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_tvalue)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_pvalue)
+
+F.ax.set_title(target_moon+' (w/ coefficient)',
+               fontsize=F.fontsize, weight='bold')
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=1.0,
+                  textcolor=False,
+                  fontsize_scale=0.65, handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
+F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_Mshell_3_coef.jpg',
+              bbox_inches='tight')
+
 F.close()
 plt.show()
