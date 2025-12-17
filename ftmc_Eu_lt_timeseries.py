@@ -311,7 +311,7 @@ F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=3, figsize=(8.0, 7.5), dpi='L')
+F.set_figparams(nrows=3, figsize=(8.2, 8.2), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
@@ -465,7 +465,8 @@ elif (exdate == '005/20250923') and (target_moon == 'Ganymede'):
              '078', '079', '081', '082', '083',
              '084', '085', '086', '087', '088',
              '089', '090', '091', '092', '093',
-             '094',
+             '094', '095', '096', '097', '098',
+             '099', '100', '101', '102',
              ]
     PJ_list = [3, 4, 5, 6, 7,
                8, 11, 12, 13, 14,
@@ -473,7 +474,8 @@ elif (exdate == '005/20250923') and (target_moon == 'Ganymede'):
                21, 21, 22, 23, 25,
                26, 27, 29, 30, 32,
                32, 33, 34, 34, 35,
-               37,
+               37, 38, 40, 41, 42,
+               46, 47, 48, 49,
                ]
     FTMC_HEM = ['both', 'both', 'S', 'both', 'S',
                 'both', 'N', 'both', 'both', 'S',
@@ -481,7 +483,8 @@ elif (exdate == '005/20250923') and (target_moon == 'Ganymede'):
                 'N', 'S', 'N', 'both', 'S',
                 'S', 'both', 'S', 'S', 'N',
                 'S', 'both', 'N', 'S', 'both',
-                'S',
+                'S', 'S', 'S', 'N', 'N',
+                'S', 'S', 'S', 'S',
                 ]
     Psyn = Psyn_ga
     ymax = 0.2
@@ -580,8 +583,8 @@ F.set_yaxis(ax_idx=0,
 F.set_yaxis(ax_idx=1,
             label='$\Delta M$ [10$^{-9}$ kg m$^{-2}$]',
             min=-1, max=ymax-1,
-            ticks=ticks-1,
-            ticklabels=ticks-1,
+            ticks=ticks[:-1]-1,
+            ticklabels=ticks[:-1]-1,
             minor_num=5)
 
 positions = np.arange(0, len(exnum)+1, 1)
@@ -638,8 +641,8 @@ elif target_moon == 'Ganymede':
 F.set_yaxis(ax_idx=2,
             label=r'$R$ [$R_{\rm J}$]',
             min=ymin, max=ymax,
-            ticks=yticks,
-            ticklabels=yticklabels,
+            ticks=yticks[:-1],
+            ticklabels=yticklabels[:-1],
             minor_num=minor_num)
 
 # Load the M shell data
