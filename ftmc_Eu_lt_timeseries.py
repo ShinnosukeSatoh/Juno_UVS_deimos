@@ -29,7 +29,7 @@ UC.set_palette()
 
 
 exdate = '005/20250923'
-target_moon = 'Ganymede'
+target_moon = 'Europa'
 target_fp = ['MAW', 'TEB']
 
 exnum = ['050', '056']
@@ -311,12 +311,12 @@ F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=3, figsize=(8.2, 8.2), dpi='L')
+F.set_figparams(nrows=2, figsize=(8.2, 6.5), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
 sxmin = '2016-01-01'
-sxmax = '2024-09-30'
+sxmax = '2025-01-01'
 xmin = datetime.datetime.strptime(sxmin, '%Y-%m-%d')
 xmax = datetime.datetime.strptime(sxmax, '%Y-%m-%d')
 xticks = [datetime.datetime.strptime('2016-01-01', '%Y-%m-%d'),
@@ -327,9 +327,10 @@ xticks = [datetime.datetime.strptime('2016-01-01', '%Y-%m-%d'),
           datetime.datetime.strptime('2021-01-01', '%Y-%m-%d'),
           datetime.datetime.strptime('2022-01-01', '%Y-%m-%d'),
           datetime.datetime.strptime('2023-01-01', '%Y-%m-%d'),
-          datetime.datetime.strptime('2024-01-01', '%Y-%m-%d')]
+          datetime.datetime.strptime('2024-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2025-01-01', '%Y-%m-%d')]
 xticklabels = ['2016', '2017', '2018', '2019', '2020',
-               '2021', '2022', '2023', '2024']
+               '2021', '2022', '2023', '2024', '2025']
 F.set_xaxis(label='Date',
             min=xmin, max=xmax,
             ticks=xticks,
@@ -338,7 +339,7 @@ F.set_xaxis(label='Date',
 for i in range(F.ax.size):
     F.ax[i].minorticks_off()
     F.ax[i].xaxis.set_minor_locator(mdates.MonthLocator())
-ticklabels = F.ax[2].get_xticklabels()
+ticklabels = F.ax[i].get_xticklabels()
 ticklabels[0].set_ha('center')
 
 PJ_LIST = [1, 3]+np.arange(4, 43+1, 1).tolist()
@@ -460,35 +461,44 @@ elif (exdate == '005/20250923') and (target_moon == 'Europa'):
 
 elif (exdate == '005/20250923') and (target_moon == 'Ganymede'):
     exnum = ['054', '055', '056', '057', '058',
-             '059', '063', '065', '068', '070',
+             '059', '063', '065', '068',  # '070',
              '071', '072', '073', '075', '076',
              '078', '079', '081', '082', '083',
              '084', '085', '086', '087', '088',
              '089', '090', '091', '092', '093',
              '094', '095', '096', '097', '098',
-             '099', '100', '101', '102',
+             '099', '100', '101', '102', '103',
+             '104', '105', '106',
+             # '107',
+             # '108', '109',
              ]
     PJ_list = [3, 4, 5, 6, 7,
-               8, 11, 12, 13, 14,
+               8, 11, 12, 13,  # 14,
                15, 16, 17, 19, 20,
                21, 21, 22, 23, 25,
                26, 27, 29, 30, 32,
                32, 33, 34, 34, 35,
                37, 38, 40, 41, 42,
-               46, 47, 48, 49,
+               46, 47, 48, 49, 50,
+               58, 59, 60,
+               # 22,
+               # 3, 3,
                ]
     FTMC_HEM = ['both', 'both', 'S', 'both', 'S',
-                'both', 'N', 'both', 'both', 'S',
+                'both', 'N', 'both', 'both',  # 'S',
                 'N', 'S', 'S', 'S', 'N',
                 'N', 'S', 'N', 'both', 'S',
                 'S', 'both', 'S', 'S', 'N',
                 'S', 'both', 'N', 'S', 'both',
                 'S', 'S', 'S', 'N', 'N',
-                'S', 'S', 'S', 'S',
+                'S', 'S', 'S', 'S', 'S',
+                'S', 'S', 'N',
+                # 'S',
+                # 'N', 'S',
                 ]
     Psyn = Psyn_ga
     ymax = 0.2
-    ticks = np.arange(0, 0.30, 0.10)
+    ticks = np.round(np.arange(0, 0.20+0.01, 0.05), 2)
 
 column_mass_1dN = np.loadtxt(
     'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dN.txt')
@@ -580,12 +590,6 @@ F.set_yaxis(ax_idx=0,
             ticks=ticks,
             ticklabels=ticks,
             minor_num=5)
-F.set_yaxis(ax_idx=1,
-            label='$\Delta M$ [10$^{-9}$ kg m$^{-2}$]',
-            min=-1, max=ymax-1,
-            ticks=ticks[:-1]-1,
-            ticklabels=ticks[:-1]-1,
-            minor_num=5)
 
 positions = np.arange(0, len(exnum)+1, 1)
 colormap = plt.cm.get_cmap('turbo')
@@ -616,30 +620,21 @@ for i in range(len(exnum)):
                       np.max(column_mass), width=width,
                       ec=UC.blue, lw=1.1)
 
-    y_fit = fit_func2(popt, lt_center)
-    q1, medians, q3 = weighted_percentile(data=column_mass-y_fit,
-                                          perc=[0.25, 0.5, 0.75],
-                                          weights=weight)
-    weighted_boxplot2(F.ax[1], d0, q1, medians, q3,
-                      np.min(column_mass)-y_fit,
-                      np.max(column_mass)-y_fit, width=width,
-                      ec=UC.blue, lw=1.1)
-
-# 3rd axis
+# 2nd axis
 if target_moon == 'Europa':
     ymin = 8
     ymax = 12
-    yticks = np.arange(8, 12+1, 1)
-    yticklabels = np.arange(8, 12+1, 1)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
     minor_num = 5
 elif target_moon == 'Ganymede':
     ymin = 11
-    ymax = 27
-    yticks = np.arange(11, 27+1, 2)
-    yticklabels = np.arange(11, 27+1, 2)
+    ymax = 25
+    yticks = np.arange(ymin, ymax+1, 2)
+    yticklabels = np.arange(ymin, ymax+1, 2)
     minor_num = 2
-F.set_yaxis(ax_idx=2,
-            label=r'$R$ [$R_{\rm J}$]',
+F.set_yaxis(ax_idx=1,
+            label='M shell',
             min=ymin, max=ymax,
             ticks=yticks[:-1],
             ticklabels=yticklabels[:-1],
@@ -712,13 +707,13 @@ for i in range(et_fp_m.size):
 datetime_fp = np.array(datetime_fp)
 
 # Satellite orbit
-F.ax[2].axhline(y=r_moon/RJ, linestyle='dashed',
+F.ax[1].axhline(y=r_moon/RJ, linestyle='dashed',
                 color=UC.lightgray, zorder=0.9)
 
 # Data
-F.ax[2].scatter(d0_median, rho_ave_arr,
+F.ax[1].scatter(d0_median, rho_ave_arr,
                 marker='s', s=5.0, c=UC.blue, label='North')
-F.ax[2].errorbar(x=d0_median, y=rho_ave_arr,
+F.ax[1].errorbar(x=d0_median, y=rho_ave_arr,
                  yerr=rho_1_ave_arr,
                  elinewidth=1.1, linewidth=0., markersize=0,
                  color=UC.blue)
@@ -814,13 +809,14 @@ PJax.xaxis.set_minor_locator(FixedLocator(mdates.date2num(xticks)))
 PJax.tick_params('y', grid_zorder=-10)
 
 # Shades in each 5 perijove
-for i in range(3):
+for i in range(2):
     F.ax[i].axvspan(xticks[0], xticks[5], fc=UC.gray, ec=None, alpha=0.10)
     F.ax[i].axvspan(xticks[10], xticks[15], fc=UC.gray, ec=None, alpha=0.10)
     F.ax[i].axvspan(xticks[20], xticks[25], fc=UC.gray, ec=None, alpha=0.10)
     F.ax[i].axvspan(xticks[30], xticks[35], fc=UC.gray, ec=None, alpha=0.10)
     F.ax[i].axvspan(xticks[40], xticks[45], fc=UC.gray, ec=None, alpha=0.10)
     F.ax[i].axvspan(xticks[50], xticks[55], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[60], xticks[65], fc=UC.gray, ec=None, alpha=0.10)
 
 savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
 F.fig.savefig(savedir+'/ftmc_lt_'+target_moon[0:2]+'_r.jpg',
@@ -855,23 +851,23 @@ if target_moon == 'Europa':
     ymax = 12
     xticks = np.arange(xmin, xmax+1, 1)
     xticklabels = np.arange(xmin, xmax+1, 1)
-    yticks = np.arange(8, 12+1, 1)
-    yticklabels = np.arange(8, 12+1, 1)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
     minor_num = 5
     boxplot_width = 0.05
 elif target_moon == 'Ganymede':
     xmin = 0
-    xmax = 0.24
+    xmax = 0.20
     ymin = 11
-    ymax = 27
-    xticks = np.arange(xmin, xmax, 0.1)
-    xticklabels = np.arange(xmin, xmax, 0.1)
-    yticks = np.arange(11, 27+1, 2)
-    yticklabels = np.arange(11, 27+1, 2)
+    ymax = 25
+    xticks = np.linspace(xmin, xmax, 5)
+    xticklabels = np.round(np.linspace(xmin, xmax, 5), 2)
+    yticks = np.arange(ymin, ymax+1, 2)
+    yticklabels = np.arange(ymin, ymax+1, 2)
     minor_num = 2
     boxplot_width = 0.20
 
-F.set_xaxis(label='FTMC [10$^{-9}$ kg m$^{-2}$]',
+F.set_xaxis(label=target_moon+'-FTMC [10$^{-9}$ kg m$^{-2}$]',
             min=xmin, max=xmax,
             ticks=xticks,
             ticklabels=xticklabels,
@@ -1059,8 +1055,7 @@ label_tvalue = r'$t =$'+str(round(t_value, 2))
 label_pvalue = r'$p =$'+str(round(p_two_sided, 4))
 label_linearfit = r'$y=$' + \
     str(round(popt_li[0], 2))+r'$x+$'+str(round(popt_li[1], 2))
-F.ax.plot(x_fit, y_fit, color='k',
-          label=label_linearfit, zorder=0.1)
+F.ax.plot(x_fit, y_fit, color='k', zorder=0.1)
 
 # Dummy
 F.ax.plot([-999, -998], [-999, -998], color='w',
@@ -1070,17 +1065,266 @@ F.ax.plot([-999, -998], [-999, -998], color='w',
 F.ax.plot([-999, -998], [-999, -998], color='w',
           label=label_pvalue)
 
-F.ax.set_title(target_moon+' (w/ coefficient)',
-               fontsize=F.fontsize, weight='bold')
+# ODR fit
+F.ax.text(0.5, 0.01,
+          'ODR fit: '+label_linearfit,
+          color='k',
+          horizontalalignment='center',
+          verticalalignment='bottom',
+          transform=F.ax.transAxes,
+          fontsize=F.fontsize*0.5)
+
 legend = F.legend(ax_idx=0,
-                  ncol=1, markerscale=1.0,
+                  ncol=3, markerscale=1.0,
                   loc='upper right',
-                  handlelength=1.0,
+                  handlelength=0.01,
                   textcolor=False,
-                  fontsize_scale=0.65, handletextpad=0.2)
+                  title='Rank correlation',
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
 F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_Mshell_coef.jpg',
+              bbox_inches='tight')
+F.close()
+plt.show()
+
+
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+# %% 横軸 FTMC & 縦軸 M shell WITHOUT COLOR BAR
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.1, 5.0), dpi='L')
+F.initialize()
+# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
+
+if target_moon == 'Europa':
+    xmin = 0
+    xmax = 3
+    ymin = 8
+    ymax = 12
+    xticks = np.arange(xmin, xmax+1, 1)
+    xticklabels = np.arange(xmin, xmax+1, 1)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
+    minor_num = 5
+    boxplot_width = 0.05
+elif target_moon == 'Ganymede':
+    xmin = 0
+    xmax = 0.20
+    ymin = 11
+    ymax = 25
+    xticks = np.linspace(xmin, xmax, 5)
+    xticklabels = np.round(np.linspace(xmin, xmax, 5), 2)
+    yticks = np.arange(ymin, ymax+1, 2)
+    yticklabels = np.arange(ymin, ymax+1, 2)
+    minor_num = 2
+    boxplot_width = 0.20
+
+F.set_xaxis(label=target_moon+'-FTMC [10$^{-9}$ kg m$^{-2}$]',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'M shell',
+            min=ymin, max=ymax,
+            ticks=yticks,
+            ticklabels=yticklabels,
+            minor_num=minor_num)
+
+column_mass_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dN.txt')
+column_mass_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dS.txt')
+ftmc_mag_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dN.txt')
+ftmc_mag_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dS.txt')
+column_mass_1d = column_mass_1dN+column_mass_1dS
+column_mass_3d = column_mass_1d.reshape(ni_num, Ai_num, Ti_num)
+ftmc_mag_1d = ftmc_mag_1dN + ftmc_mag_1dS
+ftmc_mag_3d = ftmc_mag_1d.reshape(ni_num, Ai_num, Ti_num)
+
+
+# Data subsetごとに値をまとめる
+d0_median = []
+rho_ave_arr = np.zeros(len(PJ_list))
+rho_1_ave_arr = np.zeros(len(PJ_list))
+for i in range(len(PJ_list)):
+    ftmc_pj = PJ_list[i]
+    ftmc_hem = FTMC_HEM[i]
+    pj_idx = np.where(pj_fp_m == ftmc_pj)
+
+    if ftmc_hem == 'both':
+        hem_subset = hem_fp_m[pj_idx]
+        pj_subset = pj_fp_m[pj_idx]
+        rho_arr_subset = rho_arr[pj_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx]-rho_arr_subset
+        rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset))
+        rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset))
+        rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset))
+        rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset))
+        d0_subset = et_fp_m[pj_idx]
+        view_angle_subset = view_angle[pj_idx]
+    else:
+        if ftmc_hem == 'S':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] > 0)
+        elif ftmc_hem == 'N':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] < 0)
+        hem_subset = hem_fp_m[pj_idx][hem_subset_idx]
+        pj_subset = pj_fp_m[pj_idx][hem_subset_idx]
+        rho_arr_subset = rho_arr[pj_idx][hem_subset_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset))
+        rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset))
+        rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset))
+        rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset))
+        d0_subset = et_fp_m[pj_idx][hem_subset_idx]
+        view_angle_subset = view_angle[pj_idx][hem_subset_idx]
+
+    view_angle_thres = np.where(view_angle_subset < 30.0)
+    rho_ave_arr[i] = np.average(rho_arr_subset[view_angle_thres])
+    rho_1_ave_arr[i] = np.average(
+        [rho_arr_1_subset, rho_arr_2_subset, rho_arr_3_subset, rho_arr_4_subset])
+    d0_median += [spice.et2datetime(np.median(d0_subset))]
+
+
+# Satellite orbit
+F.ax.axhline(y=r_moon/RJ, linestyle='dashed',
+             color=UC.lightgray, zorder=0.9)
+
+median_arr = np.zeros(len(exnum))
+median_error = np.zeros(len(exnum))
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+
+    # Local time
+    d0 = spice.et2datetime(moon_et[0])
+    d0_list = []
+    for ii in range(column_mass.size):
+        d0_list += [d0]
+    lt_arr = np.zeros(moon_et.size)
+    for k in range(moon_et.size):
+        lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+
+    lt_center = (lt_arr[0]+lt_arr[-1])/2
+    s3_center = ((moon_S3wlon[0]+moon_S3wlon[-1])/2)
+
+    q1, medians, q3 = weighted_percentile(data=column_mass,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+
+    weighted_boxplot_h2(F.ax, rho_ave_arr[i], q1, medians, q3,
+                        np.min(column_mass),
+                        np.max(column_mass), width=boxplot_width,
+                        ec=UC.blue, lw=1.1)
+
+    F.ax.errorbar(x=medians, y=rho_ave_arr[i],
+                  yerr=rho_1_ave_arr[i],
+                  elinewidth=1.1, linewidth=0., markersize=0,
+                  color=UC.blue)
+
+    median_arr[i] = medians
+    median_error[i] = q3-q1
+    if q3-q1 == 0.:
+        median_error[i] = 0.001
+
+# 相関係数
+isnan = np.isnan(rho_ave_arr)
+correlation, pvalue = spearmanr(median_arr[~isnan], rho_ave_arr[~isnan])
+print('Correlation coeff: ', correlation)
+
+# t検定
+n_data = median_arr[~isnan].size
+t_value = correlation*math.sqrt((n_data-2)/(1-correlation**2))
+print('t value:', t_value)
+print('n_data:', n_data)
+
+# 両側p値
+p_two_sided = 2*t.cdf(t_value, n_data-2)
+print('p value:', p_two_sided)
+
+# ODR 用データとモデルの設定
+data = RealData(median_arr[~isnan],
+                rho_ave_arr[~isnan],
+                sx=median_error[~isnan],
+                sy=rho_1_ave_arr[~isnan]
+                )
+model = Model(fit_linear)
+print(median_error[~isnan])
+print(rho_1_ave_arr[~isnan])
+
+# ODR 実行
+odr_instance = ODR(data, model, beta0=[1.0, 1.0])
+output = odr_instance.run()
+
+# フィッティング結果
+popt_li = output.beta
+perr_li = output.sd_beta
+
+print("Parameters:", popt_li)
+x_fit = np.linspace(-1, 20, 10)
+y_fit = fit_linear(popt_li, x_fit)
+label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
+label_tvalue = r'$t =$'+str(round(t_value, 2))
+label_pvalue = r'$p =$'+str(round(p_two_sided, 4))
+label_linearfit = r'$y=$' + \
+    str(round(popt_li[0], 2))+r'$x+$'+str(round(popt_li[1], 2))
+F.ax.plot(x_fit, y_fit, color='k', zorder=0.1)
+
+# Dummy
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_corrcoef)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_tvalue)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_pvalue)
+
+# ODR fit
+F.ax.text(0.5, 0.01,
+          'ODR fit: '+label_linearfit,
+          color='k',
+          horizontalalignment='center',
+          verticalalignment='bottom',
+          transform=F.ax.transAxes,
+          fontsize=F.fontsize*0.5)
+
+F.ax.set_title(target_moon,
+               fontsize=F.fontsize, weight='bold')
+
+legend = F.legend(ax_idx=0,
+                  ncol=3, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=0.01,
+                  textcolor=False,
+                  title='Rank correlation',
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
+F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_Mshell_coef_nocolor.jpg',
               bbox_inches='tight')
 F.close()
 plt.show()
@@ -1112,23 +1356,23 @@ if target_moon == 'Europa':
     ymax = 12
     xticks = np.arange(xmin, xmax+1, 1)
     xticklabels = np.arange(xmin, xmax+1, 1)
-    yticks = np.arange(8, 12+1, 1)
-    yticklabels = np.arange(8, 12+1, 1)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
     minor_num = 5
     boxplot_width = 0.05
 elif target_moon == 'Ganymede':
     xmin = 0
-    xmax = 0.24
+    xmax = 0.20
     ymin = 11
-    ymax = 27
-    xticks = np.arange(xmin, xmax+0.1, 0.2)
-    xticklabels = np.arange(xmin, xmax+0.1, 0.2)
-    yticks = np.arange(11, 27+1, 2)
-    yticklabels = np.arange(11, 27+1, 2)
+    ymax = 25
+    xticks = np.arange(xmin, xmax+0.01, 0.2)
+    xticklabels = np.arange(xmin, xmax+0.01, 0.2)
+    yticks = np.arange(ymin, ymax+1, 2)
+    yticklabels = np.arange(ymin, ymax+1, 2)
     minor_num = 2
     boxplot_width = 0.20
 
-F.set_xaxis(label='FTMC [10$^{-9}$ kg m$^{-2}$]',
+F.set_xaxis(label=target_moon+'-FTMC [10$^{-9}$ kg m$^{-2}$]',
             min=xmin, max=xmax,
             ticks=xticks,
             ticklabels=xticklabels,
@@ -1297,19 +1541,19 @@ if target_moon == 'Europa':
     ymax = 12
     xticks = np.arange(xmin, xmax+1, 1)
     xticklabels = np.arange(xmin, xmax+1, 1)
-    yticks = np.arange(8, 12+1, 1)
-    yticklabels = np.arange(8, 12+1, 1)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
     minor_num = 5
     boxplot_width = 0.05
 elif target_moon == 'Ganymede':
-    xmin = -2
+    xmin = -0.1
     xmax = 0.2
     ymin = 11
-    ymax = 27
-    xticks = np.arange(xmin, xmax+0.1, 0.5)
-    xticklabels = np.arange(xmin, xmax+0.1, 0.5)
-    yticks = np.arange(11, 27+1, 2)
-    yticklabels = np.arange(11, 27+1, 2)
+    ymax = 25
+    xticks = np.arange(xmin, xmax+0.01, 0.05)
+    xticklabels = np.round(np.arange(xmin, xmax+0.01, 0.05), 2)
+    yticks = np.arange(ymin, ymax+1, 2)
+    yticklabels = np.arange(ymin, ymax+1, 2)
     minor_num = 2
     boxplot_width = 0.20
 
@@ -1495,15 +1739,14 @@ popt_li = output.beta
 perr_li = output.sd_beta
 
 print("Parameters:", popt_li)
-x_fit = np.linspace(-1, 20, 10)
+x_fit = np.linspace(-10, 20, 10)
 y_fit = fit_linear(popt_li, x_fit)
 label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
 label_tvalue = r'$t =$'+str(round(t_value, 2))
 label_pvalue = r'$p =$'+str(round(p_two_sided, 4))
 label_linearfit = r'$y=$' + \
     str(round(popt_li[0], 2))+r'$x+$'+str(round(popt_li[1], 2))
-F.ax.plot(x_fit, y_fit, color='k',
-          label=label_linearfit, zorder=0.1)
+F.ax.plot(x_fit, y_fit, color='k', zorder=0.1)
 
 # Dummy
 F.ax.plot([-999, -998], [-999, -998], color='w',
@@ -1513,17 +1756,260 @@ F.ax.plot([-999, -998], [-999, -998], color='w',
 F.ax.plot([-999, -998], [-999, -998], color='w',
           label=label_pvalue)
 
-F.ax.set_title(target_moon+' (w/ coefficient)',
-               fontsize=F.fontsize, weight='bold')
 legend = F.legend(ax_idx=0,
-                  ncol=1, markerscale=1.0,
+                  ncol=3, markerscale=1.0,
                   loc='upper right',
-                  handlelength=1.0,
+                  handlelength=0.01,
                   textcolor=False,
-                  fontsize_scale=0.65, handletextpad=0.2)
+                  title='Rank correlation',
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
 F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_Mshell_3_coef.jpg',
+              bbox_inches='tight')
+
+F.close()
+plt.show()
+
+
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+# %% 横軸 FTMC (LT subtracted) & 縦軸 M shell
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.1, 5.0), dpi='L')
+F.initialize()
+# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
+
+if target_moon == 'Europa':
+    xmin = -1
+    xmax = 2.5
+    ymin = 8
+    ymax = 12
+    xticks = np.arange(xmin, 2+1, 1)
+    xticklabels = np.arange(xmin, 2+1, 1)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
+    minor_num = 5
+    boxplot_width = 0.05
+elif target_moon == 'Ganymede':
+    xmin = -0.1
+    xmax = 0.2
+    ymin = 11
+    ymax = 25
+    xticks = np.arange(xmin, xmax+0.01, 0.05)
+    xticklabels = np.round(np.arange(xmin, xmax+0.01, 0.05), 2)
+    yticks = np.arange(ymin, ymax+1, 2)
+    yticklabels = np.arange(ymin, ymax+1, 2)
+    minor_num = 2
+    boxplot_width = 0.20
+
+F.set_xaxis(label=r'$\Delta_{\rm FTMC}$ [10$^{-9}$ kg m$^{-2}$]',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label=r'M shell',
+            min=ymin, max=ymax,
+            ticks=yticks,
+            ticklabels=yticklabels,
+            minor_num=minor_num)
+
+column_mass_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dN.txt')
+column_mass_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dS.txt')
+ftmc_mag_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dN.txt')
+ftmc_mag_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dS.txt')
+column_mass_1d = column_mass_1dN+column_mass_1dS
+column_mass_3d = column_mass_1d.reshape(ni_num, Ai_num, Ti_num)
+ftmc_mag_1d = ftmc_mag_1dN + ftmc_mag_1dS
+ftmc_mag_3d = ftmc_mag_1d.reshape(ni_num, Ai_num, Ti_num)
+
+
+# Data subsetごとに値をまとめる
+d0_median = []
+rho_ave_arr = np.zeros(len(PJ_list))
+rho_1_ave_arr = np.zeros(len(PJ_list))
+for i in range(len(PJ_list)):
+    ftmc_pj = PJ_list[i]
+    ftmc_hem = FTMC_HEM[i]
+    pj_idx = np.where(pj_fp_m == ftmc_pj)
+
+    if ftmc_hem == 'both':
+        hem_subset = hem_fp_m[pj_idx]
+        pj_subset = pj_fp_m[pj_idx]
+        rho_arr_subset = rho_arr[pj_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx]-rho_arr_subset
+        rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset))
+        rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset))
+        rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset))
+        rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset))
+        d0_subset = et_fp_m[pj_idx]
+        view_angle_subset = view_angle[pj_idx]
+    else:
+        if ftmc_hem == 'S':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] > 0)
+        elif ftmc_hem == 'N':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] < 0)
+        hem_subset = hem_fp_m[pj_idx][hem_subset_idx]
+        pj_subset = pj_fp_m[pj_idx][hem_subset_idx]
+        rho_arr_subset = rho_arr[pj_idx][hem_subset_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset))
+        rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset))
+        rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset))
+        rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset))
+        d0_subset = et_fp_m[pj_idx][hem_subset_idx]
+        view_angle_subset = view_angle[pj_idx][hem_subset_idx]
+
+    view_angle_thres = np.where(view_angle_subset < 30.0)
+    rho_ave_arr[i] = np.average(rho_arr_subset[view_angle_thres])
+    rho_1_ave_arr[i] = np.average(
+        [rho_arr_1_subset, rho_arr_2_subset, rho_arr_3_subset, rho_arr_4_subset])
+    d0_median += [spice.et2datetime(np.median(d0_subset))]
+
+
+# Satellite orbit
+F.ax.axhline(y=r_moon/RJ, linestyle='dashed',
+             color=UC.lightgray, zorder=0.9)
+
+median_arr = np.zeros(len(exnum))
+median_error = np.zeros(len(exnum))
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+
+    # Local time
+    d0 = spice.et2datetime(moon_et[0])
+    d0_list = []
+    for ii in range(column_mass.size):
+        d0_list += [d0]
+    lt_arr = np.zeros(moon_et.size)
+    for k in range(moon_et.size):
+        lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+
+    lt_center = (lt_arr[0]+lt_arr[-1])/2
+    s3_center = ((moon_S3wlon[0]+moon_S3wlon[-1])/2)
+
+    y_fit = fit_func2(popt, lt_center)
+
+    q1, medians, q3 = weighted_percentile(data=column_mass-y_fit,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+    weighted_boxplot_h2(F.ax, rho_ave_arr[i], q1, medians, q3,
+                        np.min(column_mass)-y_fit,
+                        np.max(column_mass)-y_fit, width=boxplot_width,
+                        ec=UC.blue, lw=1.1)
+
+    eb = F.ax.errorbar(x=medians, y=rho_ave_arr[i],
+                       yerr=rho_1_ave_arr[i],
+                       elinewidth=1.1, linewidth=0., markersize=0,
+                       color=UC.blue)
+
+    median_arr[i] = medians
+    median_error[i] = q3-q1
+    if q3-q1 == 0.:
+        median_error[i] = 0.001
+
+# 相関係数
+isnan = np.isnan(rho_ave_arr)
+correlation, pvalue = spearmanr(median_arr[~isnan], rho_ave_arr[~isnan])
+print('Correlation coeff: ', correlation)
+
+# t検定
+n_data = median_arr[~isnan].size
+t_value = correlation*math.sqrt((n_data-2)/(1-correlation**2))
+print('t value:', t_value)
+print('n_data:', n_data)
+
+# 両側p値
+p_two_sided = 2*t.cdf(t_value, n_data-2)
+print('p value:', p_two_sided)
+
+# ODR 用データとモデルの設定
+data = RealData(median_arr[~isnan],
+                rho_ave_arr[~isnan],
+                sx=median_error[~isnan],
+                sy=rho_1_ave_arr[~isnan]
+                )
+model = Model(fit_linear)
+print(median_error[~isnan])
+print(rho_1_ave_arr[~isnan])
+
+# ODR 実行
+odr_instance = ODR(data, model, beta0=[1.0, 1.0])
+output = odr_instance.run()
+
+# フィッティング結果
+popt_li = output.beta
+perr_li = output.sd_beta
+
+print("Parameters:", popt_li)
+x_fit = np.linspace(-10, 20, 10)
+y_fit = fit_linear(popt_li, x_fit)
+label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
+label_tvalue = r'$t =$'+str(round(t_value, 2))
+label_pvalue = r'$p =$'+str(round(p_two_sided, 4))
+label_linearfit = r'$y=$' + \
+    str(round(popt_li[0], 2))+r'$x+$'+str(round(popt_li[1], 2))
+F.ax.plot(x_fit, y_fit, color='k', zorder=0.1)
+
+# Dummy
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_corrcoef)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_tvalue)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_pvalue)
+
+# ODR fit
+F.ax.text(0.5, 0.01,
+          'ODR fit: '+label_linearfit,
+          color='k',
+          horizontalalignment='center',
+          verticalalignment='bottom',
+          transform=F.ax.transAxes,
+          fontsize=F.fontsize*0.5)
+
+F.ax.set_title(target_moon,
+               fontsize=F.fontsize, weight='bold')
+
+
+legend = F.legend(ax_idx=0,
+                  ncol=3, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=0.01,
+                  textcolor=False,
+                  title='Rank correlation',
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
+F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_Mshell_3_coef_nocolor.jpg',
               bbox_inches='tight')
 
 F.close()
