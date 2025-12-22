@@ -293,6 +293,15 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
     return rho_arr, phi_arr, et_fp, hem_arr
 
 
+# %% GANYMEDE ONLY === read the current constant
+def read_current_coef():
+    f = np.loadtxt('results/azimuthal_current_fit/' +
+                   TARGET_MOON[0:2]+'/PJ'+str(PJ_LIST[0])+TARGET_HEM+'.txt')
+    mu_i_coef_ave = f[0]
+    mu_i_coef_1_ave = f[1]
+    return mu_i_coef_ave, mu_i_coef_1_ave
+
+
 # %% Read the viewing angle
 def viewingangle(PJnum: int, target_moon: str, target_fp: str, target_hem='both', FLIP=False):
     """
@@ -578,20 +587,31 @@ def scaleheight(Ai, Zi, Ti, Te):
 
 # %% Function to be in loop
 def calc(Ai, ni, Hp, r_A0, S3wlon_A0, z_A0, hem, S_A0=0):
-    # print('Calc loop in')
-    # S_A0 = Wave.Awave().tracefield(r_A0,
-    #                                np.radians(S3wlon_A0),
-    #                                z_A0
-    #                                )
-    tau, _, _, _ = Wave.Awave().trace3(r_A0,
-                                       np.radians(S3wlon_A0),
-                                       z_A0,
-                                       S_A0,
-                                       Ai,
-                                       ni,
-                                       Hp,
-                                       hem
-                                       )
+    if CURRENT_CONSTANT_OFFSET:
+        current_coef, _ = read_current_coef()
+        tau, _, _, _ = Wave.Awave().trace3_magnetodisk(
+            r_A0,
+            np.radians(S3wlon_A0),
+            z_A0,
+            S_A0,
+            Ai,
+            ni,
+            Hp,
+            hem,
+            current_coef=current_coef,
+        )
+
+    else:
+        tau, _, _, _ = Wave.Awave().trace3(
+            r_A0,
+            np.radians(S3wlon_A0),
+            z_A0,
+            S_A0,
+            Ai,
+            ni,
+            Hp,
+            hem
+        )
     return tau
 
 
@@ -910,15 +930,16 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '005/20250923_109'
+    exname = '005/20251221_308'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [3]
-    TARGET_HEM = 'S'   # 'both', 'N', or 'S'
-    FLIP = False      # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
-    USE_BACKTRACED = True
+    PJ_LIST = [12]
+    TARGET_HEM = 'both'   # 'both', 'N', or 'S'
+    FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
+    USE_BACKTRACED = True           # True for '005'
+    CURRENT_CONSTANT_OFFSET = True  # ALWAYS FALSE!
 
     # Input about the paremeter space
     Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'

@@ -472,6 +472,132 @@ class Awave():
 
         return tau, phi, Va_arr, theta_arr
 
+    def trace3_magnetodisk(self,
+                           r_A0: float,
+                           S3wlon_A0: float,
+                           z_A0: float,
+                           S_A0: float,
+                           Ai: float,
+                           ni: float,
+                           Hp: float,
+                           NS: float,
+                           limit=0,
+                           current_coef=1.0,):
+        """
+        `r_A0` Radial distance of the Alfven launch site [m] \\
+        `S3wlon_A0` System III west longitude of the Alfven launch site [rad] \\
+        `z_A0` z position of the Alfven launch site [m] \\
+        `S_A0` Field line position of the Alfven launch site [m] \\
+        `Ai` Ion mass of the plasma sheet [amu] \\
+        `ni` Ion number density at the plasma sheet center [cm-3]
+        `Hp` Scale height of the plasma sheet [m] \\
+        `NS` Tracing direction North=-1 or South=1 \\
+        """
+        # 磁場モデルの設定
+        mu_i_default = 139.6    # default: 139.6 [nT]
+        jm.Con2020.Config(mu_i=mu_i_default*current_coef,
+                          equation_type='analytic')
+
+        Niter = int(600000)
+
+        # 磁力線に沿ってトレースしたい
+        rs = copy.copy(r_A0)           # [m]
+        theta = math.acos(z_A0/rs)     # [rad]
+        phi = 2*np.pi-copy.copy(S3wlon_A0)      # [rad]
+        x = rs*math.sin(theta)*math.cos(phi)    # [m]
+        y = rs*math.sin(theta)*math.sin(phi)    # [m]
+        z = copy.copy(z_A0)                  # [m]
+
+        # 伝搬時間
+        tau = 0     # [sec]
+
+        # 線要素
+        ds = 100000     # [m]
+
+        # Alfven速度を格納
+        Va_arr = np.zeros(Niter)
+
+        # Moon latitude (theta)を格納
+        theta_arr = np.zeros(Niter)
+
+        # Alfven wave front longitude (phi)を格納
+        phi_arr = np.zeros(Niter)
+
+        # Column mass density [kg m-2]
+        col_massdens = np.zeros(2)
+
+        # 沿磁力線座標
+        s = copy.copy(S_A0)
+
+        # Direction of tracing
+        if NS == -1:       # Northern MAW
+            ns = -1        # 北向き
+        elif NS == 1:      # Southern MAW
+            ns = 1         # 南向き
+        elif NS == -101:   # Northern TEB
+            ns = 1         # 南向き
+        elif NS == 101:    # Southern TEB
+            ns = -1        # 北向き
+        for i in range(Niter):
+            # Community codes
+            Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)  # [nT]
+            Bx1, By1, Bz1 = jm.Con2020.Field(x/RJ, y/RJ, z/RJ)   # [nT]
+            Bx = (Bx0+Bx1)*1E-9     # [T]
+            By = (By0+By1)*1E-9     # [T]
+            Bz = (Bz0+Bz1)*1E-9     # [T]
+
+            B0 = math.sqrt(Bx[0]**2+By[0]**2+Bz[0]**2)      # [T]
+
+            # プラズマ質量密度 rho
+            rho = Ai*AMU2KG*ni*(1E+6)*np.exp(-(s/Hp)**2)     # [kg m-3]
+
+            # Alfven速度 Va
+            Va = B0/math.sqrt(MU0*rho)    # [m/s]
+
+            # 相対論効果の考慮
+            if Va/C > 0.1:
+                Va = Va/math.sqrt(1+(Va/C)**2)
+
+            # 時間要素
+            dt = ds/Va
+
+            # 伝搬時間
+            tau += dt   # [sec]
+
+            # 座標更新 (x, y, z)
+            x += (ds*Bx[0]/B0)*ns
+            y += (ds*By[0]/B0)*ns
+            z += (ds*Bz[0]/B0)*ns
+
+            # 座標更新 (r, theta, phi)
+            rs = math.sqrt(x**2 + y**2 + z**2)
+            theta = math.acos(z/rs)
+            phi = math.atan2(y, x)
+
+            # 座標更新 (沿磁力線: S0)
+            s += ds*(-ns)
+
+            # 配列格納
+            Va_arr[i] = Va          # [m/s]
+            theta_arr[i] = theta    # [rad]
+            col_massdens[0] += rho*ds     # [kg m-2]
+            col_massdens[1] += rho*ds/B0     # [kg Wb-1]
+
+            # Vaで基準
+            if limit == 0:
+                if Va/C > 0.3:
+                    break
+            elif limit == 1:
+                # 距離で基準
+                if rs < 1.1*RJ:
+                    break
+
+        # 値が格納されていない部分は削除
+        Va_arr = Va_arr[:i]
+        theta_arr = theta_arr[:i]
+
+        return tau, phi, Va_arr, col_massdens
+
     def centri_eq(self, r_rj, theta, phi):
         """_summary_
 

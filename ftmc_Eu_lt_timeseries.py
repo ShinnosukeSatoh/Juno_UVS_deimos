@@ -29,7 +29,7 @@ UC.set_palette()
 
 
 exdate = '005/20250923'
-target_moon = 'Europa'
+target_moon = 'Ganymede'
 target_fp = ['MAW', 'TEB']
 
 exnum = ['050', '056']
@@ -101,8 +101,8 @@ def data_load(exname):
     # Search the chi2-minimum
     min_idx = np.where(chi2_3d == np.min(chi2_3d))
     min_idx_Ai = 1
-    print('Min chi2:', np.min(chi2_3d), 'at', min_idx)
-    print('Scale height [RJ]:', H_3d[min_idx][0]/(71492*1E+3))
+    # print('Min chi2:', np.min(chi2_3d), 'at', min_idx)
+    # print('Scale height [RJ]:', H_3d[min_idx][0]/(71492*1E+3))
 
     # 1データのヒストグラムを作成する
     Ai_2d = Ai_3d[:, min_idx_Ai, :].T
@@ -390,6 +390,49 @@ if (exdate == '003/20250516') and (target_moon == 'Europa'):
     ymax = 4.0
     ticks = np.arange(0, 4+1, 1)
 
+elif (exdate == '003/20250516') and (target_moon == 'Io'):
+    exnum = ['047', '048', '049', '050', '051',
+             '052', '053', '054', '055', '056', '057',
+             '058', '059',
+             '062', '063', '064', '065', '066',
+             '067', '068', '069', '070', '071',
+             '072', '073', '074', '075', '076',
+             '077', '078', '079', '080', '081',
+             '083',
+             '084', '085', '086', '088',
+             '089', '090', '091', '092', '094',
+             '095', '096', '097', '098',
+             '114', '116',
+             ]
+    PJ_list = [3, 4, 5, 6, 7,
+               8, 8, 9, 9, 10, 10,
+               11, 11,
+               13, 14, 15, 16, 17,
+               18, 19, 20, 21, 22,
+               23, 24, 25, 26, 27,
+               27, 28, 29, 30, 31,
+               32,
+               33, 33, 34, 35,
+               36, 37, 38, 39, 40,
+               41, 42, 43, 43,
+               18, 12,
+               ]
+    FTMC_HEM = ['both', 'both', 'both', 'both', 'both',
+                'N', 'S', 'N', 'S', 'N', 'S',
+                'N', 'S',
+                'N', 'S', 'N', 'both', 'both',
+                'N', 'both', 'both', 'both', 'both',
+                'S', 'S', 'S', 'both', 'N',
+                'S', 'S', 'S', 'S', 'S',
+                'N',
+                'N', 'S', 'S', 'S',
+                'S', 'both', 'both', 'both', 'both',
+                'both', 'both', 'N', 'S',
+                'S', 'both']
+    Psyn = Psyn_io
+    ymax = 40
+    ticks = np.arange(0, 40+1, 10)
+
 elif (exdate == '003/20250516') and (target_moon == 'Ganymede'):
     exnum = ['100', '104', '105', '106', '107',
              '108', '109', '110', '111', '112',
@@ -621,7 +664,13 @@ for i in range(len(exnum)):
                       ec=UC.blue, lw=1.1)
 
 # 2nd axis
-if target_moon == 'Europa':
+if target_moon == 'Io':
+    ymin = 5
+    ymax = 8
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
+    minor_num = 5
+elif target_moon == 'Europa':
     ymin = 8
     ymax = 12
     yticks = np.arange(ymin, ymax+1, 1)
@@ -650,11 +699,23 @@ pj_fp_m = np.loadtxt('results/Mshell/'+target_moon[0:2]+'/pj_fp.txt')
 hem_fp_m = np.loadtxt('results/Mshell/'+target_moon[0:2]+'/hem_fp.txt')
 view_angle = np.loadtxt('results/Mshell/'+target_moon[0:2]+'/view_angle.txt')
 et_fp_m = np.loadtxt('results/Mshell/'+target_moon[0:2]+'/et_fp.txt')
+mu_i_coef = np.loadtxt('results/azimuthal_current_fit/' +
+                       target_moon[0:2]+'_coef_0.txt')
+mu_i_coef_1 = np.loadtxt('results/azimuthal_current_fit/' +
+                         target_moon[0:2]+'_coef_1.txt')
+mu_i_coef_2 = np.loadtxt('results/azimuthal_current_fit/' +
+                         target_moon[0:2]+'_coef_2.txt')
+mu_i_coef_3 = np.loadtxt('results/azimuthal_current_fit/' +
+                         target_moon[0:2]+'_coef_3.txt')
+mu_i_coef_4 = np.loadtxt('results/azimuthal_current_fit/' +
+                         target_moon[0:2]+'_coef_4.txt')
 
 # Data subsetごとに値をまとめる
 d0_median = []
 rho_ave_arr = np.zeros(len(PJ_list))
 rho_1_ave_arr = np.zeros(len(PJ_list))
+mu_i_coef_ave = np.zeros(len(PJ_list))
+mu_i_coef_1_ave = np.zeros(len(PJ_list))
 for i in range(len(PJ_list)):
     ftmc_pj = PJ_list[i]
     ftmc_hem = FTMC_HEM[i]
@@ -668,12 +729,13 @@ for i in range(len(PJ_list)):
         rho_arr_2_subset = rho_arr_2[pj_idx]-rho_arr_subset
         rho_arr_3_subset = rho_arr_3[pj_idx]-rho_arr_subset
         rho_arr_4_subset = rho_arr_4[pj_idx]-rho_arr_subset
-        rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset))
-        rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset))
-        rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset))
-        rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset))
         d0_subset = et_fp_m[pj_idx]
         view_angle_subset = view_angle[pj_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx]-mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx]-mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx]-mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx]-mu_i_coef_subset
     else:
         if ftmc_hem == 'S':
             hem_subset_idx = np.where(hem_fp_m[pj_idx] > 0)
@@ -686,18 +748,40 @@ for i in range(len(PJ_list)):
         rho_arr_2_subset = rho_arr_2[pj_idx][hem_subset_idx]-rho_arr_subset
         rho_arr_3_subset = rho_arr_3[pj_idx][hem_subset_idx]-rho_arr_subset
         rho_arr_4_subset = rho_arr_4[pj_idx][hem_subset_idx]-rho_arr_subset
-        rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset))
-        rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset))
-        rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset))
-        rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset))
         d0_subset = et_fp_m[pj_idx][hem_subset_idx]
         view_angle_subset = view_angle[pj_idx][hem_subset_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx][hem_subset_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
 
     view_angle_thres = np.where(view_angle_subset < 30.0)
+
+    rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset[view_angle_thres]))
+    rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset[view_angle_thres]))
+    rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset[view_angle_thres]))
+    rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset[view_angle_thres]))
+    mu_i_coef_1_subset = np.average(
+        np.abs(mu_i_coef_1_subset[view_angle_thres]))
+    mu_i_coef_2_subset = np.average(
+        np.abs(mu_i_coef_2_subset[view_angle_thres]))
+    mu_i_coef_3_subset = np.average(
+        np.abs(mu_i_coef_3_subset[view_angle_thres]))
+    mu_i_coef_4_subset = np.average(
+        np.abs(mu_i_coef_4_subset[view_angle_thres]))
+
     rho_ave_arr[i] = np.average(rho_arr_subset[view_angle_thres])
     rho_1_ave_arr[i] = np.average(
         [rho_arr_1_subset, rho_arr_2_subset, rho_arr_3_subset, rho_arr_4_subset])
     d0_median += [spice.et2datetime(np.median(d0_subset))]
+    mu_i_coef_ave[i] = np.average(mu_i_coef_subset[view_angle_thres])
+    mu_i_coef_1_ave[i] = np.average(
+        [mu_i_coef_1_subset, mu_i_coef_2_subset, mu_i_coef_3_subset, mu_i_coef_4_subset])
 
 # et_fpをdatetimeに変換する
 datetime_fp = []
@@ -836,6 +920,7 @@ plt.show()
 #
 #
 # %% 横軸 FTMC & 縦軸 M shell
+# Color code: local time
 F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
@@ -844,7 +929,18 @@ F.set_figparams(nrows=1, figsize=(6.5, 5.5), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
-if target_moon == 'Europa':
+if target_moon == 'Io':
+    xmin = 0
+    xmax = 40
+    ymin = 5
+    ymax = 8
+    xticks = np.arange(xmin, xmax+1, 10)
+    xticklabels = np.arange(xmin, xmax+1, 10)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
+    minor_num = 5
+    boxplot_width = 0.03
+elif target_moon == 'Europa':
     xmin = 0
     xmax = 3
     ymin = 8
@@ -1026,7 +1122,7 @@ print('t value:', t_value)
 print('n_data:', n_data)
 
 # 両側p値
-p_two_sided = 2*t.cdf(t_value, n_data-2)
+p_two_sided = 2*(1-t.cdf(np.abs(t_value), n_data-2))
 print('p value:', p_two_sided)
 
 # ODR 用データとモデルの設定
@@ -1036,8 +1132,8 @@ data = RealData(median_arr[~isnan],
                 sy=rho_1_ave_arr[~isnan]
                 )
 model = Model(fit_linear)
-print(median_error[~isnan])
-print(rho_1_ave_arr[~isnan])
+# print(median_error[~isnan])
+# print(rho_1_ave_arr[~isnan])
 
 # ODR 実行
 odr_instance = ODR(data, model, beta0=[1.0, 1.0])
@@ -1100,16 +1196,28 @@ plt.show()
 #
 #
 #
-# %% 横軸 FTMC & 縦軸 M shell WITHOUT COLOR BAR
+# %% 横軸 FTMC & 縦軸 M shell
+# === WITHOUT COLOR BAR ===
 F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=1, figsize=(5.1, 5.0), dpi='L')
+F.set_figparams(nrows=1, figsize=(5.2, 5.0), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
-if target_moon == 'Europa':
+if target_moon == 'Io':
+    xmin = 0
+    xmax = 40
+    ymin = 5
+    ymax = 8
+    xticks = np.arange(xmin, xmax+1, 10)
+    xticklabels = np.arange(xmin, xmax+1, 10)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
+    minor_num = 5
+    boxplot_width = 0.03
+elif target_moon == 'Europa':
     xmin = 0
     xmax = 3
     ymin = 8
@@ -1122,11 +1230,11 @@ if target_moon == 'Europa':
     boxplot_width = 0.05
 elif target_moon == 'Ganymede':
     xmin = 0
-    xmax = 0.20
+    xmax = 0.18
     ymin = 11
     ymax = 25
-    xticks = np.linspace(xmin, xmax, 5)
-    xticklabels = np.round(np.linspace(xmin, xmax, 5), 2)
+    xticks = np.linspace(xmin, xmax, 7)
+    xticklabels = np.round(np.linspace(xmin, xmax, 7), 2)
     yticks = np.arange(ymin, ymax+1, 2)
     yticklabels = np.arange(ymin, ymax+1, 2)
     minor_num = 2
@@ -1263,7 +1371,7 @@ print('t value:', t_value)
 print('n_data:', n_data)
 
 # 両側p値
-p_two_sided = 2*t.cdf(t_value, n_data-2)
+p_two_sided = 2*(1-t.cdf(np.abs(t_value), n_data-2))
 print('p value:', p_two_sided)
 
 # ODR 用データとモデルの設定
@@ -1273,8 +1381,8 @@ data = RealData(median_arr[~isnan],
                 sy=rho_1_ave_arr[~isnan]
                 )
 model = Model(fit_linear)
-print(median_error[~isnan])
-print(rho_1_ave_arr[~isnan])
+# print(median_error[~isnan])
+# print(rho_1_ave_arr[~isnan])
 
 # ODR 実行
 odr_instance = ODR(data, model, beta0=[1.0, 1.0])
@@ -1340,7 +1448,296 @@ plt.show()
 #
 #
 #
+# %% 横軸 FTMC & 縦軸 Azimuthal current constant
+# === WITHOUT COLOR BAR ===
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.3, 5.0), dpi='L')
+F.initialize()
+# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
+
+if target_moon == 'Io':
+    xmin = 0
+    xmax = 40
+    ymin = 5
+    ymax = 8
+    xticks = np.arange(xmin, xmax+1, 10)
+    xticklabels = np.arange(xmin, xmax+1, 10)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
+    xminor_num = 5
+    yminor_num = 5
+    boxplot_width = 0.02
+elif target_moon == 'Europa':
+    xmin = 0
+    xmax = 3
+    ymin = 0
+    ymax = 240
+    xticks = np.arange(xmin, xmax+1, 1)
+    xticklabels = np.arange(xmin, xmax+1, 1)
+    yticks = np.arange(0, 200+1, 50)
+    yticklabels = np.round(np.arange(0, 200+1, 50), 2)
+    xminor_num = 5
+    yminor_num = 5
+    boxplot_width = 2.5
+elif target_moon == 'Ganymede':
+    xmin = 0
+    xmax = 0.18
+    ymin = 40
+    ymax = 230
+    xticks = np.linspace(xmin, xmax, 7)
+    xticklabels = np.round(np.linspace(xmin, xmax, 7), 2)
+    yticks = np.arange(50, 200+1, 50)
+    yticklabels = np.round(np.arange(50, 200+1, 50), 2)
+    xminor_num = 3
+    yminor_num = 5
+    boxplot_width = 2.5
+
+F.set_xaxis(label=target_moon+'-FTMC [10$^{-9}$ kg m$^{-2}$]',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=xminor_num)
+F.set_yaxis(ax_idx=0,
+            label=r'Current constant [nT]',
+            min=ymin, max=ymax,
+            ticks=yticks,
+            ticklabels=yticklabels,
+            minor_num=yminor_num)
+
+column_mass_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dN.txt')
+column_mass_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dS.txt')
+ftmc_mag_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dN.txt')
+ftmc_mag_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dS.txt')
+column_mass_1d = column_mass_1dN+column_mass_1dS
+column_mass_3d = column_mass_1d.reshape(ni_num, Ai_num, Ti_num)
+ftmc_mag_1d = ftmc_mag_1dN + ftmc_mag_1dS
+ftmc_mag_3d = ftmc_mag_1d.reshape(ni_num, Ai_num, Ti_num)
+
+
+# Data subsetごとに値をまとめる
+d0_median = []
+rho_ave_arr = np.zeros(len(PJ_list))
+rho_1_ave_arr = np.zeros(len(PJ_list))
+mu_i_coef_ave = np.zeros(len(PJ_list))
+mu_i_coef_1_ave = np.zeros(len(PJ_list))
+for i in range(len(PJ_list)):
+    ftmc_pj = PJ_list[i]
+    ftmc_hem = FTMC_HEM[i]
+    pj_idx = np.where(pj_fp_m == ftmc_pj)
+
+    if ftmc_hem == 'both':
+        hem_subset = hem_fp_m[pj_idx]
+        pj_subset = pj_fp_m[pj_idx]
+        rho_arr_subset = rho_arr[pj_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx]-rho_arr_subset
+        d0_subset = et_fp_m[pj_idx]
+        view_angle_subset = view_angle[pj_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx]-mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx]-mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx]-mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx]-mu_i_coef_subset
+    else:
+        if ftmc_hem == 'S':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] > 0)
+        elif ftmc_hem == 'N':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] < 0)
+        hem_subset = hem_fp_m[pj_idx][hem_subset_idx]
+        pj_subset = pj_fp_m[pj_idx][hem_subset_idx]
+        rho_arr_subset = rho_arr[pj_idx][hem_subset_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx][hem_subset_idx]-rho_arr_subset
+        d0_subset = et_fp_m[pj_idx][hem_subset_idx]
+        view_angle_subset = view_angle[pj_idx][hem_subset_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx][hem_subset_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+
+    view_angle_thres = np.where(view_angle_subset < 30.0)
+
+    rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset[view_angle_thres]))
+    rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset[view_angle_thres]))
+    rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset[view_angle_thres]))
+    rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset[view_angle_thres]))
+    mu_i_coef_1_subset = np.average(
+        np.abs(mu_i_coef_1_subset[view_angle_thres]))
+    mu_i_coef_2_subset = np.average(
+        np.abs(mu_i_coef_2_subset[view_angle_thres]))
+    mu_i_coef_3_subset = np.average(
+        np.abs(mu_i_coef_3_subset[view_angle_thres]))
+    mu_i_coef_4_subset = np.average(
+        np.abs(mu_i_coef_4_subset[view_angle_thres]))
+
+    rho_ave_arr[i] = np.average(rho_arr_subset[view_angle_thres])
+    rho_1_ave_arr[i] = np.average(
+        [rho_arr_1_subset, rho_arr_2_subset, rho_arr_3_subset, rho_arr_4_subset])
+    d0_median += [spice.et2datetime(np.median(d0_subset))]
+    mu_i_coef_ave[i] = np.average(mu_i_coef_subset[view_angle_thres])
+    mu_i_coef_1_ave[i] = np.average(
+        [mu_i_coef_1_subset, mu_i_coef_2_subset, mu_i_coef_3_subset, mu_i_coef_4_subset])
+
+    # print('PJ'+str(ftmc_pj)+ftmc_hem, view_angle_thres[0].size)
+    if view_angle_thres[0].size > 0:
+        np.savetxt('results/azimuthal_current_fit/'+target_moon[0:2]+'/PJ'+str(ftmc_pj)+ftmc_hem+'.txt',
+                   np.array([mu_i_coef_ave[i], mu_i_coef_1_ave[i]]))
+
+
+# Azimuthal current constant
+mu_i_default = 139.6    # default: 139.6 [nT]
+mu_i_ave = mu_i_coef_ave*mu_i_default
+mu_i_1_ave = mu_i_coef_1_ave*mu_i_default
+F.ax.axhline(y=mu_i_default, linestyle='dashed',
+             color=UC.lightgray, zorder=0.9)
+
+median_arr = np.zeros(len(exnum))
+median_error = np.zeros(len(exnum))
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+
+    # Local time
+    d0 = spice.et2datetime(moon_et[0])
+    d0_list = []
+    for ii in range(column_mass.size):
+        d0_list += [d0]
+    lt_arr = np.zeros(moon_et.size)
+    for k in range(moon_et.size):
+        lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+
+    lt_center = (lt_arr[0]+lt_arr[-1])/2
+    s3_center = ((moon_S3wlon[0]+moon_S3wlon[-1])/2)
+
+    q1, medians, q3 = weighted_percentile(data=column_mass,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+
+    weighted_boxplot_h2(F.ax, mu_i_ave[i], q1, medians, q3,
+                        np.min(column_mass),
+                        np.max(column_mass), width=boxplot_width,
+                        ec=UC.blue, lw=1.1)
+
+    F.ax.errorbar(x=medians, y=mu_i_ave[i],
+                  yerr=mu_i_1_ave[i],
+                  elinewidth=1.1, linewidth=0., markersize=0,
+                  color=UC.blue)
+
+    median_arr[i] = medians
+    median_error[i] = q3-q1
+    if q3-q1 == 0.:
+        median_error[i] = 0.001
+
+# 相関係数
+isnan = np.isnan(mu_i_ave)
+correlation, pvalue = spearmanr(median_arr[~isnan], mu_i_ave[~isnan])
+print('Correlation coeff: ', correlation)
+
+# t検定
+n_data = median_arr[~isnan].size
+t_value = correlation*math.sqrt((n_data-2)/(1-correlation**2))
+print('t value:', t_value)
+print('n_data:', n_data)
+
+# 両側p値
+p_two_sided = 2*(1-t.cdf(np.abs(t_value), n_data-2))
+print('p value:', p_two_sided)
+
+# ODR 用データとモデルの設定
+data = RealData(median_arr[~isnan],
+                mu_i_ave[~isnan],
+                sx=median_error[~isnan],
+                sy=mu_i_1_ave[~isnan]
+                )
+model = Model(fit_linear)
+# print(median_error[~isnan])
+# print(mu_i_coef_1_ave[~isnan])
+
+# ODR 実行
+odr_instance = ODR(data, model, beta0=[1.0, 1.0])
+output = odr_instance.run()
+
+# フィッティング結果
+popt_li = output.beta
+perr_li = output.sd_beta
+
+print("Parameters:", popt_li)
+x_fit = np.linspace(-1, 20, 10)
+y_fit = fit_linear(popt_li, x_fit)
+label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
+label_tvalue = r'$t =$'+str(round(t_value, 2))
+label_pvalue = r'$p =$'+str(round(p_two_sided, 4))
+label_linearfit = r'$y=$' + \
+    str(round(popt_li[0], 2))+r'$x+$'+str(round(popt_li[1], 2))
+F.ax.plot(x_fit, y_fit, color='k', zorder=0.1)
+
+# Dummy
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_corrcoef)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_tvalue)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_pvalue)
+
+# ODR fit
+F.ax.text(0.5, 0.01,
+          'ODR fit: '+label_linearfit,
+          color='k',
+          horizontalalignment='center',
+          verticalalignment='bottom',
+          transform=F.ax.transAxes,
+          fontsize=F.fontsize*0.5)
+
+F.ax.set_title(target_moon,
+               fontsize=F.fontsize, weight='bold')
+
+legend = F.legend(ax_idx=0,
+                  ncol=3, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=0.01,
+                  textcolor=False,
+                  title='Rank correlation',
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
+F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_mui_coef_nocolor.jpg',
+              bbox_inches='tight')
+F.close()
+plt.show()
+
+
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
 # %% 横軸 FTMC & 縦軸 M shell
+# Color code: local time
 F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
@@ -1349,7 +1746,18 @@ F.set_figparams(nrows=1, figsize=(6.5, 5.5), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
-if target_moon == 'Europa':
+if target_moon == 'Io':
+    xmin = 0
+    xmax = 40
+    ymin = 5
+    ymax = 8
+    xticks = np.arange(xmin, xmax+1, 10)
+    xticklabels = np.arange(xmin, xmax+1, 10)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
+    minor_num = 5
+    boxplot_width = 0.03
+elif target_moon == 'Europa':
     xmin = 0
     xmax = 3
     ymin = 8
@@ -1534,7 +1942,18 @@ F.set_figparams(nrows=1, figsize=(6.5, 5.5), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
-if target_moon == 'Europa':
+if target_moon == 'Io':
+    xmin = 0
+    xmax = 40
+    ymin = 5
+    ymax = 8
+    xticks = np.arange(xmin, xmax+1, 10)
+    xticklabels = np.arange(xmin, xmax+1, 10)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
+    minor_num = 5
+    boxplot_width = 0.03
+elif target_moon == 'Europa':
     xmin = -1
     xmax = 2
     ymin = 8
@@ -1717,7 +2136,7 @@ print('t value:', t_value)
 print('n_data:', n_data)
 
 # 両側p値
-p_two_sided = 2*t.cdf(t_value, n_data-2)
+p_two_sided = 2*(1-t.cdf(np.abs(t_value), n_data-2))
 print('p value:', p_two_sided)
 
 # ODR 用データとモデルの設定
@@ -1727,8 +2146,8 @@ data = RealData(median_arr[~isnan],
                 sy=rho_1_ave_arr[~isnan]
                 )
 model = Model(fit_linear)
-print(median_error[~isnan])
-print(rho_1_ave_arr[~isnan])
+# print(median_error[~isnan])
+# print(rho_1_ave_arr[~isnan])
 
 # ODR 実行
 odr_instance = ODR(data, model, beta0=[1.0, 1.0])
@@ -1792,7 +2211,18 @@ F.set_figparams(nrows=1, figsize=(5.1, 5.0), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
-if target_moon == 'Europa':
+if target_moon == 'Io':
+    xmin = 0
+    xmax = 40
+    ymin = 5
+    ymax = 8
+    xticks = np.arange(xmin, xmax+1, 10)
+    xticklabels = np.arange(xmin, xmax+1, 10)
+    yticks = np.arange(ymin, ymax+1, 1)
+    yticklabels = np.arange(ymin, ymax+1, 1)
+    minor_num = 5
+    boxplot_width = 0.03
+elif target_moon == 'Europa':
     xmin = -1
     xmax = 2.5
     ymin = 8
@@ -1947,7 +2377,7 @@ print('t value:', t_value)
 print('n_data:', n_data)
 
 # 両側p値
-p_two_sided = 2*t.cdf(t_value, n_data-2)
+p_two_sided = 2*(1-t.cdf(np.abs(t_value), n_data-2))
 print('p value:', p_two_sided)
 
 # ODR 用データとモデルの設定
@@ -1957,8 +2387,8 @@ data = RealData(median_arr[~isnan],
                 sy=rho_1_ave_arr[~isnan]
                 )
 model = Model(fit_linear)
-print(median_error[~isnan])
-print(rho_1_ave_arr[~isnan])
+# print(median_error[~isnan])
+# print(rho_1_ave_arr[~isnan])
 
 # ODR 実行
 odr_instance = ODR(data, model, beta0=[1.0, 1.0])

@@ -58,7 +58,7 @@ def legend_shadow(fig, ax, legend, d=0.0, color='k'):
 
     # パスエフェクトを設定（影の色、オフセット、アルファなどを指定）
     patch.set_path_effects([
-        pe.SimplePatchShadow(offset=(4, -4),
+        pe.SimplePatchShadow(offset=(3.5, -3.5),
                              shadow_rgbFace=color,
                              alpha=1.0),
         pe.Normal(),
