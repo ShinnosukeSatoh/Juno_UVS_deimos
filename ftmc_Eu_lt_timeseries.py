@@ -543,6 +543,36 @@ elif (exdate == '005/20250923') and (target_moon == 'Ganymede'):
     ymax = 0.2
     ticks = np.round(np.arange(0, 0.20+0.01, 0.05), 2)
 
+elif (exdate == '005/20251221') and (target_moon == 'Ganymede'):
+    exnum = ['301', '302', '303', '304', '305',
+             '306', '307', '308', '309', '310',
+             '311', '312', '313', '314', '315',
+             '316', '317', '318', '319', '320',
+             '321', '322', '323', '324', '325',
+             '326', '327', '328', '329', '330',
+             '331', '332',
+             ]
+    PJ_list = [3, 4, 5, 6,
+               7,
+               8, 11, 12, 13, 16,
+               17, 19, 20, 21, 22,
+               25, 27, 30, 32, 34,
+               34, 35, 37, 38, 40,
+               41, 42, 46, 47, 50,
+               59, 60,
+               ]
+    FTMC_HEM = ['both', 'both', 'S', 'both', 'S',
+                'both', 'N', 'both', 'both', 'S',
+                'S', 'S', 'N', 'S', 'N',
+                'S', 'both', 'S', 'S', 'N',
+                'S', 'both', 'S', 'S', 'S',
+                'N', 'N', 'S', 'S', 'S',
+                'S', 'N',
+                ]
+    Psyn = Psyn_ga
+    ymax = 0.2
+    ticks = np.round(np.arange(0, 0.20+0.01, 0.05), 2)
+
 column_mass_1dN = np.loadtxt(
     'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dN.txt')
 column_mass_1dS = np.loadtxt(
