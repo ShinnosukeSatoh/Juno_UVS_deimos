@@ -4,6 +4,7 @@ import matplotlib.transforms as transforms
 import matplotlib.dates as mdates
 import matplotlib.patheffects as pe
 import matplotlib.colors as mplC
+import matplotlib.patches as patches
 from matplotlib.ticker import LogLocator
 
 import numpy as np

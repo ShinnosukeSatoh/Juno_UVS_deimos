@@ -24,7 +24,7 @@ jm.Internal.Config(Model="jrm33", CartesianIn=True,
 
 
 # Input about Juno observation
-TARGET_MOON = 'Europa'
+TARGET_MOON = 'Io'
 TARGET_FP = ['MAW', 'TEB']
 TARGET_HEM = 'both'
 PJ_LIST = [1, 3]+np.arange(4, 68+1, 1).tolist()

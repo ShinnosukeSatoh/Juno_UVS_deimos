@@ -29,7 +29,7 @@ UC.set_palette()
 
 
 exdate = '005/20250923'
-target_moon = 'Ganymede'
+target_moon = 'Europa'
 target_fp = ['MAW', 'TEB']
 
 exnum = ['050', '056']
@@ -192,22 +192,19 @@ def weighted_boxplot2(ax, x0, quartile1, medians, quartile3,
 
     # Vertical line
     ax.plot([x0, x0],
-            [min,
-             max],
+            [min, max],
             color=ec, linewidth=lw,
             zorder=1)
 
     # Min
     ax.plot([x0-width/2, x0+width/2],
-            [min,
-             min],
+            [min, min],
             color=ec, linewidth=lw,
             zorder=1)
 
     # Max
     ax.plot([x0-width/2, x0+width/2],
-            [max,
-             max],
+            [max, max],
             color=ec, linewidth=lw,
             zorder=1)
 
@@ -241,22 +238,19 @@ def weighted_boxplot_h2(ax, y0, quartile1, medians, quartile3,
     patch.set_zorder(2)
 
     # Vertical line
-    ax.plot([min,
-             max],
+    ax.plot([min, max],
             [y0, y0],
             color=ec, linewidth=lw,
             zorder=1)
 
     # Min
-    ax.plot([min,
-             min],
+    ax.plot([min, min],
             [y0-width/2, y0+width/2],
             color=ec, linewidth=lw,
             zorder=1)
 
     # Max
-    ax.plot([max,
-             max],
+    ax.plot([max, max],
             [y0-width/2, y0+width/2],
             color=ec, linewidth=lw,
             zorder=1)
