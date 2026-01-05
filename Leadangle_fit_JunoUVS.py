@@ -930,14 +930,14 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '005/20251221_361'
+    exname = '005/20251221_363'
 
     # Input about Juno observation
     TARGET_MOON = 'Europa'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [62]
+    PJ_LIST = [18]
     TARGET_HEM = 'S'   # 'both', 'N', or 'S'
-    FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
+    FLIP = True          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True           # True for '005'
     CURRENT_CONSTANT_OFFSET = True  # ALWAYS FALSE!
 
