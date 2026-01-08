@@ -686,7 +686,6 @@ F.set_yaxis(ax_idx=0,
             ticklabels=ticks,
             minor_num=5)
 
-positions = np.arange(0, len(exnum)+1, 1)
 colormap = plt.cm.get_cmap('turbo')
 for i in range(len(exnum)):
     # %% Load the data
