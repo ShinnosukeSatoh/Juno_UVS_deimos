@@ -283,6 +283,12 @@ def fit_exp(params, x):
     return a * np.exp(-x/b)
 
 
+# %% フィッティング用のべき乗関数
+def fit_power(params, x):
+    a, b = params
+    return a * (x/5.9)**b
+
+
 #
 #
 #
@@ -336,6 +342,10 @@ F.fig.subplots_adjust(hspace=0.2)
 
 IEG_median_arr = np.zeros(3)
 IEG_error_arr = np.zeros(3)
+IEG_median_arr_LT1 = np.zeros(3)
+IEG_error_arr_LT1 = np.zeros(3)
+IEG_median_arr_LT2 = np.zeros(3)
+IEG_error_arr_LT2 = np.zeros(3)
 for idx_moon in range(3):
     exdate = exdate_list[idx_moon]
     target_moon = target_moon_list[idx_moon]
@@ -583,18 +593,8 @@ for idx_moon in range(3):
                                           perc=[0.25, 0.5, 0.75],
                                           weights=weight_all_points)
     width = 0.15
-    """weighted_boxplot2(F.ax[0], r_moon/RJ,
-                      q1*1E-9, medians*1E-9, q3*1E-9,
-                      np.min(ftmc_all_points)*1E-9,
-                      np.max(ftmc_all_points)*1E-9, width=width,
-                      ec=UC.blue, lw=1.2)"""
     if target_moon == 'Ganymede':
         for i in range(2):
-            """weighted_boxplot2(F.ax[i+1], r_moon/RJ,
-                            q1*1E-9, medians*1E-9, q3*1E-9,
-                            np.min(ftmc_all_points)*1E-9,
-                            np.max(ftmc_all_points)*1E-9, width=width,
-                            ec=UC.blue, lw=1.2)"""
             sc = F.ax[i+1].scatter(r_moon/RJ, np.average(median_all_points)*1E-9,
                                    marker='d', s=8.0, c=UC.blue)
             F.ax[i+1].errorbar(x=r_moon/RJ, y=np.average(median_all_points)*1E-9,
@@ -602,25 +602,6 @@ for idx_moon in range(3):
                                elinewidth=1.2, linewidth=0., markersize=0,
                                color=UC.blue)
     else:
-        """print(ftmc_all_points.size, ftmc_LT1_points.size, ftmc_LT2_points.size)
-        q1, medians, q3 = weighted_percentile(data=ftmc_LT1_points,
-                                              perc=[0.25, 0.5, 0.75],
-                                              weights=weight_all_points)
-        weighted_boxplot2(F.ax[1], r_moon/RJ,
-                          q1*1E-9, medians*1E-9, q3*1E-9,
-                          np.min(ftmc_LT1_points)*1E-9,
-                          np.max(ftmc_LT1_points)*1E-9, width=width,
-                          ec=UC.blue, lw=1.2)
-
-        q1, medians, q3 = weighted_percentile(data=ftmc_LT2_points,
-                                              perc=[0.25, 0.5, 0.75],
-                                              weights=weight_all_points)
-        weighted_boxplot2(F.ax[2], r_moon/RJ,
-                          q1*1E-9, medians*1E-9, q3*1E-9,
-                          np.min(ftmc_LT2_points)*1E-9,
-                          np.max(ftmc_LT2_points)*1E-9, width=width,
-                          ec=UC.blue, lw=1.2)"""
-
         LT1 = np.where((ltcenter_all_points <= 3.70+6.0) |
                        (ltcenter_all_points >= 3.70+18.0))
         LT2 = np.where((ltcenter_all_points > 3.70+6.0) &
@@ -644,14 +625,18 @@ for idx_moon in range(3):
 
     IEG_median_arr[idx_moon] = np.average(median_all_points)
     IEG_error_arr[idx_moon] = np.average(error0_all_points)
+    IEG_median_arr_LT1[idx_moon] = np.average(median_all_points[LT1])
+    IEG_error_arr_LT1[idx_moon] = np.average(error0_all_points[LT1])
+    IEG_median_arr_LT2[idx_moon] = np.average(median_all_points[LT2])
+    IEG_error_arr_LT2[idx_moon] = np.average(error0_all_points[LT2])
 
-# exp関数でフィッティング
+# (All LT) べき乗関数でフィッティング
 data = RealData(np.array([5.9, 9.4, 15.0]),
                 IEG_median_arr*1E-9,
                 sx=None,
                 sy=IEG_error_arr*1E-9
                 )
-model = Model(fit_exp)
+model = Model(fit_power)
 odr_instance = ODR(data, model, beta0=[1.0, 1.0])
 odr_run = odr_instance.run()
 
@@ -659,15 +644,128 @@ odr_run = odr_instance.run()
 res_var = odr_run.res_var
 popt_li = odr_run.beta
 perr_li = odr_run.sd_beta
-cov_ab = odr_run.cov_beta[0, 1]*res_var
+cov = odr_run.cov_beta*res_var
 
+print("All LT")
 print("Parameters:", popt_li)
 print("Errors:", perr_li)
 print("cov_beta:", odr_run.cov_beta*res_var)
 print("res_var:", res_var)
-x_fit = np.linspace(0, 20, 50)
-y_fit = fit_exp(popt_li, x_fit)
+x_fit = np.linspace(2.0, 18.0, 80)
+y_fit = fit_power(popt_li, x_fit)
 F.ax[0].plot(x_fit, y_fit, linewidth=1.0, color='k', zorder=2)
+
+# ヤコビアンの計算
+J_f0 = (x_fit/5.9)**popt_li[1]
+J_f1 = y_fit*np.log(x_fit/5.9)
+J_f = np.array([J_f0, J_f1])
+sigma_f = np.zeros(x_fit.size)
+for i in range(x_fit.size):
+    sigma_f[i] = np.sqrt((J_f[:, i]@cov)@J_f[:, i].T)
+y_fit_up = y_fit + 3.0*sigma_f
+y_fit_dw = y_fit - 3.0*sigma_f
+# print(sigma_f)
+lsigma = F.ax[0].fill_between(x_fit, y_fit_up, y_fit_dw,
+                              color=UC.gray, alpha=0.2,
+                              label='2',
+                              zorder=0.01)
+F.ax[0].text(0.97, 0.80,
+             r'$y=1.18(x/5.9)^{-5.49}$ [10$^{-8}$ kg m$^{-2}$]',
+             color='k',
+             horizontalalignment='right',
+             verticalalignment='top',
+             transform=F.ax[0].transAxes,
+             fontsize=F.fontsize*0.5)
+
+# (LT1) べき乗関数でフィッティング
+data = RealData(np.array([5.9, 9.4, 15.0]),
+                IEG_median_arr_LT1*1E-9,
+                sx=None,
+                sy=IEG_error_arr_LT1*1E-9
+                )
+model = Model(fit_power)
+odr_instance = ODR(data, model, beta0=[1.0, 1.0])
+odr_run = odr_instance.run()
+
+# フィッティング結果
+res_var = odr_run.res_var
+popt_li = odr_run.beta
+perr_li = odr_run.sd_beta
+cov = odr_run.cov_beta*res_var
+print("LT1")
+print("Parameters:", popt_li)
+print("Errors:", perr_li)
+print("cov_beta:", odr_run.cov_beta*res_var)
+print("res_var:", res_var)
+x_fit = np.linspace(2.0, 18.0, 80)
+y_fit = fit_power(popt_li, x_fit)
+F.ax[1].plot(x_fit, y_fit, linewidth=1.0, color='k', zorder=2)
+
+# ヤコビアンの計算
+J_f0 = (x_fit/5.9)**popt_li[1]
+J_f1 = y_fit*np.log(x_fit/5.9)
+J_f = np.array([J_f0, J_f1])
+sigma_f = np.zeros(x_fit.size)
+for i in range(x_fit.size):
+    sigma_f[i] = np.sqrt((J_f[:, i]@cov)@J_f[:, i].T)
+y_fit_up = y_fit + 3.0*sigma_f
+y_fit_dw = y_fit - 3.0*sigma_f
+lsigma = F.ax[1].fill_between(x_fit, y_fit_up, y_fit_dw,
+                              color=UC.gray, alpha=0.2,
+                              label='2',
+                              zorder=0.01)
+F.ax[1].text(0.97, 0.80,
+             r'$y=1.40(x/5.9)^{-5.57}$ [10$^{-8}$ kg m$^{-2}$]',
+             color='k',
+             horizontalalignment='right',
+             verticalalignment='top',
+             transform=F.ax[1].transAxes,
+             fontsize=F.fontsize*0.5)
+
+# (LT2) べき乗関数でフィッティング
+data = RealData(np.array([5.9, 9.4, 15.0]),
+                IEG_median_arr_LT2*1E-9,
+                sx=None,
+                sy=IEG_error_arr_LT2*1E-9
+                )
+model = Model(fit_power)
+odr_instance = ODR(data, model, beta0=[1.0, 1.0])
+odr_run = odr_instance.run()
+
+# フィッティング結果
+res_var = odr_run.res_var
+popt_li = odr_run.beta
+perr_li = odr_run.sd_beta
+cov = odr_run.cov_beta*res_var
+print("LT2")
+print("Parameters:", popt_li)
+print("Errors:", perr_li)
+print("cov_beta:", odr_run.cov_beta*res_var)
+print("res_var:", res_var)
+x_fit = np.linspace(2.0, 18.0, 80)
+y_fit = fit_power(popt_li, x_fit)
+F.ax[2].plot(x_fit, y_fit, linewidth=1.0, color='k', zorder=2)
+
+# ヤコビアンの計算
+J_f0 = (x_fit/5.9)**popt_li[1]
+J_f1 = y_fit*np.log(x_fit/5.9)
+J_f = np.array([J_f0, J_f1])
+sigma_f = np.zeros(x_fit.size)
+for i in range(x_fit.size):
+    sigma_f[i] = np.sqrt((J_f[:, i]@cov)@J_f[:, i].T)
+y_fit_up = y_fit + 3.0*sigma_f
+y_fit_dw = y_fit - 3.0*sigma_f
+lsigma = F.ax[2].fill_between(x_fit, y_fit_up, y_fit_dw,
+                              color=UC.gray, alpha=0.2,
+                              label='2',
+                              zorder=0.01)
+F.ax[2].text(0.97, 0.80,
+             r'$y=0.90(x/5.9)^{-5.35}$ [10$^{-8}$ kg m$^{-2}$]',
+             color='k',
+             horizontalalignment='right',
+             verticalalignment='top',
+             transform=F.ax[2].transAxes,
+             fontsize=F.fontsize*0.5)
 
 # Text
 F.ax[0].text(0.97, 0.95,
@@ -678,14 +776,14 @@ F.ax[0].text(0.97, 0.95,
              transform=F.ax[0].transAxes,
              fontsize=F.fontsize*0.8)
 F.ax[1].text(0.97, 0.95,
-             'Io & Europa\n(3.7$\\pm$6.0) LT',
+             'Io & Europa (3.7$\\pm$6.0) LT',
              color='k',
              horizontalalignment='right',
              verticalalignment='top',
              transform=F.ax[1].transAxes,
              fontsize=F.fontsize*0.8)
 F.ax[2].text(0.97, 0.95,
-             'Io & Europa\n(15.7$\\pm$6.0) LT',
+             'Io & Europa (15.7$\\pm$6.0) LT',
              color='k',
              horizontalalignment='right',
              verticalalignment='top',
