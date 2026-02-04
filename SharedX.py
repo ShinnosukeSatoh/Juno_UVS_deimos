@@ -267,6 +267,7 @@ class ShareXaxis():
                 ptick.LogLocator(numticks=999, subs='auto'))
             return None
 
+        # Single column
         if self.ncols == 1:
             if self.nrows == 1:
                 ax = self.ax
@@ -290,9 +291,13 @@ class ShareXaxis():
                 else:
                     self.yadjust(ax, min, max, yscale)
 
+            self.fig.subplots_adjust(hspace=self.hspace)
+            self.fig.subplots_adjust(wspace=self.wspace)
+
             if self.nrows != 1:
                 self.fig.align_ylabels(self.ax[:])
 
+        # More than two columns
         else:
             for i in range(self.ncols):
                 ax = self.ax[ax_idx, i]
@@ -531,8 +536,8 @@ class ShareXaxis():
 
     # Locally used
     def plot_xaxis(self, fig, ax, label, labelcolor, min, max, ticks, ticklabels, minor_num, xscale):
-        fig.subplots_adjust(hspace=self.hspace)
-        fig.subplots_adjust(wspace=self.wspace)
+        # fig.subplots_adjust(hspace=self.hspace)
+        # fig.subplots_adjust(wspace=self.wspace)
 
         def _bottom_xaxis(ax0):
             ax0.set_xscale(xscale)
@@ -592,6 +597,10 @@ class ShareXaxis():
                         _set_ticks(ax0, direction='inout')
                 else:
                     fig.tight_layout()
+                    if i != 0:
+                        ax1 = ax0.twiny()
+                        _set_ticks(ax1, direction='out')
+                        ax1.tick_params(labeltop=False)
                     if i != ax.size-1:
                         ax0.tick_params(labelbottom=False)
 
@@ -730,13 +739,16 @@ class ShareXaxis():
             elif self.panelname_xposition == 'right':
                 loc = 'upper left'
 
-        if self.ncols == 1:
-            if self.nrows > 1:
-                ax = self.ax[ax_idx]
+        if type(ax_idx) == int:
+            if self.ncols == 1:
+                if self.nrows > 1:
+                    ax = self.ax[ax_idx]
+                else:
+                    ax = self.ax
             else:
-                ax = self.ax
+                ax = self.ax[ax_idx[0], ax_idx[1]]
         else:
-            ax = self.ax[ax_idx[0], ax_idx[1]]
+            ax = ax_idx
 
         legend = ax.legend(
             handles=handles,

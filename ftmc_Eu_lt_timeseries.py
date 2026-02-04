@@ -20,6 +20,8 @@ from scipy.odr import ODR, Model, RealData, Output
 from scipy.stats import spearmanr
 from scipy.stats import t
 
+import JupiterMag as jm
+
 import spiceypy as spice
 spice.furnsh('kernel/cassMetaK.txt')
 savpath = 'data/Satellite_FP_JRM33.sav'
@@ -28,8 +30,8 @@ UC = UniversalColor()
 UC.set_palette()
 
 
-exdate = '003/20250516'
-target_moon = 'Io'
+exdate = '005/20251221'
+target_moon = 'Ganymede'
 target_fp = ['MAW', 'TEB']
 
 exnum = ['050', '056']
@@ -49,6 +51,7 @@ MJ = 1.90E+27            # JUPITER MASS [kg]
 C = 2.99792E+8           # LIGHT SPEED [m/s]
 G = 6.67E-11             # 万有引力定数  [m^3 kg^-1 s^-2]
 
+omg_J = 2*np.pi/((9.0+55.5/60.0)*3600)  # Jupiter's rotation period [rad s-1]
 Psyn_io = (12.89)*3600      # Moon's synodic period [sec]
 Psyn_eu = (11.22)*3600      # Moon's synodic period [sec]
 Psyn_ga = (10.53)*3600      # Moon's synodic period [sec]
@@ -2088,6 +2091,1339 @@ legend = F.legend(ax_idx=0,
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
 F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_mui_coef_nocolor.jpg',
+              bbox_inches='tight')
+F.close()
+plt.show()
+
+
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+# %% 横軸 FTMC & 縦軸 Azimuthal current constant & 遠心力成分
+# === WITHOUT COLOR BAR ===
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.3, 5.0), dpi='L')
+F.initialize()
+# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
+
+if target_moon == 'Io':
+    T_i = 60.0      # [eV]
+    T_e = 300.0     # [eV]
+    A_i = 14.0      # [AMU]
+    Z_i = 1.3       # [charge]
+    H_i = 0.64*RJ*np.sqrt((T_i + Z_i*T_e)/A_i)    # [m]
+    xmin = 0
+    xmax = 40
+    ymin = 0
+    ymax = 300
+    xticks = np.arange(xmin, xmax+1, 10)
+    xticklabels = np.arange(xmin, xmax+1, 10)
+    yticks = np.arange(0, 300+1, 50)
+    yticklabels = np.round(np.arange(0, 300+1, 50), 2)
+    xminor_num = 5
+    yminor_num = 5
+    boxplot_width = 2.5
+elif target_moon == 'Europa':
+    T_i = 60.0      # [eV]
+    T_e = 300.0     # [eV]
+    A_i = 14.0      # [AMU]
+    Z_i = 1.3       # [charge]
+    H_i = 0.64*RJ*np.sqrt((T_i + Z_i*T_e)/A_i)    # [m]
+    xmin = 0
+    xmax = 3
+    ymin = 0
+    ymax = 250
+    xticks = np.arange(xmin, xmax+0.1, 0.5)
+    xticklabels = np.arange(xmin, xmax+0.1, 0.5)
+    yticks = np.arange(0, 250+1, 50)
+    yticklabels = np.round(np.arange(0, 250+1, 50), 2)
+    xminor_num = 5
+    yminor_num = 5
+    boxplot_width = 2.3
+elif target_moon == 'Ganymede':
+    T_i = 60.0      # [eV]
+    T_e = 300.0     # [eV]
+    A_i = 14.0      # [AMU]
+    Z_i = 1.3       # [charge]
+    H_i = 0.64*RJ*np.sqrt((T_i + Z_i*T_e)/A_i)    # [m]
+    xmin = 0
+    xmax = 0.18
+    ymin = 0
+    ymax = 200
+    xticks = np.linspace(xmin, xmax, 7)
+    xticklabels = np.round(np.linspace(xmin, xmax, 7), 2)
+    yticks = np.arange(0, 200+1, 50)
+    yticklabels = np.round(np.arange(0, 200+1, 50), 2)
+    xminor_num = 3
+    yminor_num = 5
+    boxplot_width = 2.3
+
+F.set_xaxis(label=target_moon+'-FTMC [10$^{-9}$ kg m$^{-2}$]',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=xminor_num)
+F.set_yaxis(ax_idx=0,
+            label=r'Current constant [nT]',
+            min=ymin, max=ymax,
+            ticks=yticks,
+            ticklabels=yticklabels,
+            minor_num=yminor_num)
+
+column_mass_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dN.txt')
+column_mass_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dS.txt')
+ftmc_mag_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dN.txt')
+ftmc_mag_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dS.txt')
+column_mass_1d = column_mass_1dN+column_mass_1dS
+column_mass_3d = column_mass_1d.reshape(ni_num, Ai_num, Ti_num)
+ftmc_mag_1d = ftmc_mag_1dN + ftmc_mag_1dS
+ftmc_mag_3d = ftmc_mag_1d.reshape(ni_num, Ai_num, Ti_num)
+
+
+# Data subsetごとに値をまとめる
+d0_median = []
+rho_ave_arr = np.zeros(len(PJ_list))
+rho_1_ave_arr = np.zeros(len(PJ_list))
+mu_i_coef_ave = np.zeros(len(PJ_list))
+mu_i_coef_1_ave = np.zeros(len(PJ_list))
+for i in range(len(PJ_list)):
+    ftmc_pj = PJ_list[i]
+    ftmc_hem = FTMC_HEM[i]
+    pj_idx = np.where(pj_fp_m == ftmc_pj)
+
+    if ftmc_hem == 'both':
+        hem_subset = hem_fp_m[pj_idx]
+        pj_subset = pj_fp_m[pj_idx]
+        rho_arr_subset = rho_arr[pj_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx]-rho_arr_subset
+        d0_subset = et_fp_m[pj_idx]
+        view_angle_subset = view_angle[pj_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx]-mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx]-mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx]-mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx]-mu_i_coef_subset
+    else:
+        if ftmc_hem == 'S':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] > 0)
+        elif ftmc_hem == 'N':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] < 0)
+        hem_subset = hem_fp_m[pj_idx][hem_subset_idx]
+        pj_subset = pj_fp_m[pj_idx][hem_subset_idx]
+        rho_arr_subset = rho_arr[pj_idx][hem_subset_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx][hem_subset_idx]-rho_arr_subset
+        d0_subset = et_fp_m[pj_idx][hem_subset_idx]
+        view_angle_subset = view_angle[pj_idx][hem_subset_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx][hem_subset_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+
+    view_angle_thres = np.where(view_angle_subset < view_angle_thres_degree)
+
+    rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset[view_angle_thres]))
+    rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset[view_angle_thres]))
+    rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset[view_angle_thres]))
+    rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset[view_angle_thres]))
+    mu_i_coef_1_subset = np.average(
+        np.abs(mu_i_coef_1_subset[view_angle_thres]))
+    mu_i_coef_2_subset = np.average(
+        np.abs(mu_i_coef_2_subset[view_angle_thres]))
+    mu_i_coef_3_subset = np.average(
+        np.abs(mu_i_coef_3_subset[view_angle_thres]))
+    mu_i_coef_4_subset = np.average(
+        np.abs(mu_i_coef_4_subset[view_angle_thres]))
+
+    rho_ave_arr[i] = np.average(rho_arr_subset[view_angle_thres])
+    rho_1_ave_arr[i] = np.average(
+        [rho_arr_1_subset, rho_arr_2_subset, rho_arr_3_subset, rho_arr_4_subset])
+    d0_median += [spice.et2datetime(np.median(d0_subset))]
+    mu_i_coef_ave[i] = np.average(mu_i_coef_subset[view_angle_thres])
+    mu_i_coef_1_ave[i] = np.average(
+        [mu_i_coef_1_subset, mu_i_coef_2_subset, mu_i_coef_3_subset, mu_i_coef_4_subset])
+
+    # print('PJ'+str(ftmc_pj)+ftmc_hem, view_angle_thres[0].size)
+    if view_angle_thres[0].size > 0:
+        np.savetxt('results/azimuthal_current_fit/'+target_moon[0:2]+'/PJ'+str(ftmc_pj)+ftmc_hem+'.txt',
+                   np.array([mu_i_coef_ave[i], mu_i_coef_1_ave[i]]))
+
+
+# Azimuthal current constant
+mu_i_default = 139.6    # default: 139.6 [nT]
+mu_i_ave = mu_i_coef_ave*mu_i_default
+mu_i_1_ave = mu_i_coef_1_ave*mu_i_default
+F.ax.axhline(y=mu_i_default, linestyle='dashed',
+             color=UC.lightgray, zorder=0.9)
+
+median_arr = np.zeros(len(exnum))
+median_error = np.zeros(len(exnum))
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+
+    # Local time
+    d0 = spice.et2datetime(moon_et[0])
+    d0_list = []
+    for ii in range(column_mass.size):
+        d0_list += [d0]
+    lt_arr = np.zeros(moon_et.size)
+    for k in range(moon_et.size):
+        lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+
+    lt_center = (lt_arr[0]+lt_arr[-1])/2
+    s3_center = ((moon_S3wlon[0]+moon_S3wlon[-1])/2)
+
+    q1, medians, q3 = weighted_percentile(data=column_mass,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+
+    weighted_boxplot_h2(F.ax, mu_i_ave[i], q1, medians, q3,
+                        np.min(column_mass),
+                        np.max(column_mass), width=boxplot_width,
+                        ec=UC.blue, lw=1.1)
+
+    F.ax.errorbar(x=medians, y=mu_i_ave[i],
+                  yerr=mu_i_1_ave[i],
+                  elinewidth=1.1, linewidth=0., markersize=0,
+                  color=UC.blue)
+
+    median_arr[i] = medians
+    median_error[i] = q3-q1
+    if q3-q1 == 0.:
+        median_error[i] = 0.001
+
+# The centrifugal force term in the current intensity
+M_FTMC = median_arr
+AC_tot = mu_i_ave
+B_arr = np.zeros(M_FTMC.shape)
+Bz_arr = np.zeros(M_FTMC.shape)
+Bz0_arr = np.zeros(M_FTMC.shape)
+Bz1_arr = np.zeros(M_FTMC.shape)
+Bz1_arr_e = np.zeros(M_FTMC.shape)
+
+jm.Internal.Config(Model="jrm33", CartesianIn=True,
+                   CartesianOut=True, Degree=18)
+
+wSIII_arr = 112.0    # [deg]
+theta = 0.5*np.pi    # [rad]
+phi = np.radians(360.0-wSIII_arr)   # [rad]
+x = r_moon*np.sin(theta)*np.cos(phi)
+y = r_moon*np.sin(theta)*np.sin(phi)
+z = r_moon*np.cos(theta)
+
+for i in range(M_FTMC.size):
+    jm.Con2020.Config(mu_i=AC_tot[i],
+                      equation_type='analytic')
+    Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)  # [nT]
+    Bx1, By1, Bz1 = jm.Con2020.Field(x/RJ, y/RJ, z/RJ)   # [nT]
+
+    Bx = Bx0 + Bx1
+    By = By0 + By1
+    Bz = Bz0 + Bz1
+
+    B_arr[i] = np.sqrt(Bx[0]**2+By[0]**2+Bz[0]**2)
+
+    Bz0_arr[i] = Bz0[0]
+    Bz1_arr[i] = Bz1[0]
+
+for i in range(M_FTMC.size):
+    jm.Con2020.Config(mu_i=AC_tot[i]+mu_i_1_ave[i],
+                      equation_type='analytic')
+    Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)  # [nT]
+    Bx1, By1, Bz1 = jm.Con2020.Field(x/RJ, y/RJ, z/RJ)   # [nT]
+
+    Bx = Bx0 + Bx1
+    By = By0 + By1
+    Bz = Bz0 + Bz1
+
+    Bz1_arr_e[i] = Bz1[0]
+
+rho_0 = (M_FTMC*1E-9)/(math.sqrt(np.pi)*H_i)  # [kg m-3]
+AC_cent = -(MU0/2)*(1/((Bz0_arr+Bz1_arr)*1E-9)) * \
+    ((omg_J*r_moon)**2)*rho_0     # [T]
+AC_cent_e = -(MU0/2)*(1/((Bz0_arr+Bz1_arr_e)*1E-9)) * \
+    ((omg_J*r_moon)**2)*rho_0     # [T]
+AC_cent = AC_cent*1E+9
+AC_cent_e = AC_cent_e*1E+9
+
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+    q1, medians, q3 = weighted_percentile(data=column_mass,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+
+    weighted_boxplot_h2(F.ax, AC_cent[i], q1, medians, q3,
+                        np.min(column_mass),
+                        np.max(column_mass), width=boxplot_width,
+                        ec=UC.orange, lw=1.1)
+
+    F.ax.errorbar(x=medians, y=AC_cent[i],
+                  yerr=abs(AC_cent[i]-AC_cent_e[i]),
+                  elinewidth=1.1, linewidth=0., markersize=0,
+                  color=UC.orange)
+
+# Dummy
+F.ax.plot([-999, -998], [-999, -998], linewidth=3.0,
+          color=UC.blue, label='Total')
+F.ax.plot([-999, -998], [-999, -998], linewidth=3.0,
+          color=UC.orange, label='Centrifugal force term')
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=0.5,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+F.ax.set_title(target_moon,
+               fontsize=F.fontsize, weight='bold')
+
+savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
+F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_mui_coef_centrifugal.jpg',
+              bbox_inches='tight')
+F.close()
+plt.show()
+
+
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+# %% 横軸 FTMC & 縦軸 Azimuthal current constant & 遠心力成分
+# === WITHOUT COLOR BAR ===
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.3, 5.0), dpi='L')
+F.initialize()
+# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
+
+if target_moon == 'Io':
+    T_i = 60.0      # [eV]
+    T_e = 300.0     # [eV]
+    A_i = 14.0      # [AMU]
+    Z_i = 1.3       # [charge]
+    H_i = 0.64*RJ*np.sqrt((T_i + Z_i*T_e)/A_i)    # [m]
+    xmin = 0
+    xmax = 40
+    ymin = 0
+    ymax = 300
+    xticks = np.arange(xmin, xmax+1, 10)
+    xticklabels = np.arange(xmin, xmax+1, 10)
+    yticks = np.arange(0, 300+1, 50)
+    yticklabels = np.round(np.arange(0, 300+1, 50), 2)
+    xminor_num = 5
+    yminor_num = 5
+    boxplot_width = 2.5
+elif target_moon == 'Europa':
+    T_i = 60.0      # [eV]
+    T_e = 300.0     # [eV]
+    A_i = 14.0      # [AMU]
+    Z_i = 1.3       # [charge]
+    H_i = 0.64*RJ*np.sqrt((T_i + Z_i*T_e)/A_i)    # [m]
+    xmin = 0
+    xmax = 3
+    ymin = 0
+    ymax = 250
+    xticks = np.arange(xmin, xmax+0.1, 0.5)
+    xticklabels = np.arange(xmin, xmax+0.1, 0.5)
+    yticks = np.arange(0, 250+1, 50)
+    yticklabels = np.round(np.arange(0, 250+1, 50), 2)
+    xminor_num = 5
+    yminor_num = 5
+    boxplot_width = 2.3
+elif target_moon == 'Ganymede':
+    T_i = 60.0      # [eV]
+    T_e = 300.0     # [eV]
+    A_i = 14.0      # [AMU]
+    Z_i = 1.3       # [charge]
+    H_i = 0.64*RJ*np.sqrt((T_i + Z_i*T_e)/A_i)    # [m]
+    xmin = 0
+    xmax = 0.18
+    ymin = 0
+    ymax = 200
+    xticks = np.linspace(xmin, xmax, 7)
+    xticklabels = np.round(np.linspace(xmin, xmax, 7), 2)
+    yticks = np.arange(0, 200+1, 50)
+    yticklabels = np.round(np.arange(0, 200+1, 50), 2)
+    xminor_num = 3
+    yminor_num = 5
+    boxplot_width = 2.3
+
+F.set_xaxis(label=target_moon+'-FTMC [10$^{-9}$ kg m$^{-2}$]',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=xminor_num)
+F.set_yaxis(ax_idx=0,
+            label=r'Residual [nT]',
+            min=ymin, max=ymax,
+            ticks=yticks,
+            ticklabels=yticklabels,
+            minor_num=yminor_num)
+
+column_mass_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dN.txt')
+column_mass_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/col_massdens_1dS.txt')
+ftmc_mag_1dN = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dN.txt')
+ftmc_mag_1dS = np.loadtxt(
+    'results/column_mass/'+exdate+'_'+target_moon+'/ftmc_mag_1dS.txt')
+column_mass_1d = column_mass_1dN+column_mass_1dS
+column_mass_3d = column_mass_1d.reshape(ni_num, Ai_num, Ti_num)
+ftmc_mag_1d = ftmc_mag_1dN + ftmc_mag_1dS
+ftmc_mag_3d = ftmc_mag_1d.reshape(ni_num, Ai_num, Ti_num)
+
+
+# Data subsetごとに値をまとめる
+d0_median = []
+rho_ave_arr = np.zeros(len(PJ_list))
+rho_1_ave_arr = np.zeros(len(PJ_list))
+mu_i_coef_ave = np.zeros(len(PJ_list))
+mu_i_coef_1_ave = np.zeros(len(PJ_list))
+for i in range(len(PJ_list)):
+    ftmc_pj = PJ_list[i]
+    ftmc_hem = FTMC_HEM[i]
+    pj_idx = np.where(pj_fp_m == ftmc_pj)
+
+    if ftmc_hem == 'both':
+        hem_subset = hem_fp_m[pj_idx]
+        pj_subset = pj_fp_m[pj_idx]
+        rho_arr_subset = rho_arr[pj_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx]-rho_arr_subset
+        d0_subset = et_fp_m[pj_idx]
+        view_angle_subset = view_angle[pj_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx]-mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx]-mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx]-mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx]-mu_i_coef_subset
+    else:
+        if ftmc_hem == 'S':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] > 0)
+        elif ftmc_hem == 'N':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] < 0)
+        hem_subset = hem_fp_m[pj_idx][hem_subset_idx]
+        pj_subset = pj_fp_m[pj_idx][hem_subset_idx]
+        rho_arr_subset = rho_arr[pj_idx][hem_subset_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx][hem_subset_idx]-rho_arr_subset
+        d0_subset = et_fp_m[pj_idx][hem_subset_idx]
+        view_angle_subset = view_angle[pj_idx][hem_subset_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx][hem_subset_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+
+    view_angle_thres = np.where(view_angle_subset < view_angle_thres_degree)
+
+    rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset[view_angle_thres]))
+    rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset[view_angle_thres]))
+    rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset[view_angle_thres]))
+    rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset[view_angle_thres]))
+    mu_i_coef_1_subset = np.average(
+        np.abs(mu_i_coef_1_subset[view_angle_thres]))
+    mu_i_coef_2_subset = np.average(
+        np.abs(mu_i_coef_2_subset[view_angle_thres]))
+    mu_i_coef_3_subset = np.average(
+        np.abs(mu_i_coef_3_subset[view_angle_thres]))
+    mu_i_coef_4_subset = np.average(
+        np.abs(mu_i_coef_4_subset[view_angle_thres]))
+
+    rho_ave_arr[i] = np.average(rho_arr_subset[view_angle_thres])
+    rho_1_ave_arr[i] = np.average(
+        [rho_arr_1_subset, rho_arr_2_subset, rho_arr_3_subset, rho_arr_4_subset])
+    d0_median += [spice.et2datetime(np.median(d0_subset))]
+    mu_i_coef_ave[i] = np.average(mu_i_coef_subset[view_angle_thres])
+    mu_i_coef_1_ave[i] = np.average(
+        [mu_i_coef_1_subset, mu_i_coef_2_subset, mu_i_coef_3_subset, mu_i_coef_4_subset])
+
+    # print('PJ'+str(ftmc_pj)+ftmc_hem, view_angle_thres[0].size)
+    if view_angle_thres[0].size > 0:
+        np.savetxt('results/azimuthal_current_fit/'+target_moon[0:2]+'/PJ'+str(ftmc_pj)+ftmc_hem+'.txt',
+                   np.array([mu_i_coef_ave[i], mu_i_coef_1_ave[i]]))
+
+median_arr = np.zeros(len(exnum))
+median_error = np.zeros(len(exnum))
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+
+    # Local time
+    d0 = spice.et2datetime(moon_et[0])
+    d0_list = []
+    for ii in range(column_mass.size):
+        d0_list += [d0]
+    lt_arr = np.zeros(moon_et.size)
+    for k in range(moon_et.size):
+        lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+
+    lt_center = (lt_arr[0]+lt_arr[-1])/2
+    s3_center = ((moon_S3wlon[0]+moon_S3wlon[-1])/2)
+
+    q1, medians, q3 = weighted_percentile(data=column_mass,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+
+    weighted_boxplot_h2(F.ax, mu_i_ave[i]-AC_cent[i], q1, medians, q3,
+                        np.min(column_mass),
+                        np.max(column_mass), width=boxplot_width,
+                        ec=UC.blue, lw=1.1)
+
+    F.ax.errorbar(x=medians, y=mu_i_ave[i]-AC_cent[i],
+                  yerr=mu_i_1_ave[i]+abs(AC_cent[i]-AC_cent_e[i]),
+                  elinewidth=1.1, linewidth=0., markersize=0,
+                  color=UC.blue)
+
+    median_arr[i] = medians
+    median_error[i] = q3-q1
+    if q3-q1 == 0.:
+        median_error[i] = 0.001
+
+# 相関係数
+isnan = np.isnan(mu_i_ave)
+correlation, pvalue = spearmanr(
+    median_arr[~isnan], mu_i_ave[~isnan]-AC_cent[~isnan])
+print('Correlation coeff: ', correlation)
+
+# t検定
+n_data = median_arr[~isnan].size
+t_value = correlation*math.sqrt((n_data-2)/(1-correlation**2))
+print('t value:', t_value)
+print('n_data:', n_data)
+
+# 両側p値
+p_two_sided = 2*(1-t.cdf(np.abs(t_value), n_data-2))
+print('p value:', p_two_sided)
+label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
+label_tvalue = r'$t =$'+str(round(t_value, 2))
+label_pvalue = r'$p =$'+str(round(p_two_sided, 7))
+
+# Dummy
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_corrcoef)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_tvalue)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_pvalue)
+
+F.ax.set_title(target_moon,
+               fontsize=F.fontsize, weight='bold')
+
+legend_ncol = 3
+if target_moon == 'Io':
+    legend_ncol = 1
+legend = F.legend(ax_idx=0,
+                  ncol=legend_ncol, markerscale=1.0,
+                  loc='upper right',
+                  handlelength=0.01,
+                  textcolor=False,
+                  title='Rank correlation',
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
+F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_mui_coef_centrifugal_del.jpg',
+              bbox_inches='tight')
+F.close()
+plt.show()
+
+
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+# %% 横軸 時間 & 縦軸 FTMC(a) Current constant (+遠心力) (b)
+F = ShareXaxis()
+F.fontsize = 20
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=3, figsize=(8.0, 8.3), dpi='XL')
+F.initialize()
+# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
+
+sxmin = '2016-01-01'
+sxmax = '2025-01-01'
+xmin = datetime.datetime.strptime(sxmin, '%Y-%m-%d')
+xmax = datetime.datetime.strptime(sxmax, '%Y-%m-%d')
+xticks = [datetime.datetime.strptime('2016-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2025-01-01', '%Y-%m-%d')]
+xticklabels = ['2016', '2017', '2018', '2019', '2020',
+               '2021', '2022', '2023', '2024', '2025']
+F.set_xaxis(label='Date',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=12)
+for i in range(F.ax.size):
+    F.ax[i].minorticks_off()
+    F.ax[i].xaxis.set_minor_locator(mdates.MonthLocator())
+ticklabels = F.ax[i].get_xticklabels()
+ticklabels[0].set_ha('center')
+
+F.set_yaxis(ax_idx=0,
+            label='FTMC [10$^{-9}$ kg m$^{-2}$]',
+            min=0, max=ftmc_max,
+            ticks=ticks,
+            ticklabels=ticks,
+            minor_num=5)
+
+positions = np.arange(0, len(exnum)+1, 1)
+colormap = plt.cm.get_cmap('turbo')
+for i in range(len(exnum)):
+    # Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+
+    # Local time
+    d0 = spice.et2datetime(moon_et[0])
+    d0_list = []
+    for ii in range(column_mass.size):
+        d0_list += [d0]
+    lt_arr = np.zeros(moon_et.size)
+    for k in range(moon_et.size):
+        lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+
+    lt_center = (lt_arr[0]+lt_arr[-1])/2
+
+    q1, medians, q3 = weighted_percentile(data=column_mass,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+    width = datetime.timedelta(seconds=60*60*24*20)
+    weighted_boxplot2(F.ax[0], d0, q1, medians, q3,
+                      np.min(column_mass),
+                      np.max(column_mass), width=width,
+                      ec=UC.blue, lw=1.1)
+
+# 2nd axis
+if target_moon == 'Io':
+    ymin = 0
+    ymax = 240
+    yticks = np.arange(0, 200+1, 50)
+    yticklabels = np.round(np.arange(0, 200+1, 50), 2)
+    minor_num = 5
+elif target_moon == 'Europa':
+    ymin = 0
+    ymax = 200
+    yticks = np.arange(0, 200+1, 50)
+    yticklabels = np.round(np.arange(0, 200+1, 50), 2)
+    minor_num = 5
+elif target_moon == 'Ganymede':
+    ymin = 0
+    ymax = 250
+    yticks = np.arange(0, 250+1, 50)
+    yticklabels = np.round(np.arange(0, 250+1, 50), 2)
+    minor_num = 5
+F.set_yaxis(ax_idx=1,
+            label=r'Current constant [nT]',
+            min=ymin, max=ymax,
+            ticks=yticks[:-1],
+            ticklabels=yticklabels[:-1],
+            minor_num=minor_num)
+
+# Data subsetごとに値をまとめる
+d0_median = []
+rho_ave_arr = np.zeros(len(PJ_list))
+rho_1_ave_arr = np.zeros(len(PJ_list))
+mu_i_coef_ave = np.zeros(len(PJ_list))
+mu_i_coef_1_ave = np.zeros(len(PJ_list))
+for i in range(len(PJ_list)):
+    ftmc_pj = PJ_list[i]
+    ftmc_hem = FTMC_HEM[i]
+    pj_idx = np.where(pj_fp_m == ftmc_pj)
+
+    if ftmc_hem == 'both':
+        hem_subset = hem_fp_m[pj_idx]
+        pj_subset = pj_fp_m[pj_idx]
+        rho_arr_subset = rho_arr[pj_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx]-rho_arr_subset
+        d0_subset = et_fp_m[pj_idx]
+        view_angle_subset = view_angle[pj_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx]-mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx]-mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx]-mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx]-mu_i_coef_subset
+    else:
+        if ftmc_hem == 'S':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] > 0)
+        elif ftmc_hem == 'N':
+            hem_subset_idx = np.where(hem_fp_m[pj_idx] < 0)
+        hem_subset = hem_fp_m[pj_idx][hem_subset_idx]
+        pj_subset = pj_fp_m[pj_idx][hem_subset_idx]
+        rho_arr_subset = rho_arr[pj_idx][hem_subset_idx]
+        rho_arr_1_subset = rho_arr_1[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_2_subset = rho_arr_2[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_3_subset = rho_arr_3[pj_idx][hem_subset_idx]-rho_arr_subset
+        rho_arr_4_subset = rho_arr_4[pj_idx][hem_subset_idx]-rho_arr_subset
+        d0_subset = et_fp_m[pj_idx][hem_subset_idx]
+        view_angle_subset = view_angle[pj_idx][hem_subset_idx]
+        mu_i_coef_subset = mu_i_coef[pj_idx][hem_subset_idx]
+        mu_i_coef_1_subset = mu_i_coef_1[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_2_subset = mu_i_coef_2[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_3_subset = mu_i_coef_3[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+        mu_i_coef_4_subset = mu_i_coef_4[pj_idx][hem_subset_idx] - \
+            mu_i_coef_subset
+
+    view_angle_thres = np.where(view_angle_subset < view_angle_thres_degree)
+
+    rho_arr_1_subset = np.average(np.abs(rho_arr_1_subset[view_angle_thres]))
+    rho_arr_2_subset = np.average(np.abs(rho_arr_2_subset[view_angle_thres]))
+    rho_arr_3_subset = np.average(np.abs(rho_arr_3_subset[view_angle_thres]))
+    rho_arr_4_subset = np.average(np.abs(rho_arr_4_subset[view_angle_thres]))
+    mu_i_coef_1_subset = np.average(
+        np.abs(mu_i_coef_1_subset[view_angle_thres]))
+    mu_i_coef_2_subset = np.average(
+        np.abs(mu_i_coef_2_subset[view_angle_thres]))
+    mu_i_coef_3_subset = np.average(
+        np.abs(mu_i_coef_3_subset[view_angle_thres]))
+    mu_i_coef_4_subset = np.average(
+        np.abs(mu_i_coef_4_subset[view_angle_thres]))
+
+    rho_ave_arr[i] = np.average(rho_arr_subset[view_angle_thres])
+    rho_1_ave_arr[i] = np.average(
+        [rho_arr_1_subset, rho_arr_2_subset, rho_arr_3_subset, rho_arr_4_subset])
+    d0_median += [spice.et2datetime(np.median(d0_subset))]
+    mu_i_coef_ave[i] = np.average(mu_i_coef_subset[view_angle_thres])
+    mu_i_coef_1_ave[i] = np.average(
+        [mu_i_coef_1_subset, mu_i_coef_2_subset, mu_i_coef_3_subset, mu_i_coef_4_subset])
+
+# Azimuthal current constant
+mu_i_default = 139.6    # default: 139.6 [nT]
+mu_i_ave = mu_i_coef_ave*mu_i_default
+mu_i_1_ave = mu_i_coef_1_ave*mu_i_default
+F.ax[1].axhline(y=mu_i_default, linestyle='dashed',
+                color=UC.lightgray, zorder=0.9)
+
+# Data (mu_i total)
+F.ax[1].scatter(d0_median, mu_i_ave,
+                marker='s', s=5.0, c=UC.blue, label='Total')
+F.ax[1].errorbar(x=d0_median, y=mu_i_ave,
+                 yerr=mu_i_1_ave,
+                 elinewidth=1.1, linewidth=0., markersize=0,
+                 color=UC.blue)
+
+# Data (the centrifugal force term)
+F.ax[1].scatter(d0_median, AC_cent,
+                marker='s', s=5.0, c=UC.orange,
+                label='Centrifugal force term')
+F.ax[1].errorbar(x=d0_median, y=AC_cent,
+                 yerr=abs(AC_cent-AC_cent_e),
+                 elinewidth=1.1, linewidth=0., markersize=0,
+                 color=UC.orange)
+
+# 3rd axis
+F.set_yaxis(ax_idx=2,
+            label=r'Residual [nT]',
+            min=ymin, max=ymax,
+            ticks=yticks[:-1],
+            ticklabels=yticklabels[:-1],
+            minor_num=minor_num)
+F.ax[2].axhline(y=mu_i_default, linestyle='dashed',
+                color=UC.lightgray, zorder=0.9)
+F.ax[2].scatter(d0_median, mu_i_ave-AC_cent,
+                marker='s', s=5.0, c=UC.orange, label='Residual')
+F.ax[2].errorbar(x=d0_median, y=mu_i_ave-AC_cent,
+                 yerr=mu_i_1_ave+abs(AC_cent-AC_cent_e),
+                 elinewidth=1.1, linewidth=0., markersize=0,
+                 color=UC.orange)
+
+PJax = F.ax[0].twiny()
+xticks = [datetime.datetime.strptime('2016-08-27', '%Y-%m-%d'),
+          datetime.datetime.strptime('2016-10-19', '%Y-%m-%d'),
+          datetime.datetime.strptime('2016-12-11', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-02-02', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-03-27', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-05-19 06:00', '%Y-%m-%d %H:%M'),
+          datetime.datetime.strptime('2017-07-11', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-09-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-10-24', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-12-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-02-07', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-04-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-05-24', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-07-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-09-07', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-10-29', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-12-21', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-02-12', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-04-06', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-05-29', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-07-21', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-09-12', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-11-03', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-12-26', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-02-17', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-04-10', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-06-02', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-07-25', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-09-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-11-08', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-12-30', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-02-21', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-04-15', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-06-08', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-07-21', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-09-02', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-10-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-11-29', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-01-12', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-02-25', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-04-09', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-05-23', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-07-05', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-08-17', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-09-29', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-11-06', '%Y-%m-%d'),  # PJ46
+          datetime.datetime.strptime('2022-12-15', '%Y-%m-%d'),  # PJ47
+          datetime.datetime.strptime('2023-01-22', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-03-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-04-08', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-05-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-06-23', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-07-31', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-09-07', '%Y-%m-%d'),  # PJ54
+          datetime.datetime.strptime('2023-10-15', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-11-22', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-12-30', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-02-04', '%Y-%m-%d'),  # PJ58
+          datetime.datetime.strptime('2024-03-07', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-04-09', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-05-12', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-06-14', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-07-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-08-18', '%Y-%m-%d'),  # PJ64
+          datetime.datetime.strptime('2024-09-20', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-10-23', '%Y-%m-%d'),  # PJ66
+          ]
+xticklabels = ['PJ1', '', '', '', '',
+               '6', '', '', '', '',
+               '11', '', '', '', '',
+               '16', '', '', '', '',
+               '21', '', '', '', '',
+               '26', '', '', '', '',
+               '31', '', '', '', '',
+               '36', '', '', '', '',
+               '41', '', '', '', '',
+               '46', '', '', '', '',
+               '51', '', '', '', '',
+               '56', '', '', '', '',
+               '61', '', '', '', '',
+               '66']
+PJax.set_xlim(xmin, xmax)
+PJax.set_xticks(xticks[::5])
+PJax.set_xticklabels(xticklabels[::5])
+PJax.xaxis.set_minor_locator(FixedLocator(mdates.date2num(xticks)))
+PJax.tick_params('y', grid_zorder=-10)
+
+# Electron pressure
+ax22 = F.ax[2].twinx()
+ax22.set_ylabel(r'Electron pressure [nT]')
+ax22.set_ylim(-1.0, 4.0)
+ax22.set_yticks(np.arange(0, 4+1, 1))
+pel24 = np.loadtxt(
+    'data/Pelcener24_total_electron_pressure.csv', delimiter=',')   # shape->(26,2)
+pel24_pj = pel24[:, 0]
+for i in range(pel24_pj.size):
+    pj_idx = round(pel24_pj[i])-1
+    ax22.scatter(xticks[pj_idx], pel24[i, 1],
+                 marker='s', s=5.0, c=UC.green)
+
+# Data from Connerney+2020
+con20_pj_idx = np.array([1, 3, 4, 5, 6,
+                         7, 8, 9, 10, 11,
+                         12, 13, 14, 15, 16,
+                         17, 18, 19, 20, 21,
+                         22, 23, 24])
+con20_mu_i_tot = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
+                           142.3, 140.1, 143.8, 137.0, 141.4,
+                           124.2, 148.9, 145.3, 144.8, 149.9,
+                           132.1, 133.5, 152.9, 138.5, 138.8,
+                           156.1, 141.4, 146.3])
+for i in range(con20_pj_idx.size):
+    pj_idx = round(con20_pj_idx[i])-1
+    F.ax[1].scatter(xticks[pj_idx], con20_mu_i_tot[i],
+                    marker='s', s=5.0, c=UC.red)
+
+# Dummy
+F.ax[1].scatter(-999.0, -999.0, marker='s', s=5.0,
+                c=UC.red, label='Connerney+2020')
+F.ax[2].scatter(-999.0, -999.0, marker='s', s=5.0,
+                c=UC.green, label='Electron pressure')
+
+# Shades in each 5 perijove
+for i in range(3):
+    F.ax[i].axvspan(xticks[0], xticks[5], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[10], xticks[15], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[20], xticks[25], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[30], xticks[35], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[40], xticks[45], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[50], xticks[55], fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(xticks[60], xticks[65], fc=UC.gray, ec=None, alpha=0.10)
+
+legend = F.legend(ax_idx=1,
+                  ncol=3, markerscale=1.0,
+                  loc='upper center',
+                  handlelength=0.5,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax[1], d=0.7)
+
+legend = F.legend(ax_idx=2,
+                  ncol=3, markerscale=1.0,
+                  loc='upper center',
+                  handlelength=0.5,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax[2], d=0.7)
+
+# 4th axis
+axpos = F.ax[-1].get_position()
+pp_ax_L = F.fig.add_axes([axpos.x0,
+                          axpos.y0-axpos.height*1.5,
+                          axpos.width*0.4,
+                          axpos.height])
+pp_ax_R = F.fig.add_axes([axpos.x0+axpos.width*0.6,
+                          axpos.y0-axpos.height*1.5,
+                          axpos.width*0.4,
+                          axpos.height])
+pp_ax_L.set_xlabel('Connerney+2020 [nT]')
+pp_ax_L.set_ylabel('Latitudinal shift [nT]')
+pp_ax_L.set_xlim(0.0, 200.0)
+pp_ax_L.set_ylim(0.0, 200.0)
+pp_ax_L.set_xticks(np.linspace(0.0, 200.0, 5))
+pp_ax_L.set_yticks(np.linspace(0.0, 200.0, 5))
+pp_ax_L.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax_L.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax_L.plot([0.0, 200.0], [0.0, 200.0], linewidth=1.0, color=UC.gray)
+for i in range(con20_pj_idx.size):
+    for j in range(len(PJ_list)):
+        if con20_pj_idx[i] == PJ_list[j]:
+            pp_ax_L.scatter(con20_mu_i_tot[i], mu_i_ave[j],
+                            marker='s', s=5.0, c=UC.blue,)
+            pp_ax_L.errorbar(x=con20_mu_i_tot[i], y=mu_i_ave[j],
+                             yerr=mu_i_1_ave[j],
+                             elinewidth=1.1, linewidth=0., markersize=0,
+                             color=UC.blue)
+pp_ax_R.set_xlabel('Electron pressure [nPa]')
+pp_ax_R.set_ylabel('Residual [nT]')
+pp_ax_R.set_xlim(0.0, 4.0)
+pp_ax_R.set_ylim(0.0, 200.0)
+pp_ax_R.set_xticks(np.linspace(0.0, 4.0, 5))
+pp_ax_R.set_yticks(np.linspace(0.0, 200.0, 5))
+pp_ax_R.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax_R.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+for i in range(pel24_pj.size):
+    pj_idx = round(pel24_pj[i])-1
+    for j in range(len(PJ_list)):
+        if pj_idx == PJ_list[j]:
+            pp_ax_R.scatter(pel24[i, 1], mu_i_ave[j],
+                            marker='s', s=5.0, c=UC.blue)
+            pp_ax_R.errorbar(x=pel24[i, 1], y=mu_i_ave[j],
+                             yerr=mu_i_1_ave[j],
+                             elinewidth=1.1, linewidth=0., markersize=0,
+                             color=UC.blue)
+
+# 5th axis
+axpos = pp_ax_L.get_position()
+pp_ax1_L = F.fig.add_axes([axpos.x0,
+                          axpos.y0-axpos.height*1.5,
+                          axpos.width,
+                          axpos.height])
+axpos = pp_ax_R.get_position()
+pp_ax1_R = F.fig.add_axes([axpos.x0,
+                          axpos.y0-axpos.height*1.5,
+                          axpos.width,
+                          axpos.height])
+pp_ax1_L.set_xlabel(r'FTMC [$10^{-9}$ kg m$^{-2}$]')
+pp_ax1_L.set_ylabel('Current constant [nT]')
+pp_ax1_L.set_xlim(0.0, ftmc_max)
+pp_ax1_L.set_ylim(0.0, 200.0)
+pp_ax1_L.set_xticks(ticks)
+pp_ax1_L.set_yticks(np.linspace(0.0, 200.0, 5))
+pp_ax1_L.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax1_L.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax1_R.set_xlabel(r'FTMC [$10^{-9}$ kg m$^{-2}$]')
+pp_ax1_R.set_ylabel('Residual [nT]')
+pp_ax1_R.set_xlim(0.0, ftmc_max)
+pp_ax1_R.set_ylim(0.0, 200.0)
+pp_ax1_R.set_xticks(ticks)
+pp_ax1_R.set_yticks(np.linspace(0.0, 200.0, 5))
+pp_ax1_R.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax1_R.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+
+# Azimuthal current constant
+mu_i_default = 139.6    # default: 139.6 [nT]
+mu_i_ave = mu_i_coef_ave*mu_i_default
+mu_i_1_ave = mu_i_coef_1_ave*mu_i_default
+pp_ax1_L.axhline(y=mu_i_default, linestyle='dashed',
+                 color=UC.lightgray, zorder=0.9)
+pp_ax1_R.axhline(y=mu_i_default, linestyle='dashed',
+                 color=UC.lightgray, zorder=0.9)
+
+median_arr = np.zeros(len(exnum))
+median_error = np.zeros(len(exnum))
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+
+    # Local time
+    d0 = spice.et2datetime(moon_et[0])
+    d0_list = []
+    for ii in range(column_mass.size):
+        d0_list += [d0]
+    lt_arr = np.zeros(moon_et.size)
+    for k in range(moon_et.size):
+        lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+
+    lt_center = (lt_arr[0]+lt_arr[-1])/2
+    s3_center = ((moon_S3wlon[0]+moon_S3wlon[-1])/2)
+
+    q1, medians, q3 = weighted_percentile(data=column_mass,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+
+    weighted_boxplot_h2(pp_ax1_L, mu_i_ave[i], q1, medians, q3,
+                        np.min(column_mass),
+                        np.max(column_mass), width=boxplot_width,
+                        ec=UC.blue, lw=1.)
+
+    pp_ax1_L.errorbar(x=medians, y=mu_i_ave[i],
+                      yerr=mu_i_1_ave[i],
+                      elinewidth=1., linewidth=0., markersize=0,
+                      color=UC.blue)
+
+    median_arr[i] = medians
+    median_error[i] = q3-q1
+    if q3-q1 == 0.:
+        median_error[i] = 0.001
+
+# The centrifugal force term in the current intensity
+M_FTMC = median_arr
+AC_tot = mu_i_ave
+B_arr = np.zeros(M_FTMC.shape)
+Bz_arr = np.zeros(M_FTMC.shape)
+Bz0_arr = np.zeros(M_FTMC.shape)
+Bz1_arr = np.zeros(M_FTMC.shape)
+Bz1_arr_e = np.zeros(M_FTMC.shape)
+
+jm.Internal.Config(Model="jrm33", CartesianIn=True,
+                   CartesianOut=True, Degree=18)
+
+wSIII_arr = 112.0    # [deg]
+theta = 0.5*np.pi    # [rad]
+phi = np.radians(360.0-wSIII_arr)   # [rad]
+x = r_moon*np.sin(theta)*np.cos(phi)
+y = r_moon*np.sin(theta)*np.sin(phi)
+z = r_moon*np.cos(theta)
+
+for i in range(M_FTMC.size):
+    jm.Con2020.Config(mu_i=AC_tot[i],
+                      equation_type='analytic')
+    Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)  # [nT]
+    Bx1, By1, Bz1 = jm.Con2020.Field(x/RJ, y/RJ, z/RJ)   # [nT]
+
+    Bx = Bx0 + Bx1
+    By = By0 + By1
+    Bz = Bz0 + Bz1
+
+    B_arr[i] = np.sqrt(Bx[0]**2+By[0]**2+Bz[0]**2)
+
+    Bz0_arr[i] = Bz0[0]
+    Bz1_arr[i] = Bz1[0]
+
+for i in range(M_FTMC.size):
+    jm.Con2020.Config(mu_i=AC_tot[i]+mu_i_1_ave[i],
+                      equation_type='analytic')
+    Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)  # [nT]
+    Bx1, By1, Bz1 = jm.Con2020.Field(x/RJ, y/RJ, z/RJ)   # [nT]
+
+    Bx = Bx0 + Bx1
+    By = By0 + By1
+    Bz = Bz0 + Bz1
+
+    Bz1_arr_e[i] = Bz1[0]
+
+rho_0 = (M_FTMC*1E-9)/(math.sqrt(np.pi)*H_i)  # [kg m-3]
+AC_cent = -(MU0/2)*(1/((Bz0_arr+Bz1_arr)*1E-9)) * \
+    ((omg_J*r_moon)**2)*rho_0     # [T]
+AC_cent_e = -(MU0/2)*(1/((Bz0_arr+Bz1_arr_e)*1E-9)) * \
+    ((omg_J*r_moon)**2)*rho_0     # [T]
+AC_cent = AC_cent*1E+9
+AC_cent_e = AC_cent_e*1E+9
+
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+    q1, medians, q3 = weighted_percentile(data=column_mass,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+
+    # Absolute values
+    weighted_boxplot_h2(pp_ax1_L, AC_cent[i], q1, medians, q3,
+                        np.min(column_mass),
+                        np.max(column_mass), width=boxplot_width,
+                        ec=UC.orange, lw=1.)
+    pp_ax1_L.errorbar(x=medians, y=AC_cent[i],
+                      yerr=abs(AC_cent[i]-AC_cent_e[i]),
+                      elinewidth=1., linewidth=0., markersize=0,
+                      color=UC.orange)
+
+    # Residuals
+    weighted_boxplot_h2(pp_ax1_R, mu_i_ave[i]-AC_cent[i],
+                        q1, medians, q3,
+                        np.min(column_mass),
+                        np.max(column_mass), width=boxplot_width,
+                        ec=UC.blue, lw=1.)
+    pp_ax1_R.errorbar(x=medians, y=mu_i_ave[i]-AC_cent[i],
+                      yerr=mu_i_1_ave[i]+abs(AC_cent[i]-AC_cent_e[i]),
+                      elinewidth=1., linewidth=0., markersize=0,
+                      color=UC.blue)
+
+# Dummy
+pp_ax1_L.plot([-999, -998], [-999, -998], linewidth=3.0,
+              color=UC.blue, label='Total')
+pp_ax1_L.plot([-999, -998], [-999, -998], linewidth=3.0,
+              color=UC.orange, label='Centrifugal force term')
+
+legend = F.legend(ax_idx=pp_ax1_L,
+                  ncol=1, markerscale=1.0,
+                  loc='lower right',
+                  bbox_to_anchor=[1.12, -0.03],
+                  handlelength=0.5,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=pp_ax1_L, d=0.7)
+
+# 6th axis
+axpos = pp_ax1_L.get_position()
+pp_ax2_L = F.fig.add_axes([axpos.x0,
+                          axpos.y0-axpos.height*1.5,
+                          axpos.width,
+                          axpos.height])
+axpos = pp_ax1_R.get_position()
+pp_ax2_R = F.fig.add_axes([axpos.x0,
+                          axpos.y0-axpos.height*1.5,
+                          axpos.width,
+                          axpos.height])
+pp_ax2_L.set_xlabel(r'FTMC [$10^{-9}$ kg m$^{-2}$]')
+pp_ax2_L.set_ylabel('Electron pressure [nPa]')
+pp_ax2_L.set_xlim(0.0, ftmc_max)
+pp_ax2_L.set_ylim(0.0, 4.0)
+pp_ax2_L.set_xticks(ticks)
+pp_ax2_L.set_yticks(np.linspace(0.0, 4.0, 5))
+pp_ax2_L.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax2_L.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax2_R.set_xlabel(r'FTMC [$10^{-9}$ kg m$^{-2}$]')
+pp_ax2_R.set_ylabel(r'Residual [pA m$^{-2}$]')
+pp_ax2_R.set_xlim(0.0, ftmc_max)
+pp_ax2_R.set_ylim(0.0, 250.0)
+pp_ax2_R.set_xticks(ticks)
+pp_ax2_R.set_yticks(np.linspace(0.0, 250.0, 6))
+pp_ax2_R.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax2_R.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+for j in range(pel24_pj.size):
+    pj_idx = round(pel24_pj[j])-1
+    for i in range(len(exnum)):
+        if pj_idx == PJ_list[i]:
+            # Load the data
+            exname = exdate+'_'+exnum[i]
+            column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+                exname)     # [kg m-2]
+            column_mass *= 1E+9  # [10^-9 kg m-2]
+
+            # Local time
+            d0 = spice.et2datetime(moon_et[0])
+            d0_list = []
+            for ii in range(column_mass.size):
+                d0_list += [d0]
+            lt_arr = np.zeros(moon_et.size)
+            for k in range(moon_et.size):
+                lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+
+            lt_center = (lt_arr[0]+lt_arr[-1])/2
+
+            q1, medians, q3 = weighted_percentile(data=column_mass,
+                                                  perc=[0.25, 0.5, 0.75],
+                                                  weights=weight)
+            width = 0.07
+            weighted_boxplot_h2(pp_ax2_L, pel24[i, 1],
+                                q1, medians, q3,
+                                np.min(column_mass),
+                                np.max(column_mass), width=width,
+                                ec=UC.blue, lw=1.0)
+
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+    q1, medians, q3 = weighted_percentile(data=column_mass,
+                                          perc=[0.25, 0.5, 0.75],
+                                          weights=weight)
+
+    # Residuals [A m-2]
+    y_value = (mu_i_ave[i]-AC_cent[i])*1E-9*2/(MU0*r_moon)
+    y_err = (mu_i_1_ave[i]+abs(AC_cent[i]-AC_cent_e[i]))*1E-9*2/(MU0*r_moon)
+    y_value = y_value*1E+12  # [pA m-2]
+    y_err = y_err*1E+12  # [pA m-2]
+
+    weighted_boxplot_h2(pp_ax2_R,
+                        y_value,
+                        q1, medians, q3,
+                        np.min(column_mass),
+                        np.max(column_mass), width=boxplot_width,
+                        ec=UC.blue, lw=1.)
+
+    pp_ax2_R.errorbar(x=medians,
+                      y=y_value,
+                      yerr=y_err,
+                      elinewidth=1., linewidth=0., markersize=0,
+                      color=UC.blue)
+
+    print(y_value)
+
+# 7th axis
+axpos = pp_ax2_L.get_position()
+pp_ax3_L = F.fig.add_axes([axpos.x0,
+                          axpos.y0-axpos.height*1.5,
+                          axpos.width*2,
+                          axpos.height])
+pp_ax3_L.set_xlabel(target_moon+' local time [LT]')
+pp_ax3_L.set_ylabel(r'Current constant [nT]')
+pp_ax3_L.set_xlim(0.0, 48.0)
+pp_ax3_L.set_ylim(0.0, 200.0)
+pp_ax3_L.set_xticks(np.arange(0.0, 48.0+1, 3))
+pp_ax3_L.set_yticks(np.linspace(0.0, 200.0, 5))
+pp_ax3_L.xaxis.set_minor_locator(ptick.AutoMinorLocator(3))
+pp_ax3_L.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+for i in range(len(exnum)):
+    # %% Load the data
+    exname = exdate+'_'+exnum[i]
+    column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+        exname)     # [kg m-2]
+    column_mass *= 1E+9  # [10^-9 kg m-2]
+
+    # Local time
+    d0 = spice.et2datetime(moon_et[0])
+    d0_list = []
+    for ii in range(column_mass.size):
+        d0_list += [d0]
+    lt_arr = np.zeros(moon_et.size)
+    for k in range(moon_et.size):
+        lt_arr[k] = local_time_moon(moon_et[k], target_moon)
+
+    lt_center = (lt_arr[0]+lt_arr[-1])/2
+    s3_center = ((moon_S3wlon[0]+moon_S3wlon[-1])/2)
+
+    for ii in range(2):
+        pp_ax3_L.scatter(lt_center+24.0*ii, mu_i_ave[i],
+                         marker='s', s=5.0, c=UC.blue,)
+        pp_ax3_L.errorbar(x=lt_center+24.0*ii, y=mu_i_ave[i],
+                          yerr=mu_i_1_ave[i],
+                          elinewidth=1., linewidth=0., markersize=0,
+                          color=UC.blue)
+pp_ax3_L.axvline(x=24.0, linewidth=1.0,
+                 color=UC.lightgray, zorder=0.9)
+
+F.draw_panel_name(ax=pp_ax_L, panelname=' d ')
+F.draw_panel_name(ax=pp_ax_R, panelname=' e ')
+F.draw_panel_name(ax=pp_ax1_L, panelname=' f ')
+F.draw_panel_name(ax=pp_ax1_R, panelname=' g ')
+F.draw_panel_name(ax=pp_ax2_L, panelname=' h ')
+F.draw_panel_name(ax=pp_ax2_R, panelname=' i ')
+F.draw_panel_name(ax=pp_ax3_L, panelname=' j ')
+
+savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
+F.fig.savefig(savedir+'/ftmc_lt_'+target_moon[0:2]+'_centrifugal.jpg',
               bbox_inches='tight')
 F.close()
 plt.show()

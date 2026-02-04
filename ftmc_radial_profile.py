@@ -305,6 +305,7 @@ F.fontname = 'Liberation Sans Narrow'
 
 F.set_figparams(nrows=3, figsize=(7.1, 8.5), dpi='L')
 F.initialize()
+F.hspace = 0.2
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
 xmin = 3.0
@@ -338,7 +339,6 @@ F.set_yaxis(ax_idx=2,
             ticklabels=None,
             minor_num=5,
             yscale='log',)
-F.fig.subplots_adjust(hspace=0.2)
 
 IEG_median_arr = np.zeros(3)
 IEG_error_arr = np.zeros(3)
