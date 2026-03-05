@@ -549,7 +549,7 @@ F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=4, figsize=(7.5, 10.5), dpi='L')
+F.set_figparams(nrows=4, figsize=(7.5, 9.), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
