@@ -24,7 +24,7 @@ jm.Internal.Config(Model="jrm33", CartesianIn=True,
 
 
 # Input about Juno observation
-TARGET_MOON = 'Io'
+TARGET_MOON = 'Ganymede'
 TARGET_FP = ['MAW', 'TEB']
 TARGET_HEM = 'both'
 PJ_LIST = [1, 3]+np.arange(4, 68+1, 1).tolist()
@@ -140,109 +140,27 @@ theta_e = np.radians(extradius[1, :])    # [rad]
 phi_e = np.radians(extradius[2, :])      # [rad]
 
 
-# %% Loop function
-def calc(coef):
-    start_loop = time.time()
-
-    # 中央値
-    rho_arr = np.zeros(wlon_fp.size)
-    z_arr = np.zeros(wlon_fp.size)
-
-    # 磁場モデルの設定
-    mu_i_default = 139.6    # default: 139.6 [nT]
-    jm.Con2020.Config(mu_i=mu_i_default*coef,
-                      equation_type='analytic')
-
-    latitude = lat_fp
-    if error_num == 1:
-        for i in range(lat_fp.size):
-            if latitude[i] >= 0.0:
-                latitude[i] = latitude[i] + err_lat_fp[i]
-            else:
-                latitude[i] = latitude[i] - err_lat_fp[i]
-    elif error_num == 2:
-        for i in range(lat_fp.size):
-            if latitude[i] >= 0.0:
-                latitude[i] = latitude[i] - err_lat_fp[i]
-            else:
-                latitude[i] = latitude[i] + err_lat_fp[i]
-
-    theta = np.radians(90.0-latitude)
-    phi = np.radians(360.0-wlon_fp)
-    if error_num == 3:
-        phi = np.radians(360.0-(wlon_fp+err_wlon_fp))
-    elif error_num == 4:
-        phi = np.radians(360.0-(wlon_fp-err_wlon_fp))
-
-    x0_norm = np.sin(theta)*np.cos(phi)
-    y0_norm = np.sin(theta)*np.sin(phi)
-    z0_norm = np.cos(theta)
-
-    for i in range(rho_arr.size):
-        # テーブルを参照し距離を確定
-        dis = np.abs(theta[i]-theta_e)
-        idx = np.argmin(dis)
-        r = r_e[idx]
-
-        x0 = r*x0_norm[i]
-        y0 = r*y0_norm[i]
-        z0 = r*z0_norm[i]
-
-        # create trace objects, pass starting position(s) x0,y0,z0
-        T1 = jm.TraceField(x0, y0, z0,
-                           IntModel='jrm33', ExtModel='Con2020',
-                           MaxStep=0.0003,
-                           MaxLen=800000, ErrMax=0.000001)
-
-        x1 = T1.x[0][~np.isnan(T1.x[0])]
-        y1 = T1.y[0][~np.isnan(T1.y[0])]
-        z1 = T1.z[0][~np.isnan(T1.z[0])]
-        rho = np.sqrt(x1**2 + y1**2 + z1**2)
-
-        # Satellite orbital plane
-        idx_z0 = np.argmin(np.abs(z1))
-
-        # phi_z0 = np.arctan2(y1[idx_z0], x1[idx_z0])  # in SIII RH [rad]
-        rho_arr[i] = rho[idx_z0]
-        # z_arr = T1.z[0][idx_z0]
-
-    print('------ Loop time [sec]:', round(time.time()-start_loop, 4))
-    return rho_arr
+# %% Data from Connerney+2020: PJ index
+con20_pj_idx = np.array([1, 3, 4, 5, 6,
+                         7, 8, 9, 10, 11,
+                         12, 13, 14, 15, 16,
+                         17, 18, 19, 20, 21,
+                         22, 23, 24])
 
 
-# %% The main function
-def main():
-    print('Target moon:', TARGET_MOON)
-    print('Target fp:', TARGET_FP)
-    print('Target hemisphere:', TARGET_HEM)
-    start_all = time.time()
-
-    coef_arr = np.arange(0, 2.1, 0.01)
-    coef_zipped = list(zip(coef_arr))
-    with Pool(processes=parallel) as pool:
-        results_list = list(pool.starmap(calc, coef_zipped))
-
-    rho_arr = np.array(results_list)
-    print(rho_arr.shape)
-
-    coef_best = np.zeros(rho_arr.shape[1])
-    for j in range(rho_arr.shape[1]):
-        rho_j_arr = rho_arr[:, j]
-        idx_rho_best = np.argmin(np.abs(rho_j_arr-r_moon/RJ))
-        coef_best[j] = coef_arr[idx_rho_best]
-
-    print('--- Total time [sec]:', round(time.time()-start_all, 4))
-
-    np.savetxt('results/azimuthal_current_fit/'+TARGET_MOON[0:2]+'_coef_'+str(error_num)+'.txt',
-               coef_best)
-    return None
+# %% Data from Connerney+2020: Current constant [nT]
+con20_mu_i_tot = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
+                           142.3, 140.1, 143.8, 137.0, 141.4,
+                           124.2, 148.9, 145.3, 144.8, 149.9,
+                           132.1, 133.5, 152.9, 138.5, 138.8,
+                           156.1, 141.4, 146.3])
 
 
 # %%
-def calc2(x0, y0, z0):
+def calc2(x0, y0, z0, mu_i):
     start_loop = time.time()
 
-    coef_arr = np.arange(0, 2.1, 0.01)
+    coef_arr = np.arange(0.62, 1.34, 0.01)
 
     # 中央値
     rho_arr = np.zeros(coef_arr.size)
@@ -252,8 +170,9 @@ def calc2(x0, y0, z0):
         coef = coef_arr[i]
 
         # 磁場モデルの設定
-        mu_i_default = 139.6    # default: 139.6 [nT]
-        jm.Con2020.Config(mu_i=mu_i_default*coef,
+        d_rj_default = 3.6      # default: 3.6 [RJ]
+        jm.Con2020.Config(mu_i=mu_i,
+                          d__cs_half_thickness_rj=d_rj_default*coef,
                           equation_type='analytic')
 
         # create trace objects, pass starting position(s) x0,y0,z0
@@ -289,25 +208,27 @@ def main2():
     start_all = time.time()
 
     latitude = lat_fp
+    wlongitude = wlon_fp
+
     if error_num == 1:
-        for i in range(lat_fp.size):
+        for i in range(latitude.size):
             if latitude[i] >= 0.0:
                 latitude[i] = latitude[i] + err_lat_fp[i]
             else:
                 latitude[i] = latitude[i] - err_lat_fp[i]
     elif error_num == 2:
-        for i in range(lat_fp.size):
+        for i in range(latitude.size):
             if latitude[i] >= 0.0:
                 latitude[i] = latitude[i] - err_lat_fp[i]
             else:
                 latitude[i] = latitude[i] + err_lat_fp[i]
 
     theta = np.radians(90.0-latitude)
-    phi = np.radians(360.0-wlon_fp)
+    phi = np.radians(360.0-wlongitude)
     if error_num == 3:
-        phi = np.radians(360.0-(wlon_fp+err_wlon_fp))
+        phi = np.radians(360.0-(wlongitude+err_wlon_fp))
     elif error_num == 4:
-        phi = np.radians(360.0-(wlon_fp-err_wlon_fp))
+        phi = np.radians(360.0-(wlongitude-err_wlon_fp))
 
     x0_norm = np.sin(theta)*np.cos(phi)
     y0_norm = np.sin(theta)*np.sin(phi)
@@ -326,7 +247,14 @@ def main2():
         y0[i] = r*y0_norm[i]
         z0[i] = r*z0_norm[i]
 
-    xyz0_zip = list(zip(x0, y0, z0))
+    mu_i_default = 139.6    # default: 139.6 [nT]
+    mu_i_arr = np.ones(lat_fp.size)*mu_i_default
+    for i in range(con20_pj_idx.size):
+        for j in range(len(pj_fp)):
+            if con20_pj_idx[i] == round(pj_fp[j]):
+                mu_i_arr[j] = con20_mu_i_tot[i]
+
+    xyz0_zip = list(zip(x0, y0, z0, mu_i_arr))
     with Pool(processes=parallel) as pool:
         results_list = list(pool.starmap(calc2, xyz0_zip))
 
@@ -335,9 +263,74 @@ def main2():
 
     print('--- Total time [sec]:', round(time.time()-start_all, 4))
 
-    np.savetxt('results/azimuthal_current_fit/'+TARGET_MOON[0:2]+'_coef_'+str(error_num)+'.txt',
+    np.savetxt('results/magdisk_thickness_fit/'+TARGET_MOON[0:2]+'_coef_'+str(error_num)+'.txt',
                coef_best_arr)
     return None
+
+
+# %%
+def main3():
+    print('Target moon:', TARGET_MOON)
+    print('Target fp:', TARGET_FP)
+    print('Target hemisphere:', TARGET_HEM)
+    start_all = time.time()
+
+    latitude = []
+    wlongitude = []
+    mu_i_list = []
+    for i in range(con20_pj_idx.size):
+        for j in range(len(pj_fp)):
+            if con20_pj_idx[i] == round(pj_fp[j]):
+                wlongitude += [wlon_fp[j]]
+                mu_i_list += [con20_mu_i_tot[i]]
+                if error_num == 0:
+                    latitude += [lat_fp[j]]
+                elif error_num == 1:
+                    if lat_fp[j] >= 0.0:
+                        latitude += [lat_fp[j] + err_lat_fp[j]]
+                    else:
+                        latitude += [lat_fp[j] - err_lat_fp[j]]
+                elif error_num == 2:
+                    if lat_fp[j] >= 0.0:
+                        latitude += [lat_fp[j] - err_lat_fp[j]]
+                    else:
+                        latitude += [lat_fp[j] + err_lat_fp[j]]
+
+    latitude = np.array(latitude)
+    wlongitude = np.array(wlongitude)
+    mu_i_arr = np.array(mu_i_list)
+
+    theta = np.radians(90.0-latitude)
+    phi = np.radians(360.0-wlongitude)
+
+    x0_norm = np.sin(theta)*np.cos(phi)
+    y0_norm = np.sin(theta)*np.sin(phi)
+    z0_norm = np.cos(theta)
+
+    x0 = np.zeros(latitude.size)
+    y0 = np.zeros(latitude.size)
+    z0 = np.zeros(latitude.size)
+    for i in range(latitude.size):
+        # テーブルを参照し距離を確定
+        dis = np.abs(theta[i]-theta_e)
+        idx = np.argmin(dis)
+        r = r_e[idx]
+
+        x0[i] = r*x0_norm[i]
+        y0[i] = r*y0_norm[i]
+        z0[i] = r*z0_norm[i]
+
+    xyz0_zip = list(zip(x0, y0, z0, mu_i_arr))
+    with Pool(processes=parallel) as pool:
+        results_list = list(pool.starmap(calc2, xyz0_zip))
+
+    coef_best_arr = np.array(results_list)
+    print(coef_best_arr.shape)
+
+    print('--- Total time [sec]:', round(time.time()-start_all, 4))
+
+    np.savetxt('results/magdisk_thickness_fit/'+TARGET_MOON[0:2]+'_coef_'+str(error_num)+'.txt',
+               coef_best_arr)
 
 
 # %% EXECUTE
@@ -346,6 +339,7 @@ if __name__ == '__main__':
     error_num = 4
 
     # Number of parallel processes
-    parallel = 35
+    parallel = 30
 
+    # main2()
     main2()

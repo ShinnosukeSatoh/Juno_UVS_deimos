@@ -295,11 +295,37 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
 
 # %% GANYMEDE ONLY === read the current constant
 def read_current_coef():
-    f = np.loadtxt('results/azimuthal_current_fit/' +
-                   TARGET_MOON[0:2]+'/PJ'+str(PJ_LIST[0])+TARGET_HEM+'.txt')
-    mu_i_coef_ave = f[0]
-    mu_i_coef_1_ave = f[1]
+    f1 = np.loadtxt('results/azimuthal_current_fit/' +
+                    TARGET_MOON[0:2]+'_coef_0.txt')
+    f2 = np.loadtxt('results/azimuthal_current_fit/' +
+                    TARGET_MOON[0:2]+'_coef_1.txt')
+
+    con20_pj_idx = np.array([1, 3, 4, 5, 6,
+                             7, 8, 9, 10, 11,
+                             12, 13, 14, 15, 16,
+                             17, 18, 19, 20, 21,
+                             22, 23, 24])
+
+    select_pj = np.where(con20_pj_idx == PJ_LIST[0])
+
+    mu_i_coef_ave = f1[select_pj]
+    mu_i_coef_1_ave = f2[select_pj]
     return mu_i_coef_ave, mu_i_coef_1_ave
+
+
+# %% GANYMEDE ONLY === read the magnetodisk thickness coefficient
+def read_disk_thick_coef():
+    f = np.loadtxt('results/magdisk_thickness_fit/' +
+                   TARGET_MOON[0:2]+'_coef_0.txt')
+
+    con20_pj_idx = np.array([1, 3, 4, 5, 6,
+                             7, 8, 9, 10, 11,
+                             12, 13, 14, 15, 16,
+                             17, 18, 19, 20, 21,
+                             22, 23, 24])
+
+    select_pj = np.where(con20_pj_idx == PJ_LIST[0])
+    return f[select_pj]
 
 
 # %% Read the viewing angle
@@ -580,14 +606,26 @@ def scaleheight(Ai, Zi, Ti, Te):
     Returns:
         H : Scale height of the plasma sheet [m] \\
     """
-    H = 0.64*RJ*np.sqrt((Ti/Ai)*(1+(Zi*Te/Ti)))
+    H = 0.64*RJ*np.sqrt((Ti/Ai)*(1+(Zi*Te/Ti)))     # [m]
     # H = 0.64*RJ*np.sqrt((Ti/Ai))
     return H
 
 
 # %% Function to be in loop
 def calc(Ai, ni, Hp, r_A0, S3wlon_A0, z_A0, hem, S_A0=0):
-    if CURRENT_CONSTANT_OFFSET:
+    if SELECT_MODE == '0':
+        tau, _, _, _ = Wave.Awave().trace3(
+            r_A0,
+            np.radians(S3wlon_A0),
+            z_A0,
+            S_A0,
+            Ai,
+            ni,
+            Hp,
+            hem
+        )
+
+    elif SELECT_MODE == '1':
         current_coef, _ = read_current_coef()
         tau, _, _, _ = Wave.Awave().trace3_magnetodisk(
             r_A0,
@@ -601,8 +639,13 @@ def calc(Ai, ni, Hp, r_A0, S3wlon_A0, z_A0, hem, S_A0=0):
             current_coef=current_coef,
         )
 
-    else:
-        tau, _, _, _ = Wave.Awave().trace3(
+    # SELECT_MODE == '2': Ti_FROM_DISK_THICKNESS
+    elif SELECT_MODE == '2':
+        current_coef, _ = read_current_coef()
+        D_coef = read_disk_thick_coef()
+        D_disk = 3.6*RJ               # [m]
+        Hp = (2/np.pi)*D_disk*D_coef  # [m]
+        tau, _, _, _ = Wave.Awave().trace3_magnetodisk(
             r_A0,
             np.radians(S3wlon_A0),
             z_A0,
@@ -610,8 +653,11 @@ def calc(Ai, ni, Hp, r_A0, S3wlon_A0, z_A0, hem, S_A0=0):
             Ai,
             ni,
             Hp,
-            hem
+            hem,
+            current_coef=current_coef,
+            thickness_coef=D_coef,
         )
+
     return tau
 
 
@@ -734,7 +780,6 @@ def TEB_transit(r_moon, s3wlon, target_moon):
 def create_argmesh(a0=1, a1=2, a_num=3, a_scale='linear',
                    b0=1, b1=2, b_num=3, b_scale='linear',
                    c0=-99.9, c1=-98.0, c_num=0, c_scale='linear'):
-
     # パラメータ空間の作成
     a_arr = 0     # 1st parameter
     b_arr = 0     # 2nd parameter
@@ -746,30 +791,43 @@ def create_argmesh(a0=1, a1=2, a_num=3, a_scale='linear',
         a_arr = np.linspace(np.log(a0), np.log(a1), a_num)
         a_arr = np.exp(a_arr)
 
-    if b_scale == 'linear':
-        b_arr = np.linspace(b0, b1, b_num)
-    elif b_scale == 'log':
-        b_arr = np.linspace(np.log(b0), np.log(b1), b_num)
-        b_arr = np.exp(b_arr)
-
-    if c_num >= 1:
-        if c_scale == 'linear':
-            c_arr = np.linspace(c0, c1, c_num)
-        elif c_scale == 'log':
-            c_arr = np.linspace(np.log(c0), np.log(c1), c_num)
-            c_arr = np.exp(c_arr)
-
-        a_mesh, b_mesh, c_mesh = np.meshgrid(a_arr, b_arr, c_arr)
-        # -> shape is like (b_arr.size, a_arr.size, c_arr.size)
-
-        a_1d = a_mesh.reshape(int(a_arr.size*b_arr.size*c_arr.size))
-        b_1d = b_mesh.reshape(int(a_arr.size*b_arr.size*c_arr.size))
-        c_1d = c_mesh.reshape(int(a_arr.size*b_arr.size*c_arr.size))
-    else:
-        a_mesh, b_mesh = np.meshgrid(a_arr, b_arr)
-        a_1d = a_mesh.reshape(int(a_arr.size*b_arr.size))
-        b_1d = b_mesh.reshape(int(a_arr.size*b_arr.size))
+    if b_num == 1:
+        a_1d = a_arr
+        b_1d = b0*np.ones(a_num)
         c_1d = -999.9
+        print('b_num == 1')
+
+    elif b_num > 1:
+        if b_scale == 'linear':
+            b_arr = np.linspace(b0, b1, b_num)
+        elif b_scale == 'log':
+            b_arr = np.linspace(np.log(b0), np.log(b1), b_num)
+            b_arr = np.exp(b_arr)
+
+        if c_num == 1:
+            a_mesh, b_mesh = np.meshgrid(a_arr, b_arr)
+            a_1d = a_mesh.reshape(int(a_arr.size*b_arr.size))
+            b_1d = b_mesh.reshape(int(a_arr.size*b_arr.size))
+            c_1d = c0*np.ones(int(a_arr.size*b_arr.size))
+            print('c_num == 1')
+        elif c_num > 1:
+            if c_scale == 'linear':
+                c_arr = np.linspace(c0, c1, c_num)
+            elif c_scale == 'log':
+                c_arr = np.linspace(np.log(c0), np.log(c1), c_num)
+                c_arr = np.exp(c_arr)
+
+            a_mesh, b_mesh, c_mesh = np.meshgrid(a_arr, b_arr, c_arr)
+            # -> shape is like (b_arr.size, a_arr.size, c_arr.size)
+
+            a_1d = a_mesh.reshape(int(a_arr.size*b_arr.size*c_arr.size))
+            b_1d = b_mesh.reshape(int(a_arr.size*b_arr.size*c_arr.size))
+            c_1d = c_mesh.reshape(int(a_arr.size*b_arr.size*c_arr.size))
+        else:
+            a_mesh, b_mesh = np.meshgrid(a_arr, b_arr)
+            a_1d = a_mesh.reshape(int(a_arr.size*b_arr.size))
+            b_1d = b_mesh.reshape(int(a_arr.size*b_arr.size))
+            c_1d = -999.9
 
     return a_1d, b_1d, c_1d, a_arr, b_arr, c_arr
 
@@ -926,28 +984,39 @@ def main():
     np.savetxt('results/fit/'+exname+'/et_obs.txt',
                et_fp)
 
+    print('Output shape:')
+    print('--- chi2.shape:', chi2.shape)
+    print('--- Ai_1d.shape:', Ai_1d.shape)
+    print('--- ni_1d.shape:', ni_1d.shape)
+    print('--- Ti_1d.shape:', Ti_1d.shape)
+    print('--- y_estimate.shape:', y_estimate.shape)
+
 
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '005/20251221_363'
+    exname = '1001/20260421_004'
 
     # Input about Juno observation
-    TARGET_MOON = 'Europa'
+    TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [18]
-    TARGET_HEM = 'S'   # 'both', 'N', or 'S'
-    FLIP = True          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
+    PJ_LIST = [6]
+    TARGET_HEM = 'both'   # 'both', 'N', or 'S'
+    FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True           # True for '005'
-    CURRENT_CONSTANT_OFFSET = True  # ALWAYS FALSE!
+
+    SELECT_MODE = '2'
+    # '0': Normal
+    # '1': CURRENT_CONSTANT_OFFSET
+    # '2': Ti_FROM_DISK_THICKNESS
 
     # Input about the paremeter space
-    Ai_0, Ai_1, Ai_num, Ai_scale = 16.0, 20.0, 3, 'linear'
-    ni_0, ni_1, ni_num, ni_scale = 10.0, 800.0, 50, 'log'
-    Ti_0, Ti_1, Ti_num, Ti_scale = 20.0, 1000.0, 60, 'log'
+    Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'
+    ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 50, 'log'
+    Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 35
+    parallel = 10
 
     main()
 

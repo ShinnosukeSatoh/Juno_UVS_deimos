@@ -763,6 +763,9 @@ mu_i_coef_3 = np.loadtxt('results/azimuthal_current_fit/' +
                          target_moon[0:2]+'_coef_3.txt')
 mu_i_coef_4 = np.loadtxt('results/azimuthal_current_fit/' +
                          target_moon[0:2]+'_coef_4.txt')
+d_cs_coef = np.loadtxt('results/magdisk_thickness_fit/' +
+                       target_moon[0:2]+'_coef_0.txt')
+
 
 # Data subsetごとに値をまとめる
 d0_median = []
@@ -770,6 +773,7 @@ rho_ave_arr = np.zeros(len(PJ_list))
 rho_1_ave_arr = np.zeros(len(PJ_list))
 mu_i_coef_ave = np.zeros(len(PJ_list))
 mu_i_coef_1_ave = np.zeros(len(PJ_list))
+d_cs_coef_ave = np.zeros(len(PJ_list))
 for i in range(len(PJ_list)):
     ftmc_pj = PJ_list[i]
     ftmc_hem = FTMC_HEM[i]
@@ -790,6 +794,7 @@ for i in range(len(PJ_list)):
         mu_i_coef_2_subset = mu_i_coef_2[pj_idx]-mu_i_coef_subset
         mu_i_coef_3_subset = mu_i_coef_3[pj_idx]-mu_i_coef_subset
         mu_i_coef_4_subset = mu_i_coef_4[pj_idx]-mu_i_coef_subset
+        d_cs_coef_subset = d_cs_coef[pj_idx]
     else:
         if ftmc_hem == 'S':
             hem_subset_idx = np.where(hem_fp_m[pj_idx] > 0)
@@ -813,6 +818,7 @@ for i in range(len(PJ_list)):
             mu_i_coef_subset
         mu_i_coef_4_subset = mu_i_coef_4[pj_idx][hem_subset_idx] - \
             mu_i_coef_subset
+        d_cs_coef_subset = d_cs_coef[pj_idx][hem_subset_idx]
 
     view_angle_thres = np.where(view_angle_subset < view_angle_thres_degree)
 
@@ -836,6 +842,7 @@ for i in range(len(PJ_list)):
     mu_i_coef_ave[i] = np.average(mu_i_coef_subset[view_angle_thres])
     mu_i_coef_1_ave[i] = np.average(
         [mu_i_coef_1_subset, mu_i_coef_2_subset, mu_i_coef_3_subset, mu_i_coef_4_subset])
+    d_cs_coef_ave[i] = np.average(d_cs_coef_subset[view_angle_thres])
 
 # et_fpをdatetimeに変換する
 datetime_fp = []
@@ -2731,6 +2738,94 @@ for i in range(F.ax.size):
 ticklabels = F.ax[i].get_xticklabels()
 ticklabels[0].set_ha('center')
 
+PJax = F.ax[0].twiny()
+xticks = [datetime.datetime.strptime('2016-08-27', '%Y-%m-%d'),
+          datetime.datetime.strptime('2016-10-19', '%Y-%m-%d'),
+          datetime.datetime.strptime('2016-12-11', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-02-02', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-03-27', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-05-19 06:00', '%Y-%m-%d %H:%M'),
+          datetime.datetime.strptime('2017-07-11', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-09-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-10-24', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-12-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-02-07', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-04-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-05-24', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-07-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-09-07', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-10-29', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-12-21', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-02-12', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-04-06', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-05-29', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-07-21', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-09-12', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-11-03', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-12-26', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-02-17', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-04-10', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-06-02', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-07-25', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-09-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-11-08', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-12-30', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-02-21', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-04-15', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-06-08', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-07-21', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-09-02', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-10-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-11-29', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-01-12', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-02-25', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-04-09', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-05-23', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-07-05', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-08-17', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-09-29', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-11-06', '%Y-%m-%d'),  # PJ46
+          datetime.datetime.strptime('2022-12-15', '%Y-%m-%d'),  # PJ47
+          datetime.datetime.strptime('2023-01-22', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-03-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-04-08', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-05-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-06-23', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-07-31', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-09-07', '%Y-%m-%d'),  # PJ54
+          datetime.datetime.strptime('2023-10-15', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-11-22', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-12-30', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-02-04', '%Y-%m-%d'),  # PJ58
+          datetime.datetime.strptime('2024-03-07', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-04-09', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-05-12', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-06-14', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-07-16', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-08-18', '%Y-%m-%d'),  # PJ64
+          datetime.datetime.strptime('2024-09-20', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-10-23', '%Y-%m-%d'),  # PJ66
+          ]
+xticklabels = ['PJ1', '', '', '', '',
+               '6', '', '', '', '',
+               '11', '', '', '', '',
+               '16', '', '', '', '',
+               '21', '', '', '', '',
+               '26', '', '', '', '',
+               '31', '', '', '', '',
+               '36', '', '', '', '',
+               '41', '', '', '', '',
+               '46', '', '', '', '',
+               '51', '', '', '', '',
+               '56', '', '', '', '',
+               '61', '', '', '', '',
+               '66']
+PJax.set_xlim(xmin, xmax)
+PJax.set_xticks(xticks[::5])
+PJax.set_xticklabels(xticklabels[::5])
+PJax.xaxis.set_minor_locator(FixedLocator(mdates.date2num(xticks)))
+PJax.tick_params('y', grid_zorder=-10)
+
 F.set_yaxis(ax_idx=0,
             label='FTMC [10$^{-9}$ kg m$^{-2}$]',
             min=0, max=ftmc_max,
@@ -2882,130 +2977,13 @@ F.ax[1].errorbar(x=d0_median, y=mu_i_ave,
                  color=UC.blue)
 
 # Data (the centrifugal force term)
-F.ax[1].scatter(d0_median, AC_cent,
+"""F.ax[1].scatter(d0_median, AC_cent,
                 marker='s', s=5.0, c=UC.orange,
                 label='Centrifugal force term')
 F.ax[1].errorbar(x=d0_median, y=AC_cent,
                  yerr=abs(AC_cent-AC_cent_e),
                  elinewidth=1.1, linewidth=0., markersize=0,
-                 color=UC.orange)
-
-# 3rd axis
-F.set_yaxis(ax_idx=2,
-            label=r'Residual [nT]',
-            min=ymin, max=ymax,
-            ticks=yticks[:-1],
-            ticklabels=yticklabels[:-1],
-            minor_num=minor_num)
-F.ax[2].axhline(y=mu_i_default, linestyle='dashed',
-                color=UC.lightgray, zorder=0.9)
-F.ax[2].scatter(d0_median, mu_i_ave-AC_cent,
-                marker='s', s=5.0, c=UC.orange, label='Residual')
-F.ax[2].errorbar(x=d0_median, y=mu_i_ave-AC_cent,
-                 yerr=mu_i_1_ave+abs(AC_cent-AC_cent_e),
-                 elinewidth=1.1, linewidth=0., markersize=0,
-                 color=UC.orange)
-
-PJax = F.ax[0].twiny()
-xticks = [datetime.datetime.strptime('2016-08-27', '%Y-%m-%d'),
-          datetime.datetime.strptime('2016-10-19', '%Y-%m-%d'),
-          datetime.datetime.strptime('2016-12-11', '%Y-%m-%d'),
-          datetime.datetime.strptime('2017-02-02', '%Y-%m-%d'),
-          datetime.datetime.strptime('2017-03-27', '%Y-%m-%d'),
-          datetime.datetime.strptime('2017-05-19 06:00', '%Y-%m-%d %H:%M'),
-          datetime.datetime.strptime('2017-07-11', '%Y-%m-%d'),
-          datetime.datetime.strptime('2017-09-01', '%Y-%m-%d'),
-          datetime.datetime.strptime('2017-10-24', '%Y-%m-%d'),
-          datetime.datetime.strptime('2017-12-16', '%Y-%m-%d'),
-          datetime.datetime.strptime('2018-02-07', '%Y-%m-%d'),
-          datetime.datetime.strptime('2018-04-01', '%Y-%m-%d'),
-          datetime.datetime.strptime('2018-05-24', '%Y-%m-%d'),
-          datetime.datetime.strptime('2018-07-16', '%Y-%m-%d'),
-          datetime.datetime.strptime('2018-09-07', '%Y-%m-%d'),
-          datetime.datetime.strptime('2018-10-29', '%Y-%m-%d'),
-          datetime.datetime.strptime('2018-12-21', '%Y-%m-%d'),
-          datetime.datetime.strptime('2019-02-12', '%Y-%m-%d'),
-          datetime.datetime.strptime('2019-04-06', '%Y-%m-%d'),
-          datetime.datetime.strptime('2019-05-29', '%Y-%m-%d'),
-          datetime.datetime.strptime('2019-07-21', '%Y-%m-%d'),
-          datetime.datetime.strptime('2019-09-12', '%Y-%m-%d'),
-          datetime.datetime.strptime('2019-11-03', '%Y-%m-%d'),
-          datetime.datetime.strptime('2019-12-26', '%Y-%m-%d'),
-          datetime.datetime.strptime('2020-02-17', '%Y-%m-%d'),
-          datetime.datetime.strptime('2020-04-10', '%Y-%m-%d'),
-          datetime.datetime.strptime('2020-06-02', '%Y-%m-%d'),
-          datetime.datetime.strptime('2020-07-25', '%Y-%m-%d'),
-          datetime.datetime.strptime('2020-09-16', '%Y-%m-%d'),
-          datetime.datetime.strptime('2020-11-08', '%Y-%m-%d'),
-          datetime.datetime.strptime('2020-12-30', '%Y-%m-%d'),
-          datetime.datetime.strptime('2021-02-21', '%Y-%m-%d'),
-          datetime.datetime.strptime('2021-04-15', '%Y-%m-%d'),
-          datetime.datetime.strptime('2021-06-08', '%Y-%m-%d'),
-          datetime.datetime.strptime('2021-07-21', '%Y-%m-%d'),
-          datetime.datetime.strptime('2021-09-02', '%Y-%m-%d'),
-          datetime.datetime.strptime('2021-10-16', '%Y-%m-%d'),
-          datetime.datetime.strptime('2021-11-29', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-01-12', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-02-25', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-04-09', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-05-23', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-07-05', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-08-17', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-09-29', '%Y-%m-%d'),
-          datetime.datetime.strptime('2022-11-06', '%Y-%m-%d'),  # PJ46
-          datetime.datetime.strptime('2022-12-15', '%Y-%m-%d'),  # PJ47
-          datetime.datetime.strptime('2023-01-22', '%Y-%m-%d'),
-          datetime.datetime.strptime('2023-03-01', '%Y-%m-%d'),
-          datetime.datetime.strptime('2023-04-08', '%Y-%m-%d'),
-          datetime.datetime.strptime('2023-05-16', '%Y-%m-%d'),
-          datetime.datetime.strptime('2023-06-23', '%Y-%m-%d'),
-          datetime.datetime.strptime('2023-07-31', '%Y-%m-%d'),
-          datetime.datetime.strptime('2023-09-07', '%Y-%m-%d'),  # PJ54
-          datetime.datetime.strptime('2023-10-15', '%Y-%m-%d'),
-          datetime.datetime.strptime('2023-11-22', '%Y-%m-%d'),
-          datetime.datetime.strptime('2023-12-30', '%Y-%m-%d'),
-          datetime.datetime.strptime('2024-02-04', '%Y-%m-%d'),  # PJ58
-          datetime.datetime.strptime('2024-03-07', '%Y-%m-%d'),
-          datetime.datetime.strptime('2024-04-09', '%Y-%m-%d'),
-          datetime.datetime.strptime('2024-05-12', '%Y-%m-%d'),
-          datetime.datetime.strptime('2024-06-14', '%Y-%m-%d'),
-          datetime.datetime.strptime('2024-07-16', '%Y-%m-%d'),
-          datetime.datetime.strptime('2024-08-18', '%Y-%m-%d'),  # PJ64
-          datetime.datetime.strptime('2024-09-20', '%Y-%m-%d'),
-          datetime.datetime.strptime('2024-10-23', '%Y-%m-%d'),  # PJ66
-          ]
-xticklabels = ['PJ1', '', '', '', '',
-               '6', '', '', '', '',
-               '11', '', '', '', '',
-               '16', '', '', '', '',
-               '21', '', '', '', '',
-               '26', '', '', '', '',
-               '31', '', '', '', '',
-               '36', '', '', '', '',
-               '41', '', '', '', '',
-               '46', '', '', '', '',
-               '51', '', '', '', '',
-               '56', '', '', '', '',
-               '61', '', '', '', '',
-               '66']
-PJax.set_xlim(xmin, xmax)
-PJax.set_xticks(xticks[::5])
-PJax.set_xticklabels(xticklabels[::5])
-PJax.xaxis.set_minor_locator(FixedLocator(mdates.date2num(xticks)))
-PJax.tick_params('y', grid_zorder=-10)
-
-# Electron pressure
-ax22 = F.ax[2].twinx()
-ax22.set_ylabel(r'Electron pressure [nT]')
-ax22.set_ylim(-1.0, 4.0)
-ax22.set_yticks(np.arange(0, 4+1, 1))
-pel24 = np.loadtxt(
-    'data/Pelcener24_total_electron_pressure.csv', delimiter=',')   # shape->(26,2)
-pel24_pj = pel24[:, 0]
-for i in range(pel24_pj.size):
-    pj_idx = round(pel24_pj[i])-1
-    ax22.scatter(xticks[pj_idx], pel24[i, 1],
-                 marker='s', s=5.0, c=UC.green)
+                 color=UC.orange)"""
 
 # Data from Connerney+2020
 con20_pj_idx = np.array([1, 3, 4, 5, 6,
@@ -3025,7 +3003,55 @@ for i in range(con20_pj_idx.size):
 
 # Dummy
 F.ax[1].scatter(-999.0, -999.0, marker='s', s=5.0,
-                c=UC.red, label='Connerney+2020')
+                c=UC.red, label='Con2020 Current')
+F.ax[1].scatter(-999.0, -999.0, marker='d', s=5.0,
+                c='k', label='Disk thickness')
+
+# Thickness of the current sheet
+ax11 = F.ax[1].twinx()
+ax11.set_ylabel(r'$D_{\rm sc}$ [$R_{\rm J}$]')
+ax11.set_ylim(0.0, 5.0)
+ax11.set_yticks(np.arange(0, 5+1, 1))
+for i in range(con20_pj_idx.size):
+    for j in range(len(PJ_list)):
+        pj_idx = round(con20_pj_idx[i])-1
+        if con20_pj_idx[i] == PJ_list[j]:
+            # Current sheet half thickness
+            d_cs_default = 3.6      # default: 3.6 [RJ]
+            y_value = d_cs_default*d_cs_coef_ave[j]
+            F.ax[1].scatter(xticks[pj_idx], y_value*50.0,
+                            marker='d', s=5.0, c='k', zorder=10)
+
+# 3rd axis
+F.set_yaxis(ax_idx=2,
+            label=r'Residual [nT]',
+            min=ymin, max=ymax,
+            ticks=yticks[:-1],
+            ticklabels=yticklabels[:-1],
+            minor_num=minor_num)
+F.ax[2].axhline(y=mu_i_default, linestyle='dashed',
+                color=UC.lightgray, zorder=0.9)
+F.ax[2].scatter(d0_median, mu_i_ave-AC_cent,
+                marker='s', s=5.0, c=UC.orange, label='Residual')
+F.ax[2].errorbar(x=d0_median, y=mu_i_ave-AC_cent,
+                 yerr=mu_i_1_ave+abs(AC_cent-AC_cent_e),
+                 elinewidth=1.1, linewidth=0., markersize=0,
+                 color=UC.orange)
+
+# Electron pressure
+ax22 = F.ax[2].twinx()
+ax22.set_ylabel(r'Electron pressure [nT]')
+ax22.set_ylim(-1.0, 4.0)
+ax22.set_yticks(np.arange(0, 4+1, 1)[:-1])
+pel24 = np.loadtxt(
+    'data/Pelcener24_total_electron_pressure.csv', delimiter=',')   # shape->(26,2)
+pel24_pj = pel24[:, 0]
+for i in range(pel24_pj.size):
+    pj_idx = round(pel24_pj[i])-1
+    ax22.scatter(xticks[pj_idx], pel24[i, 1],
+                 marker='s', s=5.0, c=UC.green)
+
+# Dummy
 F.ax[2].scatter(-999.0, -999.0, marker='s', s=5.0,
                 c=UC.green, label='Electron pressure')
 
@@ -3040,7 +3066,7 @@ for i in range(3):
     F.ax[i].axvspan(xticks[60], xticks[65], fc=UC.gray, ec=None, alpha=0.10)
 
 legend = F.legend(ax_idx=1,
-                  ncol=3, markerscale=1.0,
+                  ncol=4, markerscale=1.0,
                   loc='upper center',
                   handlelength=0.5,
                   textcolor=False,
@@ -3069,10 +3095,10 @@ pp_ax_R = F.fig.add_axes([axpos.x0+axpos.width*0.6,
                           axpos.height])
 pp_ax_L.set_xlabel('Connerney+2020 [nT]')
 pp_ax_L.set_ylabel('Latitudinal shift [nT]')
-pp_ax_L.set_xlim(0.0, 200.0)
-pp_ax_L.set_ylim(0.0, 200.0)
-pp_ax_L.set_xticks(np.linspace(0.0, 200.0, 5))
-pp_ax_L.set_yticks(np.linspace(0.0, 200.0, 5))
+pp_ax_L.set_xlim(50.0, 200.0)
+pp_ax_L.set_ylim(50.0, 200.0)
+pp_ax_L.set_xticks(np.linspace(50.0, 200.0, 4))
+pp_ax_L.set_yticks(np.linspace(50.0, 200.0, 4))
 pp_ax_L.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
 pp_ax_L.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
 pp_ax_L.plot([0.0, 200.0], [0.0, 200.0], linewidth=1.0, color=UC.gray)
@@ -3373,6 +3399,61 @@ for i in range(len(exnum)):
 
 # 7th axis
 axpos = pp_ax2_L.get_position()
+pp_ax22_L = F.fig.add_axes([axpos.x0,
+                            axpos.y0-axpos.height*1.5,
+                            axpos.width,
+                            axpos.height])
+axpos = pp_ax2_R.get_position()
+pp_ax22_R = F.fig.add_axes([axpos.x0,
+                            axpos.y0-axpos.height*1.5,
+                            axpos.width,
+                            axpos.height])
+pp_ax22_L.set_xlabel(r'FTMC [$10^{-9}$ kg m$^{-2}$]')
+pp_ax22_L.set_ylabel(r'$D_{\rm sc}$ [$R_{\rm J}$]')
+pp_ax22_L.set_xlim(0.0, ftmc_max)
+pp_ax22_L.set_ylim(1.0, 5.0)
+pp_ax22_R.set_xlabel(r'Connerney+2020 [nT]')
+pp_ax22_R.set_ylabel(r'$D_{\rm sc}$ [$R_{\rm J}$]')
+pp_ax22_R.set_xlim(50.0, 200.0)
+pp_ax22_R.set_ylim(1.0, 5.0)
+pp_ax22_R.set_xticks(np.linspace(50.0, 200.0, 4))
+pp_ax22_R.set_yticks(np.linspace(1.0, 5.0, 5))
+pp_ax22_R.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax22_R.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+coef_idx = 0
+for i in range(con20_pj_idx.size):
+    for j in range(len(PJ_list)):
+        if con20_pj_idx[i] == PJ_list[j]:
+            exname = exdate+'_'+exnum[j]
+            column_mass, chi2r, moon_et, _, moon_S3wlon, weight = data_load(
+                exname)     # [kg m-2]
+            column_mass *= 1E+9  # [10^-9 kg m-2]
+            q1, medians, q3 = weighted_percentile(data=column_mass,
+                                                  perc=[0.25, 0.5, 0.75],
+                                                  weights=weight)
+
+            # Current sheet half thickness
+            d_cs_default = 3.6      # default: 3.6 [RJ]
+            y_value = d_cs_default*d_cs_coef_ave[j]
+
+            weighted_boxplot_h2(pp_ax22_L,
+                                y_value,
+                                q1, medians, q3,
+                                np.min(column_mass),
+                                np.max(column_mass), width=0.1,
+                                ec=UC.blue, lw=1.)
+for i in range(con20_pj_idx.size):
+    for j in range(len(PJ_list)):
+        if con20_pj_idx[i] == PJ_list[j]:
+            # Current sheet half thickness
+            d_cs_default = 3.6      # default: 3.6 [RJ]
+            y_value = d_cs_default*d_cs_coef_ave[j]
+
+            pp_ax22_R.scatter(con20_mu_i_tot[i], y_value,
+                              marker='s', s=5.0, c=UC.blue,)
+
+# 8th axis
+axpos = pp_ax22_L.get_position()
 pp_ax3_L = F.fig.add_axes([axpos.x0,
                           axpos.y0-axpos.height*1.5,
                           axpos.width*2,
@@ -3420,15 +3501,18 @@ F.draw_panel_name(ax=pp_ax1_L, panelname=' f ')
 F.draw_panel_name(ax=pp_ax1_R, panelname=' g ')
 F.draw_panel_name(ax=pp_ax2_L, panelname=' h ')
 F.draw_panel_name(ax=pp_ax2_R, panelname=' i ')
-F.draw_panel_name(ax=pp_ax3_L, panelname=' j ')
+F.draw_panel_name(ax=pp_ax22_L, panelname=' j ')
+F.draw_panel_name(ax=pp_ax22_R, panelname=' k ')
+F.draw_panel_name(ax=pp_ax3_L, panelname=' l ')
 
 savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
-F.fig.savefig(savedir+'/ftmc_lt_'+target_moon[0:2]+'_centrifugal.jpg',
+F.fig.savefig(savedir+'/ftmc_lt_'+target_moon[0:2]+'_centrifugal_2.jpg',
               bbox_inches='tight')
 F.close()
 plt.show()
 
 
+"""
 #
 #
 #
@@ -4200,3 +4284,4 @@ F.fig.savefig(savedir+'/ftmc_'+target_moon[0:2]+'_mui_coef_LTsubtracted.jpg',
 
 F.close()
 plt.show()
+"""

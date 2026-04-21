@@ -482,7 +482,8 @@ class Awave():
                            Hp: float,
                            NS: float,
                            limit=0,
-                           current_coef=1.0,):
+                           current_coef=1.0,
+                           thickness_coef=1.0,):
         """
         `r_A0` Radial distance of the Alfven launch site [m] \\
         `S3wlon_A0` System III west longitude of the Alfven launch site [rad] \\
@@ -495,7 +496,9 @@ class Awave():
         """
         # 磁場モデルの設定
         mu_i_default = 139.6    # default: 139.6 [nT]
+        d_rj_default = 3.6      # default: 3.6 [RJ]
         jm.Con2020.Config(mu_i=mu_i_default*current_coef,
+                          d__cs_half_thickness_rj=d_rj_default*thickness_coef,
                           equation_type='analytic')
 
         Niter = int(600000)
