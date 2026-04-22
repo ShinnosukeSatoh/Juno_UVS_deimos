@@ -295,9 +295,9 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
 
 # %% GANYMEDE ONLY === read the current constant
 def read_current_coef():
-    f1 = np.loadtxt('results/azimuthal_current_fit/' +
+    f0 = np.loadtxt('results/azimuthal_current_fit/' +
                     TARGET_MOON[0:2]+'_coef_0.txt')
-    f2 = np.loadtxt('results/azimuthal_current_fit/' +
+    f1 = np.loadtxt('results/azimuthal_current_fit/' +
                     TARGET_MOON[0:2]+'_coef_1.txt')
 
     con20_pj_idx = np.array([1, 3, 4, 5, 6,
@@ -308,16 +308,15 @@ def read_current_coef():
 
     select_pj = np.where(con20_pj_idx == PJ_LIST[0])
 
-    mu_i_coef_ave = f1[select_pj]
-    mu_i_coef_1_ave = f2[select_pj]
-    return mu_i_coef_ave, mu_i_coef_1_ave
+    return f0[select_pj], f1[select_pj]
 
 
 # %% GANYMEDE ONLY === read the magnetodisk thickness coefficient
 def read_disk_thick_coef():
-    f = np.loadtxt('results/magdisk_thickness_fit/' +
-                   TARGET_MOON[0:2]+'_coef_0.txt')
-
+    f0 = np.loadtxt('results/magdisk_thickness_fit/' +
+                    TARGET_MOON[0:2]+'_coef_0.txt')
+    f1 = np.loadtxt('results/magdisk_thickness_fit/' +
+                    TARGET_MOON[0:2]+'_coef_1.txt')
     con20_pj_idx = np.array([1, 3, 4, 5, 6,
                              7, 8, 9, 10, 11,
                              12, 13, 14, 15, 16,
@@ -325,7 +324,7 @@ def read_disk_thick_coef():
                              22, 23, 24])
 
     select_pj = np.where(con20_pj_idx == PJ_LIST[0])
-    return f[select_pj]
+    return f0[select_pj], f1[select_pj]
 
 
 # %% Read the viewing angle
@@ -642,7 +641,7 @@ def calc(Ai, ni, Hp, r_A0, S3wlon_A0, z_A0, hem, S_A0=0):
     # SELECT_MODE == '2': Ti_FROM_DISK_THICKNESS
     elif SELECT_MODE == '2':
         current_coef, _ = read_current_coef()
-        D_coef = read_disk_thick_coef()
+        D_coef, _ = read_disk_thick_coef()
         D_disk = 3.6*RJ               # [m]
         Hp = (2/np.pi)*D_disk*D_coef  # [m]
         tau, _, _, _ = Wave.Awave().trace3_magnetodisk(
@@ -658,6 +657,24 @@ def calc(Ai, ni, Hp, r_A0, S3wlon_A0, z_A0, hem, S_A0=0):
             thickness_coef=D_coef,
         )
 
+    # SELECT_MODE == '3': Ti_FROM_DISK_THICKNESS WITH ERROR
+    elif SELECT_MODE == '3':
+        current_coef, _ = read_current_coef()
+        _, D_coef = read_disk_thick_coef()
+        D_disk = 3.6*RJ               # [m]
+        Hp = (2/np.pi)*D_disk*D_coef  # [m]
+        tau, _, _, _ = Wave.Awave().trace3_magnetodisk(
+            r_A0,
+            np.radians(S3wlon_A0),
+            z_A0,
+            S_A0,
+            Ai,
+            ni,
+            Hp,
+            hem,
+            current_coef=current_coef,
+            thickness_coef=D_coef,
+        )
     return tau
 
 
@@ -795,7 +812,7 @@ def create_argmesh(a0=1, a1=2, a_num=3, a_scale='linear',
         a_1d = a_arr
         b_1d = b0*np.ones(a_num)
         c_1d = -999.9
-        print('b_num == 1')
+        # print('b_num == 1')
 
     elif b_num > 1:
         if b_scale == 'linear':
@@ -809,7 +826,7 @@ def create_argmesh(a0=1, a1=2, a_num=3, a_scale='linear',
             a_1d = a_mesh.reshape(int(a_arr.size*b_arr.size))
             b_1d = b_mesh.reshape(int(a_arr.size*b_arr.size))
             c_1d = c0*np.ones(int(a_arr.size*b_arr.size))
-            print('c_num == 1')
+            # print('c_num == 1')
         elif c_num > 1:
             if c_scale == 'linear':
                 c_arr = np.linspace(c0, c1, c_num)
@@ -995,15 +1012,15 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '1001/20260421_004'
+    exname = '1001/20260421_022'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [6]
-    TARGET_HEM = 'both'   # 'both', 'N', or 'S'
+    PJ_LIST = [19]
+    TARGET_HEM = 'S'   # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
-    USE_BACKTRACED = True           # True for '005'
+    USE_BACKTRACED = True       # True for '005' and '1001'
 
     SELECT_MODE = '2'
     # '0': Normal
@@ -1012,11 +1029,11 @@ if __name__ == '__main__':
 
     # Input about the paremeter space
     Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'
-    ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 50, 'log'
+    ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 150, 'log'
     Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 10
+    parallel = 20
 
     main()
 
