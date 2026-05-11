@@ -31,11 +31,11 @@ F.set_default()
 
 
 # %%
-exname = '1001/20260421_015'
+exname = '1001/20260421_027'
 TARGET_MOON = 'Ganymede'
 target_fp = ['MAW', 'TEB']
-PJ_num = [14]
-hem = 'N'
+PJ_num = [3]
+hem = 'S'
 Ai_num = 3
 ni_num = 150
 Ti_num = 1
