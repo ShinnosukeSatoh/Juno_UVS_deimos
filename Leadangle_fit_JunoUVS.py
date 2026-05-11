@@ -3,7 +3,7 @@
 Created on Apr 8, 2025
 @author: Shin Satoh
 
-Description:ƒ
+Description:
 Using the lead angle values measured in one single Perijove of Juno,
 this program iterates the Alfven wave tracing along the magnetic
 field line and estimate the transit time of the Alfven wave from the
@@ -612,69 +612,16 @@ def scaleheight(Ai, Zi, Ti, Te):
 
 # %% Function to be in loop
 def calc(Ai, ni, Hp, r_A0, S3wlon_A0, z_A0, hem, S_A0=0):
-    if SELECT_MODE == '0':
-        tau, _, _, _ = Wave.Awave().trace3(
-            r_A0,
-            np.radians(S3wlon_A0),
-            z_A0,
-            S_A0,
-            Ai,
-            ni,
-            Hp,
-            hem
-        )
-
-    elif SELECT_MODE == '1':
-        current_coef, _ = read_current_coef()
-        tau, _, _, _ = Wave.Awave().trace3_magnetodisk(
-            r_A0,
-            np.radians(S3wlon_A0),
-            z_A0,
-            S_A0,
-            Ai,
-            ni,
-            Hp,
-            hem,
-            current_coef=current_coef,
-        )
-
-    # SELECT_MODE == '2': Ti_FROM_DISK_THICKNESS
-    elif SELECT_MODE == '2':
-        current_coef, _ = read_current_coef()
-        D_coef, _ = read_disk_thick_coef()
-        D_disk = 3.6*RJ               # [m]
-        Hp = (2/np.pi)*D_disk*D_coef  # [m]
-        tau, _, _, _ = Wave.Awave().trace3_magnetodisk(
-            r_A0,
-            np.radians(S3wlon_A0),
-            z_A0,
-            S_A0,
-            Ai,
-            ni,
-            Hp,
-            hem,
-            current_coef=current_coef,
-            thickness_coef=D_coef,
-        )
-
-    # SELECT_MODE == '3': Ti_FROM_DISK_THICKNESS WITH ERROR
-    elif SELECT_MODE == '3':
-        current_coef, _ = read_current_coef()
-        _, D_coef = read_disk_thick_coef()
-        D_disk = 3.6*RJ               # [m]
-        Hp = (2/np.pi)*D_disk*D_coef  # [m]
-        tau, _, _, _ = Wave.Awave().trace3_magnetodisk(
-            r_A0,
-            np.radians(S3wlon_A0),
-            z_A0,
-            S_A0,
-            Ai,
-            ni,
-            Hp,
-            hem,
-            current_coef=current_coef,
-            thickness_coef=D_coef,
-        )
+    tau, _, _, _ = Wave.Awave().trace3(
+        r_A0,
+        np.radians(S3wlon_A0),
+        z_A0,
+        S_A0,
+        Ai,
+        ni,
+        Hp,
+        hem
+    )
     return tau
 
 
@@ -849,6 +796,23 @@ def create_argmesh(a0=1, a1=2, a_num=3, a_scale='linear',
     return a_1d, b_1d, c_1d, a_arr, b_arr, c_arr
 
 
+# %% Retrieval mode select
+def mode_select(H_1d):
+    if SELECT_MODE == '1':
+        current_coef, _ = read_current_coef()
+        Wave.Awave().update_Con2020(current_coef=current_coef)
+
+    elif SELECT_MODE == '2':
+        current_coef, _ = read_current_coef()
+        D_coef, _ = read_disk_thick_coef()
+        D_disk = 3.6*RJ               # [m]
+        Hp = (2/np.pi)*D_disk*D_coef  # [m]
+        Wave.Awave().update_Con2020(current_coef=current_coef, thickness_coef=D_coef)
+        H_1d = Hp*np.ones(H_1d.shape)
+
+    return H_1d
+
+
 # %% Main function
 def main():
     # Select moon synodic orbital period
@@ -925,11 +889,16 @@ def main():
     print('Number of data points used/total:', i_size, '/', wlon_fp.size)
     print('Param space shape:', ni_num, Ai_num, Ti_num)
     start_all = time.time()
+
+    # Retrieval mode
+    H_1d = mode_select(H_1d)
+
     for i in range(i_size):
         # print('r_A0 [RJ]:', r_A0[i]/RJ)
         # print('S3wlon_A0 [deg]:', S3wlon_A0[i])
 
         start_1loop = time.time()
+
         S_A0 = Wave.Awave().tracefield(r_A0[i],
                                        np.radians(S3wlon_A0[i]),
                                        z_A0[i]
@@ -1012,12 +981,12 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '1001/20260421_022'
+    exname = '1001/20260421_027'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [19]
+    PJ_LIST = [3]
     TARGET_HEM = 'S'   # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'
