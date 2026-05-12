@@ -489,6 +489,154 @@ class Awave():
 
         return tau, phi, Va_arr, col_massdens
 
+    def trace3_reflect(self,
+                       r_A0: float,
+                       S3wlon_A0: float,
+                       z_A0: float,
+                       S_A0: float,
+                       Ai: float,
+                       ni: float,
+                       Hp: float,
+                       NS: float,
+                       limit=0,
+                       current_coef=1.0,
+                       thickness_coef=1.0,):
+        """
+        `r_A0` Radial distance of the Alfven launch site [m] \\
+        `S3wlon_A0` System III west longitude of the Alfven launch site [rad] \\
+        `z_A0` z position of the Alfven launch site [m] \\
+        `S_A0` Field line position of the Alfven launch site [m] \\
+        `Ai` Ion mass of the plasma sheet [amu] \\
+        `ni` Ion number density at the plasma sheet center [cm-3]
+        `Hp` Scale height of the plasma sheet [m] \\
+        `NS` Tracing direction North=-1 or South=1 \\
+        """
+        Niter = int(650000)
+
+        # 経度0度(y=0)平面のx-z対応テーブル (高度900 km)
+        extradius = np.loadtxt('data/Alt_900km/rthetaphi.txt')
+        r_ref = extradius[0, :]*RJ        # [m]
+        theta_ref = np.radians(extradius[1, :])    # [rad]
+        phi_ref = np.radians(extradius[2, :])      # [rad]
+
+        # 磁力線に沿ってトレースしたい
+        rs = copy.copy(r_A0)           # [m]
+        theta = math.acos(z_A0/rs)     # [rad]
+        phi = 2*np.pi-copy.copy(S3wlon_A0)      # [rad]
+        x = rs*math.sin(theta)*math.cos(phi)    # [m]
+        y = rs*math.sin(theta)*math.sin(phi)    # [m]
+        z = copy.copy(z_A0)                  # [m]
+
+        # 伝搬時間
+        tau = 0     # [sec]
+
+        # 線要素
+        ds = 8000     # [m]
+
+        # Alfven速度を格納
+        Va_arr = np.zeros(Niter)
+
+        # Magnetic latitudeを格納
+        theta_arr = np.zeros(Niter)
+
+        # Jovigraphic east longitudeを格納
+        phi_jov = np.zeros(Niter)
+
+        # 沿磁力線座標
+        s = copy.copy(S_A0)
+
+        # 遠心力赤道 s=0 における質量密度
+        rho_0 = Ai*AMU2KG*ni*(1E+6)
+
+        # Direction of tracing
+        if NS == -1:       # Northern MAW
+            ns = -1        # 北向き
+        elif NS == 1:      # Southern MAW
+            ns = 1         # 南向き
+        elif NS == -101:   # Northern TEB
+            ns = 1         # 南向き
+        elif NS == 101:    # Southern TEB
+            ns = -1        # 北向き
+        for i in range(Niter):
+            # Community codes
+            Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)  # [nT]
+            Bx1, By1, Bz1 = jm.Con2020.Field(x/RJ, y/RJ, z/RJ)   # [nT]
+            Bx = (Bx0+Bx1)*1E-9     # [T]
+            By = (By0+By1)*1E-9     # [T]
+            Bz = (Bz0+Bz1)*1E-9     # [T]
+
+            B0 = math.sqrt(Bx[0]**2+By[0]**2+Bz[0]**2)      # [T]
+
+            # プラズマ質量密度 rho
+            rho = rho_0*np.exp(-(s/Hp)**2)     # [kg m-3]
+
+            # Alfven速度 Va / 大きくなりすぎないように調整
+            if rho < rho_0/(math.e**8):
+                rho = rho_0/(math.e**8)
+            Va = B0/math.sqrt(MU0*rho)    # [m/s]
+
+            # 相対論効果の考慮
+            if Va/C > 0.1:
+                Va = Va/math.sqrt(1.0+(Va/C)**2)
+
+            # 光速の8割で速度はとめておく
+            if Va/C > 0.85:
+                Va = 0.85*C
+
+            # 時間要素
+            dt = ds/Va
+
+            # 伝搬時間
+            tau += dt   # [sec]
+
+            # 座標更新 (x, y, z)
+            x += (ds*Bx[0]/B0)*ns
+            y += (ds*By[0]/B0)*ns
+            z += (ds*Bz[0]/B0)*ns
+
+            # 座標更新 (r, theta, phi)
+            rs = math.sqrt(x**2 + y**2 + z**2)  # [m]
+            theta = math.acos(z/rs)
+            phi = math.atan2(y, x)
+
+            # 座標更新 (沿磁力線: S0)
+            s += ds*(-ns)
+
+            # 木星の高度900 kmで計算ストップ
+            # if rs < 1.0*RJ+900.0E+3:
+            #     break
+
+            # 高度900 kmの座標テーブルを参照
+            if i > 3000:
+                if rs < 1.1*RJ:
+                    dis = np.abs(theta-theta_ref)
+                    idx = np.argmin(dis)
+                    r_h = r_ref[idx]
+                    theta_h = theta_ref[idx]
+                    x_ref = r_h*np.sin(theta_h)*np.cos(phi)
+                    y_ref = r_h*np.sin(theta_h)*np.sin(phi)
+                    z_ref = r_h*np.cos(theta_h)
+                    dis = math.sqrt((x-x_ref)**2 + (y-y_ref)**2 + (z-z_ref)**2)
+                    if dis < 9.0E+3:
+                        # print('i:', i)
+                        print('dis [m]:', dis)
+                        rs = r_h
+                        theta = theta_h
+                        z = z_ref
+                        break
+
+            # 配列格納
+            Va_arr[i] = Va          # [m/s]
+            phi_jov[i] = dt*OMGJ    # [rad]
+            theta_arr[i] = theta    # [rad]
+
+        # 値が格納されていない部分は削除
+        Va_arr = Va_arr[:i]
+        phi_jov = phi_jov[:i]+copy.copy(S3wlon_A0)
+        theta_arr = theta_arr[:i]
+
+        return tau, rs, 2*np.pi-phi, z, s, phi_jov[::50], theta_arr[::50]
+
     def centri_eq(self, r_rj, theta, phi, current_coef=1.0,
                   thickness_coef=1.0,):
         """_summary_
