@@ -619,7 +619,7 @@ class Awave():
                     dis = math.sqrt((x-x_ref)**2 + (y-y_ref)**2 + (z-z_ref)**2)
                     if dis < 9.0E+3:
                         # print('i:', i)
-                        print('dis [m]:', dis)
+                        # print('dis [m]:', dis)
                         rs = r_h
                         theta = theta_h
                         z = z_ref
@@ -627,7 +627,7 @@ class Awave():
 
             # 配列格納
             Va_arr[i] = Va          # [m/s]
-            phi_jov[i] = dt*OMGJ    # [rad]
+            phi_jov[i] = tau*OMGJ    # [rad]
             theta_arr[i] = theta    # [rad]
 
         # 値が格納されていない部分は削除

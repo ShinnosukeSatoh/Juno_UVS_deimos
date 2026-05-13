@@ -19,6 +19,10 @@ from multiprocessing import Pool
 # from numba import jit
 import numpy as np
 import math
+import matplotlib.pyplot as plt
+from UniversalColor import UniversalColor
+from SharedX import ShareXaxis
+from legend_shadow import legend_shadow
 
 import Leadangle_wave as Wave
 import datetime
@@ -30,6 +34,13 @@ import JupiterMag as jm
 jm.Internal.Config(Model='jrm33', CartesianIn=True, CartesianOut=True)
 jm.Con2020.Config(equation_type='analytic')
 
+UC = UniversalColor()
+UC.set_palette()
+
+F = ShareXaxis()
+F.fontsize = 20
+F.fontname = 'Liberation Sans Narrow'
+F.set_default()
 
 spice.furnsh('kernel/cassMetaK.txt')
 savpath = 'data/Satellite_FP_JRM33.sav'
@@ -287,78 +298,99 @@ def load_best_fit():
 
 # calc function
 def calc(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, num_reflection):
-    print('hem:', hem)
+    # Initialize the result list/array
+    tau_list = []
+
     # Initital trace
     # -> MAW position at 900 km altitude
-    tau_t1, rs_t1, s3wlon_t1, z_t1, s_t1, phi_jov_t1, theta_arr_t1 = Wave.Awave().trace3_reflect(r_t0,
-                                                                                                 s3wlon_t0,
-                                                                                                 z_t0,
-                                                                                                 s_t0,
-                                                                                                 Ai,
-                                                                                                 ni,
-                                                                                                 Hp,
-                                                                                                 hem)
+    tau_t1, rs_t1, s3wlon_t1, z_t1, s_t1, phi_jov_t1, theta_s3_t1 = Wave.Awave().trace3_reflect(r_t0,
+                                                                                                s3wlon_t0,
+                                                                                                z_t0,
+                                                                                                s_t0,
+                                                                                                Ai,
+                                                                                                ni,
+                                                                                                Hp,
+                                                                                                hem)
 
     # 1st reflection
     # -> 1st RAW position at 900 km altitude on the opposite hemisphere
-    tau_t2, rs_t2, s3wlon_t2, z_t2, s_t2, phi_jov_t2, theta_arr_t2 = Wave.Awave().trace3_reflect(rs_t1,
-                                                                                                 s3wlon_t1,
-                                                                                                 z_t1,
-                                                                                                 s_t1,
-                                                                                                 Ai,
-                                                                                                 ni,
-                                                                                                 Hp,
-                                                                                                 hem*(-1))
+    tau_t2, rs_t2, s3wlon_t2, z_t2, s_t2, phi_jov_t2, theta_s3_t2 = Wave.Awave().trace3_reflect(rs_t1,
+                                                                                                s3wlon_t1,
+                                                                                                z_t1,
+                                                                                                s_t1,
+                                                                                                Ai,
+                                                                                                ni,
+                                                                                                Hp,
+                                                                                                hem*(-1))
 
     # 2nd reflection
     # -> 1st RAW position at 900 km altitude on the same hemisphere as MAW
-    tau_t3, rs_t3, s3wlon_t3, z_t3, s_t3, phi_jov_t3, theta_arr_t3 = Wave.Awave().trace3_reflect(rs_t2,
-                                                                                                 s3wlon_t2,
-                                                                                                 z_t2,
-                                                                                                 s_t2,
-                                                                                                 Ai,
-                                                                                                 ni,
-                                                                                                 Hp,
-                                                                                                 hem*(-1)**2)
+    tau_t3, rs_t3, s3wlon_t3, z_t3, s_t3, phi_jov_t3, theta_s3_t3 = Wave.Awave().trace3_reflect(rs_t2,
+                                                                                                s3wlon_t2,
+                                                                                                z_t2,
+                                                                                                s_t2,
+                                                                                                Ai,
+                                                                                                ni,
+                                                                                                Hp,
+                                                                                                hem*(-1)**2)
+
+    # Change to the Jovigraphic coordinate
+    phi_jov_t2 = phi_jov_t2-s3wlon_t1+phi_jov_t1[-1]
+    phi_jov_t3 = phi_jov_t3-s3wlon_t2+phi_jov_t2[-1]
+
+    # Result lists
+    tau_list = [tau_t1, tau_t2, tau_t3]
+    phi_jov_list = [phi_jov_t1, phi_jov_t2, phi_jov_t3]
+    theta_s3_list = [theta_s3_t1, theta_s3_t2, theta_s3_t3]
 
     if num_reflection >= 2:
         # 3rd reflection
         # -> 2nd RAW position at 900 km altitude on the opposite hemisphere
-        tau_t4, rs_t4, s3wlon_t4, z_t4, s_t4, phi_jov_t4, theta_arr_t4 = Wave.Awave().trace3_reflect(rs_t3,
-                                                                                                     s3wlon_t3,
-                                                                                                     z_t3,
-                                                                                                     s_t3,
-                                                                                                     Ai,
-                                                                                                     ni,
-                                                                                                     Hp,
-                                                                                                     hem*(-1)**3)
+        tau_t4, rs_t4, s3wlon_t4, z_t4, s_t4, phi_jov_t4, theta_s3_t4 = Wave.Awave().trace3_reflect(rs_t3,
+                                                                                                    s3wlon_t3,
+                                                                                                    z_t3,
+                                                                                                    s_t3,
+                                                                                                    Ai,
+                                                                                                    ni,
+                                                                                                    Hp,
+                                                                                                    hem*(-1)**3)
         # 4th reflection
         # -> 2nd RAW position at 900 km altitude on the same hemisphere as MAW
-        tau_t5, rs_t5, s3wlon_t5, z_t5, s_t5, phi_jov_t5, theta_arr_t5 = Wave.Awave().trace3_reflect(rs_t4,
-                                                                                                     s3wlon_t4,
-                                                                                                     z_t4,
-                                                                                                     s_t4,
-                                                                                                     Ai,
-                                                                                                     ni,
-                                                                                                     Hp,
-                                                                                                     hem*(-1)**4)
+        tau_t5, rs_t5, s3wlon_t5, z_t5, s_t5, phi_jov_t5, theta_s3_t5 = Wave.Awave().trace3_reflect(rs_t4,
+                                                                                                    s3wlon_t4,
+                                                                                                    z_t4,
+                                                                                                    s_t4,
+                                                                                                    Ai,
+                                                                                                    ni,
+                                                                                                    Hp,
+                                                                                                    hem*(-1)**4)
 
-    print('h [m]:', (rs_t1-1.0*RJ)*1E-3,
-          (rs_t2-1.0*RJ)*1E-3, (rs_t3-1.0*RJ)*1E-3)
-    print('z [RJ]:', z_t1/RJ, z_t2/RJ, z_t3/RJ)
+        # Change to the Jovigraphic coordinate
+        phi_jov_t4 = phi_jov_t4-s3wlon_t3+phi_jov_t3[-1]
+        phi_jov_t5 = phi_jov_t5-s3wlon_t4+phi_jov_t4[-1]
+
+        tau_list += [tau_t4, tau_t5]
+        phi_jov_list += [phi_jov_t4, phi_jov_t5]
+        theta_s3_list += [theta_s3_t4, theta_s3_t5]
+
+    # print('h [m]:', (rs_t1-1.0*RJ)*1E-3,
+    #       (rs_t2-1.0*RJ)*1E-3, (rs_t3-1.0*RJ)*1E-3)
+    # print('z [RJ]:', z_t1/RJ, z_t2/RJ, z_t3/RJ)
     print('s [RJ]:', s_t1/RJ, s_t2/RJ, s_t3/RJ)
-    print('phi [deg]:', math.degrees(s3wlon_t1),
-          math.degrees(s3wlon_t2), math.degrees(s3wlon_t3), )
-    print('Array shape:', phi_jov_t1.shape,
-          phi_jov_t2.shape,  phi_jov_t3.shape)
+    # print('phi [deg]:', math.degrees(s3wlon_t1),
+    #       math.degrees(s3wlon_t2), math.degrees(s3wlon_t3), )
+    # print('Array shape:', phi_jov_t1.shape,
+    #       phi_jov_t2.shape,  phi_jov_t3.shape)
 
-    return tau_t1
+    return tau_list, phi_jov_list, theta_s3_list
 
 
 # %% Main function
 def main():
     # the initial SIII w-longitude of the moon
     s3wlon_t0 = np.radians(210.0)
+    s3wlon_t0_arr = np.radians(np.arange(-45.0, 360.0+45, 20))
+    arr_size = s3wlon_t0_arr.size
 
     Ai_best, ni_best, Ti_best, Hp_best = load_best_fit()
 
@@ -367,34 +399,119 @@ def main():
                                    0
                                    )
 
-    # Initial trace direction (1: 北向き, 2: 南向き)
-    NS = 1
+    # Initial trace direction (-1: 北向き, 1: 南向き)
+    NS = -1
 
-    args = list(zip(Ai_best*np.ones(4),
-                    ni_best*np.ones(4),
-                    Hp_best*np.ones(4),
-                    r_moon*np.ones(4),
-                    s3wlon_t0*np.ones(4),
-                    0*np.ones(4),
-                    S_A0*np.ones(4),
-                    NS*np.ones(4, dtype=int),
-                    num_reflection*np.ones(4, dtype=int)))
+    args = list(zip(Ai_best*np.ones(arr_size),
+                    ni_best*np.ones(arr_size),
+                    Hp_best*np.ones(arr_size),
+                    r_moon*np.ones(arr_size),
+                    s3wlon_t0_arr,
+                    0*np.ones(arr_size),
+                    S_A0*np.ones(arr_size),
+                    NS*np.ones(arr_size, dtype=int),
+                    num_reflection*np.ones(arr_size, dtype=int)))
 
+    time_start = time.time()
     with Pool(processes=parallel) as pool:
         results_list = list(pool.starmap(calc, args))
-    tau = np.array(results_list)    # [sec]
 
-    print(tau.shape)
+    print('Number of CPU cores used:', parallel)
+    print('Loop time [sec]:', round(time.time()-time_start, 4))
 
-    """calc(Ai_best,
-         ni_best,
-         Hp_best,
-         r_moon,
-         s3wlon_t0,
-         z_t0=0,
-         s_t0=S_A0,
-         hem=NS,)"""
+    # print('=== ALL ===')
+    # print(results_list)
+    print('=== results_list[0][1] ===')
+    print(results_list[0][0])
+    print(results_list[1][0])
 
+    tau_t1_arr = np.zeros(arr_size)
+    tau_t2_arr = np.zeros(arr_size)
+    tau_t3_arr = np.zeros(arr_size)
+    tau_t4_arr = np.zeros(arr_size)
+    tau_t5_arr = np.zeros(arr_size)
+    for i in range(arr_size):
+        tau_t1_arr[i] = results_list[i][0][0]
+        tau_t2_arr[i] = results_list[i][0][1]
+        tau_t3_arr[i] = results_list[i][0][2]
+        if num_reflection == 2:
+            tau_t4_arr[i] = results_list[i][0][3]
+            tau_t5_arr[i] = results_list[i][0][4]
+
+    """fig, ax = plt.subplots(figsize=(8, 4))
+    ax.set_xlim(0.0, 360.0)
+    ax.set_ylim(-90.0, 90.0)
+    ax.set_xticks(np.arange(0, 360+1, 45))
+    ax.set_yticks(np.arange(-90, 90+1, 30))
+    ax.grid(color=UC.lightgray, linewidth=0.5)
+    ax.set_xlabel('Jovigraphic east longitude [deg]')
+    ax.set_ylabel('SIII latitude')
+    color_list = [UC.red, UC.blue, UC.green, UC.yellow,
+                  UC.pink, UC.lightblue, UC.orange, UC.purple]
+
+    for i in range(len(color_list)):
+        phi_jov_t1_arr = results_list[i][1][0]
+        theta_s3_t1_arr = results_list[i][2][0]
+        phi_jov_t2_arr = results_list[i][1][1]
+        theta_s3_t2_arr = results_list[i][2][1]
+        phi_jov_t3_arr = results_list[i][1][2]
+        theta_s3_t3_arr = results_list[i][2][2]
+        if num_reflection >= 2:
+            phi_jov_t4_arr = results_list[i][1][3]
+            phi_jov_t5_arr = results_list[i][1][4]
+            theta_s3_t4_arr = results_list[i][2][3]
+            theta_s3_t5_arr = results_list[i][2][4]
+
+        ax.plot(np.degrees(phi_jov_t1_arr),
+                90.0-np.degrees(theta_s3_t1_arr),
+                color=color_list[i])
+        ax.plot(np.degrees(phi_jov_t2_arr),
+                90.0-np.degrees(theta_s3_t2_arr),
+                color=color_list[i])
+        ax.plot(np.degrees(phi_jov_t3_arr),
+                90.0-np.degrees(theta_s3_t3_arr),
+                color=color_list[i])
+        if num_reflection >= 2:
+            ax.plot(np.degrees(phi_jov_t4_arr),
+                    90.0-np.degrees(theta_s3_t4_arr),
+                    color=color_list[i])
+            ax.plot(np.degrees(phi_jov_t5_arr),
+                    90.0-np.degrees(theta_s3_t5_arr),
+                    color=color_list[i])
+    fig.tight_layout()
+    fig.savefig('img/test.jpg')
+    plt.show()"""
+
+    # Lead angle plot
+    eqlead_t1_arr = tau_t1_arr*360.0/Psyn
+    eqlead_t2_arr = tau_t2_arr*360.0/Psyn+eqlead_t1_arr
+    eqlead_t3_arr = tau_t3_arr*360.0/Psyn+eqlead_t2_arr
+    if num_reflection >= 2:
+        eqlead_t4_arr = tau_t4_arr*360.0/Psyn+eqlead_t3_arr
+        eqlead_t5_arr = tau_t5_arr*360.0/Psyn+eqlead_t4_arr
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.set_xlim(0.0, 360.0)
+    # ax.set_ylim(0.0, 90.0)
+    # ax.set_xticks(np.arange(0, 360+1, 45))
+    # ax.set_yticks(np.arange(0, 90+1, 30))
+    # ax.grid(color=UC.lightgray, linewidth=0.5)
+    ax.set_xlabel('Io SIII longitude [deg]')
+    ax.set_ylabel('Equatorial lead angle [deg]')
+    ax.plot(np.degrees(s3wlon_t0_arr)+eqlead_t1_arr,
+            eqlead_t1_arr, color=UC.blue)
+    ax.plot(np.degrees(s3wlon_t0_arr)+eqlead_t2_arr,
+            eqlead_t2_arr, color=UC.red)
+    ax.plot(np.degrees(s3wlon_t0_arr)+eqlead_t3_arr,
+            eqlead_t3_arr, color=UC.blue)
+    if num_reflection >= 2:
+        ax.plot(np.degrees(s3wlon_t0_arr)+eqlead_t4_arr,
+                eqlead_t4_arr, color=UC.red)
+        ax.plot(np.degrees(s3wlon_t0_arr)+eqlead_t5_arr,
+                eqlead_t5_arr, color=UC.blue)
+    fig.tight_layout()
+    fig.savefig('img/test4.jpg')
+    plt.show()
     return None
 
 
@@ -410,10 +527,10 @@ if __name__ == '__main__':
     Ti_num = 60
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
-    num_reflection = 1
+    num_reflection = 2      # 1 or 2
 
     # Number of parallel processes
-    parallel = 2
+    parallel = 6
 
     if TARGET_MOON == 'Io':
         Psyn = Psyn_io
