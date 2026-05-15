@@ -529,18 +529,17 @@ class Awave():
 
         # 伝搬時間
         tau = 0     # [sec]
+        tau_arr = np.zeros(Niter)   # Launchからの経過時間 [sec]
 
         # 線要素
-        ds = 8000     # [m]
+        ds = 10000.0     # [m]
 
         # Alfven速度を格納
         Va_arr = np.zeros(Niter)
 
-        # Magnetic latitudeを格納
+        # Magnetic latitudeとmagnetic east longitudeを格納
         theta_arr = np.zeros(Niter)
-
-        # Jovigraphic east longitudeを格納
-        phi_jov = np.zeros(Niter)
+        phi_arr = np.zeros(Niter)
 
         # 沿磁力線座標
         s = copy.copy(S_A0)
@@ -608,11 +607,25 @@ class Awave():
 
             # 高度900 kmの座標テーブルを参照
             if i > 3000:
-                if rs < 1.1*RJ:
+                if rs < (1.0*RJ+3000.0E+3):
+                    ds = 5000.0     # 線要素長を短く [m]
                     dis = np.abs(theta-theta_ref)
-                    idx = np.argmin(dis)
-                    r_h = r_ref[idx]
-                    theta_h = theta_ref[idx]
+                    # idx = np.argmin(dis)
+                    # r_h = r_ref[idx]
+                    # theta_h = theta_ref[idx]
+
+                    # 線形補間する場合
+                    idx_0 = np.argmin(dis)
+                    idx_1 = idx_0 + 1
+                    if abs(theta-theta_ref[idx_0-1]) < abs(theta-theta_ref[idx_0+1]):
+                        idx_1 = idx_0 - 1
+                    X0 = theta_ref[idx_0]
+                    X1 = theta_ref[idx_1]
+                    Y0 = r_ref[idx_0]
+                    Y1 = r_ref[idx_1]
+                    r_h = (Y1-Y0)*(theta-X0)/(X1-X0) + Y0
+                    theta_h = theta
+
                     x_ref = r_h*np.sin(theta_h)*np.cos(phi)
                     y_ref = r_h*np.sin(theta_h)*np.sin(phi)
                     z_ref = r_h*np.cos(theta_h)
@@ -627,15 +640,17 @@ class Awave():
 
             # 配列格納
             Va_arr[i] = Va          # [m/s]
-            phi_jov[i] = tau*OMGJ    # [rad]
-            theta_arr[i] = theta    # [rad]
+            theta_arr[i] = theta    # SIII colatitude [rad]
+            phi_arr[i] = phi        # SIII east longitude [rad]
+            tau_arr[i] = tau        # [sec]
 
         # 値が格納されていない部分は削除
         Va_arr = Va_arr[:i]
-        phi_jov = phi_jov[:i]+copy.copy(S3wlon_A0)
         theta_arr = theta_arr[:i]
+        phi_arr = phi_arr[:i]
+        tau_arr = tau_arr[:i]
 
-        return tau, rs, 2*np.pi-phi, z, s, phi_jov[::50], theta_arr[::50]
+        return tau_arr, rs, 2*np.pi-phi_arr, theta_arr, s
 
     def centri_eq(self, r_rj, theta, phi, current_coef=1.0,
                   thickness_coef=1.0,):
