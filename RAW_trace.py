@@ -370,7 +370,7 @@ def calc(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, num_reflection):
     z_t5 = rs_t5*math.cos(theta_s3_t5[-1])
 
     # 5th reflection
-    # -> 2nd RAW position at 900 km altitude on the same hemisphere as MAW
+    # -> 3rd RAW position at 900 km altitude on the opposite hemisphere
     tau_t6, rs_t6, s3wlon_t6, theta_s3_t6, s_t6 = Wave.Awave().trace3_reflect(rs_t5,
                                                                               s3wlon_t5[-1],
                                                                               z_t5,
@@ -381,12 +381,28 @@ def calc(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, num_reflection):
                                                                               hem*(-1)**5)
     z_t6 = rs_t6*math.cos(theta_s3_t6[-1])
 
+    # 6th reflection
+    # -> 3rd RAW position at 900 km altitude on the same hemisphere as MAW
+    tau_t7, rs_t7, s3wlon_t7, theta_s3_t7, s_t7 = Wave.Awave().trace3_reflect(rs_t6,
+                                                                              s3wlon_t6[-1],
+                                                                              z_t6,
+                                                                              s_t6,
+                                                                              Ai,
+                                                                              ni,
+                                                                              Hp,
+                                                                              hem*(-1)**6)
+    z_t7 = rs_t7*math.cos(theta_s3_t7[-1])
+
     # Result lists
-    tau_list = [tau_t1, tau_t2, tau_t3, tau_t4, tau_t5, tau_t6]
+    tau_list = [tau_t1, tau_t2, tau_t3,
+                tau_t4, tau_t5, tau_t6,
+                tau_t7,]
     theta_s3_list = [theta_s3_t1, theta_s3_t2, theta_s3_t3,
-                     theta_s3_t4, theta_s3_t5, theta_s3_t6]
+                     theta_s3_t4, theta_s3_t5, theta_s3_t6,
+                     theta_s3_t7]
     s3wlon_list = [s3wlon_t1, s3wlon_t2, s3wlon_t3,
-                   s3wlon_t4, s3wlon_t5, s3wlon_t6]
+                   s3wlon_t4, s3wlon_t5, s3wlon_t6,
+                   s3wlon_t7]
 
     # print('h [m]:', (rs_t1-1.0*RJ)*1E-3,
     #       (rs_t2-1.0*RJ)*1E-3, (rs_t3-1.0*RJ)*1E-3)
@@ -450,7 +466,7 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
     theta_s3_t5 = theta_s3_t3
 
     # 5th reflection
-    # -> 3rd RAW position at 900 km altitude on the opposite hemisphere as MAW
+    # -> 3rd RAW position at 900 km altitude on the opposite hemisphere
     tau_t6 = tau_t4
     rs_t6 = rs_t4
     s3wlon_t6 = s3wlon_t4
@@ -463,16 +479,30 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
     s3wlon_t7 = s3wlon_t5
     theta_s3_t7 = theta_s3_t5
 
+    # 7th reflection
+    # -> 4th RAW position at 900 km altitude on the opposite hemisphere
+    tau_t8 = tau_t6
+    rs_t8 = rs_t6
+    s3wlon_t8 = s3wlon_t6
+    theta_s3_t8 = theta_s3_t6
+
+    # 8th reflection
+    # -> 4th RAW position at 900 km altitude on the same hemisphere as MAW
+    tau_t9 = tau_t7
+    rs_t9 = rs_t7
+    s3wlon_t9 = s3wlon_t7
+    theta_s3_t9 = theta_s3_t7
+
     # Result lists
     tau_list = [tau_t1, tau_t2, tau_t3,
                 tau_t4, tau_t5, tau_t6,
-                tau_t7]
+                tau_t7, tau_t8, tau_t9]
     theta_s3_list = [theta_s3_t1, theta_s3_t2, theta_s3_t3,
                      theta_s3_t4, theta_s3_t5, theta_s3_t6,
-                     theta_s3_t7]
+                     theta_s3_t7, theta_s3_t8, theta_s3_t9]
     s3wlon_list = [s3wlon_t1, s3wlon_t2, s3wlon_t3,
                    s3wlon_t4, s3wlon_t5, s3wlon_t6,
-                   s3wlon_t7]
+                   s3wlon_t7, s3wlon_t8, s3wlon_t9]
 
     print('s [RJ]:', s_t1/RJ, s_t2/RJ)
 
@@ -482,7 +512,7 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
 # %% Main function
 def main():
     # the initial SIII w-longitude of the moon
-    s3wlon_t0_arr = np.radians(np.arange(-70.0, 360.0+1.0, 0.6))
+    s3wlon_t0_arr = np.radians(np.arange(-95.0, 360.0+1.0, d_phi))
     arr_size = s3wlon_t0_arr.size
 
     Ai_best, ni_best, Ti_best, Hp_best = load_best_fit()
@@ -555,6 +585,8 @@ def main():
     data_N4_arr = np.zeros((results_N[0][0][4].size, 3))     # 4 reflections
     data_N5_arr = np.zeros((results_N[0][0][5].size, 3))     # 5 reflections
     data_N6_arr = np.zeros((results_N[0][0][6].size, 3))     # 6 reflections
+    data_N7_arr = np.zeros((results_N[0][0][7].size, 3))     # 7 reflections
+    data_N8_arr = np.zeros((results_N[0][0][8].size, 3))     # 8 reflections
     data_S0_arr = np.zeros((results_S[0][0][0].size, 3))     # S MAW
     data_S1_arr = np.zeros((results_S[0][0][1].size, 3))     # a reflection
     data_S2_arr = np.zeros((results_S[0][0][2].size, 3))     # 2 reflections
@@ -562,6 +594,8 @@ def main():
     data_S4_arr = np.zeros((results_S[0][0][4].size, 3))     # 4 reflections
     data_S5_arr = np.zeros((results_S[0][0][5].size, 3))     # 5 reflections
     data_S6_arr = np.zeros((results_S[0][0][6].size, 3))     # 6 reflections
+    data_S7_arr = np.zeros((results_S[0][0][7].size, 3))     # 7 reflections
+    data_S8_arr = np.zeros((results_S[0][0][8].size, 3))     # 8 reflections
     for j in range(3):
         data_N0_arr[:, j] = results_N[0][j][0]
         data_N1_arr[:, j] = results_N[0][j][1]
@@ -570,6 +604,8 @@ def main():
         data_N4_arr[:, j] = results_N[0][j][4]
         data_N5_arr[:, j] = results_N[0][j][5]
         data_N6_arr[:, j] = results_N[0][j][6]
+        data_N7_arr[:, j] = results_N[0][j][7]
+        data_N8_arr[:, j] = results_N[0][j][8]
         data_S0_arr[:, j] = results_S[0][j][0]
         data_S1_arr[:, j] = results_S[0][j][1]
         data_S2_arr[:, j] = results_S[0][j][2]
@@ -577,6 +613,8 @@ def main():
         data_S4_arr[:, j] = results_S[0][j][4]
         data_S5_arr[:, j] = results_S[0][j][5]
         data_S6_arr[:, j] = results_S[0][j][6]
+        data_S7_arr[:, j] = results_S[0][j][7]
+        data_S8_arr[:, j] = results_S[0][j][8]
 
     # Equatorial lead angle array
     eq_N0_arr = data_N0_arr[:, 0]*360.0/Psyn
@@ -586,6 +624,8 @@ def main():
     eq_N4_arr = data_N4_arr[:, 0]*360.0/Psyn + eq_N3_arr[-1]
     eq_N5_arr = data_N5_arr[:, 0]*360.0/Psyn + eq_N4_arr[-1]
     eq_N6_arr = data_N6_arr[:, 0]*360.0/Psyn + eq_N5_arr[-1]
+    eq_N7_arr = data_N7_arr[:, 0]*360.0/Psyn + eq_N6_arr[-1]
+    eq_N8_arr = data_N8_arr[:, 0]*360.0/Psyn + eq_N7_arr[-1]
     eq_S0_arr = data_S0_arr[:, 0]*360.0/Psyn
     eq_S1_arr = data_S1_arr[:, 0]*360.0/Psyn + eq_S0_arr[-1]
     eq_S2_arr = data_S2_arr[:, 0]*360.0/Psyn + eq_S1_arr[-1]
@@ -593,6 +633,8 @@ def main():
     eq_S4_arr = data_S4_arr[:, 0]*360.0/Psyn + eq_S3_arr[-1]
     eq_S5_arr = data_S5_arr[:, 0]*360.0/Psyn + eq_S4_arr[-1]
     eq_S6_arr = data_S6_arr[:, 0]*360.0/Psyn + eq_S5_arr[-1]
+    eq_S7_arr = data_S7_arr[:, 0]*360.0/Psyn + eq_S6_arr[-1]
+    eq_S8_arr = data_S8_arr[:, 0]*360.0/Psyn + eq_S7_arr[-1]
 
     skip = 60   # int
     fig, ax = plt.subplots()
@@ -618,6 +660,10 @@ def main():
             color=UC.red)
     ax.plot(eq_N6_arr[::skip], np.cos(data_N6_arr[::skip, 1]),
             color=UC.red)
+    ax.plot(eq_N7_arr[::skip], np.cos(data_N7_arr[::skip, 1]),
+            color=UC.red)
+    ax.plot(eq_N8_arr[::skip], np.cos(data_N8_arr[::skip, 1]),
+            color=UC.red)
     ax.plot(eq_S0_arr[::skip], np.cos(data_S0_arr[::skip, 1]),
             color=UC.blue)
     ax.plot(eq_S1_arr[::skip], np.cos(data_S1_arr[::skip, 1]),
@@ -631,6 +677,10 @@ def main():
     ax.plot(eq_S5_arr[::skip], np.cos(data_S5_arr[::skip, 1]),
             color=UC.blue)
     ax.plot(eq_S6_arr[::skip], np.cos(data_S6_arr[::skip, 1]),
+            color=UC.blue)
+    ax.plot(eq_S7_arr[::skip], np.cos(data_S7_arr[::skip, 1]),
+            color=UC.blue)
+    ax.plot(eq_S8_arr[::skip], np.cos(data_S8_arr[::skip, 1]),
             color=UC.blue)
     fig.tight_layout()
     fig.savefig('img/reflect/'+exname+'/eqlead_vs_s3lat.jpg')
@@ -660,6 +710,8 @@ def main():
         tau_N4_fp = results_N[i][0][4][-1] + tau_N3_fp
         tau_N5_fp = results_N[i][0][5][-1] + tau_N4_fp
         tau_N6_fp = results_N[i][0][6][-1] + tau_N5_fp
+        tau_N7_fp = results_N[i][0][7][-1] + tau_N6_fp
+        tau_N8_fp = results_N[i][0][8][-1] + tau_N7_fp
 
         # Footprintの赤道リード角を格納 [deg]
         eq_N_fp[i, 0] = tau_N0_fp*360.0/Psyn
@@ -669,13 +721,15 @@ def main():
         eq_N_fp[i, 12] = tau_N4_fp*360.0/Psyn
         eq_N_fp[i, 15] = tau_N5_fp*360.0/Psyn
         eq_N_fp[i, 18] = tau_N6_fp*360.0/Psyn
+        eq_N_fp[i, 21] = tau_N7_fp*360.0/Psyn
+        eq_N_fp[i, 24] = tau_N8_fp*360.0/Psyn
 
         # FootprintのSIII余緯度を格納 [rad]
-        for j in range(reflections):
+        for j in range(1+reflections):
             eq_N_fp[i, 3*j+1] = results_N[i][1][j][-1]
 
         # FootprintのSIII西経を格納 [rad]
-        for j in range(reflections):
+        for j in range(1+reflections):
             eq_N_fp[i, 3*j+2] = results_N[i][2][j][-1]
 
         # Footprintまでの伝搬時間
@@ -686,6 +740,8 @@ def main():
         tau_S4_fp = results_S[i][0][4][-1] + tau_S3_fp
         tau_S5_fp = results_S[i][0][5][-1] + tau_S4_fp
         tau_S6_fp = results_S[i][0][6][-1] + tau_S5_fp
+        tau_S7_fp = results_S[i][0][7][-1] + tau_S6_fp
+        tau_S8_fp = results_S[i][0][8][-1] + tau_S7_fp
 
         # Footprintの赤道リード角を格納 [deg]
         eq_S_fp[i, 0] = tau_S0_fp*360.0/Psyn
@@ -695,13 +751,15 @@ def main():
         eq_S_fp[i, 12] = tau_S4_fp*360.0/Psyn
         eq_S_fp[i, 15] = tau_S5_fp*360.0/Psyn
         eq_S_fp[i, 18] = tau_S6_fp*360.0/Psyn
+        eq_S_fp[i, 21] = tau_S7_fp*360.0/Psyn
+        eq_S_fp[i, 24] = tau_S8_fp*360.0/Psyn
 
         # FootprintのSIII余緯度を格納 [rad]
-        for j in range(reflections):
+        for j in range(1+reflections):
             eq_S_fp[i, 3*j+1] = results_S[i][1][j][-1]
 
         # FootprintのSIII西経を格納 [rad]
-        for j in range(reflections):
+        for j in range(1+reflections):
             eq_S_fp[i, 3*j+2] = results_S[i][2][j][-1]
 
     # Interpolate & make array
@@ -752,9 +810,9 @@ def main():
     # Lead angle plot
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.set_xlim(0.0, 360.0)
-    ax.set_ylim(0.0, 80.0)
+    ax.set_ylim(0.0, 100.0)
     ax.set_xticks(np.arange(0, 360+1, 45))
-    ax.set_yticks(np.arange(0, 80+1, 10))
+    ax.set_yticks(np.arange(0, 100+1, 10))
     ax.grid(color=UC.lightgray, linewidth=0.5)
     ax.set_xlabel('Io SIII longitude [deg]')
     ax.set_ylabel('Equatorial lead angle [deg]')
@@ -803,20 +861,23 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_050'
+    exname = '003/20250516_047'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [6]
-    hem = 'N'
+    PJ_num = [3]
+    hem = 'both'
     Ai_num = 3
     ni_num = 50
     Ti_num = 60
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
-    reflections = 6         # fixed at 6
+    reflections = 8         # fixed at 8
 
     # Number of parallel processes
     parallel = 6
+
+    # Grid
+    d_phi = 0.6    # [deg]
 
     # Target select
     if TARGET_MOON == 'Io':
