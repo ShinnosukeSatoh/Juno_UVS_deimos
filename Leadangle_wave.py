@@ -511,7 +511,7 @@ class Awave():
         `Hp` Scale height of the plasma sheet [m] \\
         `NS` Tracing direction North=-1 or South=1 \\
         """
-        Niter = int(650000)
+        Niter = int(750000)
 
         # 経度0度(y=0)平面のx-z対応テーブル (高度900 km)
         extradius = np.loadtxt('data/Alt_900km/rthetaphi.txt')
@@ -546,6 +546,9 @@ class Awave():
 
         # 遠心力赤道 s=0 における質量密度
         rho_0 = Ai*AMU2KG*ni*(1E+6)
+
+        # FLAG
+        flag = 0
 
         # Direction of tracing
         if NS == -1:       # Northern MAW
@@ -636,6 +639,7 @@ class Awave():
                         rs = r_h
                         theta = theta_h
                         z = z_ref
+                        flag = 1
                         break
 
             # 配列格納
@@ -649,6 +653,8 @@ class Awave():
         theta_arr = theta_arr[:i]
         phi_arr = phi_arr[:i]
         tau_arr = tau_arr[:i]
+
+        # print('Iter flag:', flag)
 
         return tau_arr, rs, 2*np.pi-phi_arr, theta_arr, s
 

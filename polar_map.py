@@ -9,9 +9,6 @@ from matplotlib.ticker import AutoMinorLocator
 import math
 import datetime
 import Leadangle_wave as Wave
-from Leadangle_fit_JunoUVS import eqwlong_err
-from Leadangle_fit_JunoUVS import TEB_transit
-from Leadangle_fit_JunoUVS import create_argmesh
 from column_mass import calc as column_calc
 from UniversalColor import UniversalColor
 from SharedX import ShareXaxis
@@ -286,6 +283,58 @@ def Obsresults(PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP):
     return wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, wlon_moon_fp, et_fp, hem_fp, pj_fp
 
 
+# %% Footprint position will be mapped on the equatorial plane
+def ft_ref(hemisphere, MOON: str):
+    """
+    Args:
+        `fpwlon`: System III longitude of footprint aurora at Jupiter's upper atmosphere [deg]
+        `satmodel`: footprint model from magnetic field model
+        `MOON`: select from IO, EUROPA, GANYMEDE
+
+    Returns:
+        `y`: System III longitude of instantaneous field line at the orbital plane
+    """
+
+    data = readsav(savpath)
+
+    # Select the target moon
+    if (MOON == 'IO') or (MOON == 'Io'):
+        data_name = 'ifp_contour'
+
+    elif (MOON == 'EUROPA') or (MOON == 'Europa'):
+        data_name = 'efp_contour'
+
+    elif (MOON == 'GANYMEDE') or (MOON == 'Ganymede'):
+        data_name = 'gfp_contour'
+
+    # Select the hemisphere of the target auroal footprint
+    if hemisphere == -1:   # North MAW
+        variable = data[data_name+'_n']
+        eqwlon = variable[0:-1][:, 0]
+        s3wlon = variable[0:-1][:, 1]
+        s3lat = variable[0:-1][:, 2]
+
+    elif hemisphere == 1:  # South MAW
+        variable = data[data_name+'_s']
+        eqwlon = variable[0:-1][:, 0]
+        s3wlon = variable[0:-1][:, 1]
+        s3lat = variable[0:-1][:, 2]
+
+    elif hemisphere == -101:   # North TEB
+        variable = data[data_name+'_n']
+        eqwlon = variable[0:-1][:, 0]
+        s3wlon = variable[0:-1][:, 1]
+        s3lat = variable[0:-1][:, 2]
+
+    elif hemisphere == 101:  # South TEB
+        variable = data[data_name+'_s']
+        eqwlon = variable[0:-1][:, 0]
+        s3wlon = variable[0:-1][:, 1]
+        s3lat = variable[0:-1][:, 2]
+
+    return s3lat, s3wlon
+
+
 # %% Import the best-fit parameters (Ai, ni, Ti)
 def load_best_fit():
     chi2_1d = np.loadtxt('results/fit/'+exname+'/params_chi2.txt')
@@ -338,16 +387,35 @@ def fp_traced(target_moon_s3_obs):
     moon_s3_obs = interp[:, 0]
     idx = np.argmin(abs(moon_s3_obs-target_moon_s3_obs))
 
-    positions = interp[idx, :]
+    positions = interp[idx, :]      # 652
     return positions
+
+
+# %% Generate the footpath of MAW
+def fp_path():
+    interp = np.loadtxt('results/reflect/'+exname+'/data_fp_interp.txt')
+    moon_s3_obs = interp[:, 0]
+
+    # j=0: colatitude, j=1: w-longitude [rad]
+    pos_N_MAW = interp[:, 1:3]
+    pos_S_MAW = interp[:, 1+3*(1+reflections):3*(1+reflections)+3]
+
+    pos_S_RAW1 = interp[:, 4:6]
+    pos_N_RAW1 = interp[:, 4+3*(1+reflections):3*(1+reflections)+6]
+
+    x = np.sin(pos_N_MAW[:, 0])*np.cos(2*np.pi-pos_N_MAW[:, 1])
+    y = np.sin(pos_N_MAW[:, 0])*np.sin(2*np.pi-pos_N_MAW[:, 1])
+    idx = np.where(y > 0.48)
+    print(idx, moon_s3_obs[idx], pos_N_MAW[idx, 0], pos_N_MAW[idx, 1], y[idx])
+    return moon_s3_obs, pos_N_MAW, pos_S_MAW, pos_N_RAW1, pos_S_RAW1
 
 
 # %% Polar plot
 def polar_plot(fp_traced_arr):
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(9, 9), dpi=150)
     ax.set_xlim(-1, 1)
     ax.set_ylim(-1, 1)
-    for j in range((1+reflections)*2):
+    for j in range(2*(1+reflections)):
         colat = fp_traced_arr[3*j+1]    # [rad]
         wlon = fp_traced_arr[3*j+2]     # [rad]
         if 90.0-np.degrees(colat) >= 0:
@@ -362,7 +430,32 @@ def polar_plot(fp_traced_arr):
                 np.sin(colat)*np.sin(2*np.pi-wlon),
                 c=UC.blue,
             )
-        print(90.0-np.degrees(colat), np.degrees(wlon))
+        # print(90.0-np.degrees(colat), np.degrees(wlon))
+
+    _, pos_N_MAW, pos_S_MAW, _, _ = fp_path()
+    ax.scatter(
+        np.sin(pos_N_MAW[:, 0])*np.cos(2*np.pi-pos_N_MAW[:, 1]),
+        np.sin(pos_N_MAW[:, 0])*np.sin(2*np.pi-pos_N_MAW[:, 1]),
+        s=0.5, c=UC.red
+    )
+    ax.scatter(
+        np.sin(pos_S_MAW[:, 0])*np.cos(2*np.pi-pos_S_MAW[:, 1]),
+        np.sin(pos_S_MAW[:, 0])*np.sin(2*np.pi-pos_S_MAW[:, 1]),
+        s=0.5, c=UC.blue
+    )
+
+    ax.axhline(y=0, linestyle='--', linewidth=1.0,
+               color=UC.lightgray, zorder=0.5)
+    ax.axvline(x=0, linestyle='--', linewidth=1.0,
+               color=UC.lightgray, zorder=0.5)
+
+    # Io orbit
+    for i in range(6):
+        circle = plt.Circle(xy=(0, 0),
+                            radius=math.cos(math.radians(15.0*i)),
+                            fill=False, ec=UC.lightgray, linewidth=1,
+                            linestyle='--', zorder=0.5)
+        ax.add_patch(circle)
 
     fig.tight_layout()
     fig.savefig('img/test_polar.jpg')
@@ -383,6 +476,32 @@ def main():
 
     polar_plot(fp_traced_arr)
 
+    # 横軸をmoon_s3_wlonにする
+    moon_s3_wlon, pos_N_MAW, pos_S_MAW, _, _ = fp_path()
+    fig, ax = plt.subplots()
+    ax.plot(moon_s3_wlon, np.degrees(pos_N_MAW[:, 0]))
+    fig.tight_layout()
+    fig.savefig('img/test_theta.jpg')
+    plt.close()
+
+    fig, ax = plt.subplots()
+    # ax.set_xlim(185, 205)
+    ax.plot(moon_s3_wlon, np.degrees(pos_N_MAW[:, 1]))
+    fig.tight_layout()
+    fig.savefig('img/test_phi.jpg')
+    plt.close()
+
+    for i in range(pos_N_MAW[:, 1].size):
+        if math.degrees(pos_N_MAW[i, 1]) > 360.0:
+            pos_N_MAW[i, 1] += -2*np.pi
+
+    fig, ax = plt.subplots()
+    # ax.set_xlim(185, 205)
+    ax.plot(moon_s3_wlon, np.degrees(pos_N_MAW[:, 1]))
+    fig.tight_layout()
+    fig.savefig('img/test_phi2.jpg')
+    plt.close()
+
     return None
 
 
@@ -394,7 +513,7 @@ if __name__ == '__main__':
     # Input about Juno observation
     TARGET_MOON = 'Io'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [3]
+    PJ_LIST = [4]
     TARGET_HEM = 'both'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
@@ -402,7 +521,7 @@ if __name__ == '__main__':
     Ti_num = 1
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
-    reflections = 6         # fixed at 6
+    reflections = 8         # fixed at 8
 
     # Target select
     if TARGET_MOON == 'Io':

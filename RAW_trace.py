@@ -25,7 +25,6 @@ from SharedX import ShareXaxis
 from legend_shadow import legend_shadow
 
 import Leadangle_wave as Wave
-import datetime
 import time
 # import os
 from scipy.io import readsav
@@ -407,7 +406,7 @@ def calc(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, num_reflection):
     # print('h [m]:', (rs_t1-1.0*RJ)*1E-3,
     #       (rs_t2-1.0*RJ)*1E-3, (rs_t3-1.0*RJ)*1E-3)
     # print('z [RJ]:', z_t1/RJ, z_t2/RJ, z_t3/RJ)
-    print('s [RJ]:', s_t1/RJ, s_t2/RJ, s_t3/RJ)
+    # print('s [RJ]:', s_t1/RJ, s_t2/RJ, s_t3/RJ)
     # print('phi [deg]:', math.degrees(s3wlon_t1),
     #       math.degrees(s3wlon_t2), math.degrees(s3wlon_t3), )
     # print('Array shape:', phi_jov_t1.shape,
@@ -494,17 +493,42 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
     theta_s3_t9 = theta_s3_t7
 
     # Result lists
-    tau_list = [tau_t1, tau_t2, tau_t3,
-                tau_t4, tau_t5, tau_t6,
-                tau_t7, tau_t8, tau_t9]
-    theta_s3_list = [theta_s3_t1, theta_s3_t2, theta_s3_t3,
-                     theta_s3_t4, theta_s3_t5, theta_s3_t6,
-                     theta_s3_t7, theta_s3_t8, theta_s3_t9]
-    s3wlon_list = [s3wlon_t1, s3wlon_t2, s3wlon_t3,
-                   s3wlon_t4, s3wlon_t5, s3wlon_t6,
-                   s3wlon_t7, s3wlon_t8, s3wlon_t9]
+    skip = 60
+    tau_list = [
+        np.hstack((tau_t1[::skip], tau_t1[-1])),
+        np.hstack((tau_t2[::skip], tau_t2[-1])),
+        np.hstack((tau_t3[::skip], tau_t3[-1])),
+        np.hstack((tau_t4[::skip], tau_t4[-1])),
+        np.hstack((tau_t5[::skip], tau_t5[-1])),
+        np.hstack((tau_t6[::skip], tau_t6[-1])),
+        np.hstack((tau_t7[::skip], tau_t7[-1])),
+        np.hstack((tau_t8[::skip], tau_t8[-1])),
+        np.hstack((tau_t9[::skip], tau_t9[-1])),
+    ]
+    theta_s3_list = [
+        np.hstack((theta_s3_t1[::skip], theta_s3_t1[-1])),
+        np.hstack((theta_s3_t2[::skip], theta_s3_t2[-1])),
+        np.hstack((theta_s3_t3[::skip], theta_s3_t3[-1])),
+        np.hstack((theta_s3_t4[::skip], theta_s3_t4[-1])),
+        np.hstack((theta_s3_t5[::skip], theta_s3_t5[-1])),
+        np.hstack((theta_s3_t6[::skip], theta_s3_t6[-1])),
+        np.hstack((theta_s3_t7[::skip], theta_s3_t7[-1])),
+        np.hstack((theta_s3_t8[::skip], theta_s3_t8[-1])),
+        np.hstack((theta_s3_t9[::skip], theta_s3_t9[-1])),
+    ]
+    s3wlon_list = [
+        np.hstack((s3wlon_t1[::skip], s3wlon_t1[-1])),
+        np.hstack((s3wlon_t2[::skip], s3wlon_t2[-1])),
+        np.hstack((s3wlon_t3[::skip], s3wlon_t3[-1])),
+        np.hstack((s3wlon_t4[::skip], s3wlon_t4[-1])),
+        np.hstack((s3wlon_t5[::skip], s3wlon_t5[-1])),
+        np.hstack((s3wlon_t6[::skip], s3wlon_t6[-1])),
+        np.hstack((s3wlon_t7[::skip], s3wlon_t7[-1])),
+        np.hstack((s3wlon_t8[::skip], s3wlon_t8[-1])),
+        np.hstack((s3wlon_t9[::skip], s3wlon_t9[-1])),
+    ]
 
-    print('s [RJ]:', s_t1/RJ, s_t2/RJ)
+    # print('s [RJ]:', s_t1/RJ, s_t2/RJ)
 
     return tau_list, theta_s3_list, s3wlon_list
 
@@ -513,6 +537,8 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
 def main():
     # the initial SIII w-longitude of the moon
     s3wlon_t0_arr = np.radians(np.arange(-95.0, 360.0+1.0, d_phi))
+    # s3wlon = 195 deg あたりに特異点がある?
+    # s3wlon_t0_arr = np.radians(np.arange(200.0, 230.0+1.0, d_phi))
     arr_size = s3wlon_t0_arr.size
 
     Ai_best, ni_best, Ti_best, Hp_best = load_best_fit()
@@ -616,7 +642,7 @@ def main():
         data_S7_arr[:, j] = results_S[0][j][7]
         data_S8_arr[:, j] = results_S[0][j][8]
 
-    # Equatorial lead angle array
+    # Equatorial lead angle array [deg]
     eq_N0_arr = data_N0_arr[:, 0]*360.0/Psyn
     eq_N1_arr = data_N1_arr[:, 0]*360.0/Psyn + eq_N0_arr[-1]
     eq_N2_arr = data_N2_arr[:, 0]*360.0/Psyn + eq_N1_arr[-1]
@@ -636,7 +662,6 @@ def main():
     eq_S7_arr = data_S7_arr[:, 0]*360.0/Psyn + eq_S6_arr[-1]
     eq_S8_arr = data_S8_arr[:, 0]*360.0/Psyn + eq_S7_arr[-1]
 
-    skip = 60   # int
     fig, ax = plt.subplots()
     ax.set_xlim(0.0, 90.0)
     ax.set_ylim(-1.0, 1.0)
@@ -646,45 +671,50 @@ def main():
     ax.grid(color=UC.lightgray, linewidth=0.5)
     ax.set_xlabel('Equatorial lead angle [deg]')
     ax.set_ylabel(r'S${\rm III}$ latitude [deg]')
-    ax.plot(eq_N0_arr[::skip], np.cos(data_N0_arr[::skip, 1]),
+    ax.plot(eq_N0_arr, np.cos(data_N0_arr[:, 1]),
             color=UC.red)
-    ax.plot(eq_N1_arr[::skip], np.cos(data_N1_arr[::skip, 1]),
+    ax.plot(eq_N1_arr, np.cos(data_N1_arr[:, 1]),
             color=UC.red)
-    ax.plot(eq_N2_arr[::skip], np.cos(data_N2_arr[::skip, 1]),
+    ax.plot(eq_N2_arr, np.cos(data_N2_arr[:, 1]),
             color=UC.red)
-    ax.plot(eq_N3_arr[::skip], np.cos(data_N3_arr[::skip, 1]),
+    ax.plot(eq_N3_arr, np.cos(data_N3_arr[:, 1]),
             color=UC.red)
-    ax.plot(eq_N4_arr[::skip], np.cos(data_N4_arr[::skip, 1]),
+    ax.plot(eq_N4_arr, np.cos(data_N4_arr[:, 1]),
             color=UC.red)
-    ax.plot(eq_N5_arr[::skip], np.cos(data_N5_arr[::skip, 1]),
+    ax.plot(eq_N5_arr, np.cos(data_N5_arr[:, 1]),
             color=UC.red)
-    ax.plot(eq_N6_arr[::skip], np.cos(data_N6_arr[::skip, 1]),
+    ax.plot(eq_N6_arr, np.cos(data_N6_arr[:, 1]),
             color=UC.red)
-    ax.plot(eq_N7_arr[::skip], np.cos(data_N7_arr[::skip, 1]),
+    ax.plot(eq_N7_arr, np.cos(data_N7_arr[:, 1]),
             color=UC.red)
-    ax.plot(eq_N8_arr[::skip], np.cos(data_N8_arr[::skip, 1]),
+    ax.plot(eq_N8_arr, np.cos(data_N8_arr[:, 1]),
             color=UC.red)
-    ax.plot(eq_S0_arr[::skip], np.cos(data_S0_arr[::skip, 1]),
+    ax.plot(eq_S0_arr, np.cos(data_S0_arr[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S1_arr[::skip], np.cos(data_S1_arr[::skip, 1]),
+    ax.plot(eq_S1_arr, np.cos(data_S1_arr[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S2_arr[::skip], np.cos(data_S2_arr[::skip, 1]),
+    ax.plot(eq_S2_arr, np.cos(data_S2_arr[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S3_arr[::skip], np.cos(data_S3_arr[::skip, 1]),
+    ax.plot(eq_S3_arr, np.cos(data_S3_arr[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S4_arr[::skip], np.cos(data_S4_arr[::skip, 1]),
+    ax.plot(eq_S4_arr, np.cos(data_S4_arr[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S5_arr[::skip], np.cos(data_S5_arr[::skip, 1]),
+    ax.plot(eq_S5_arr, np.cos(data_S5_arr[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S6_arr[::skip], np.cos(data_S6_arr[::skip, 1]),
+    ax.plot(eq_S6_arr, np.cos(data_S6_arr[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S7_arr[::skip], np.cos(data_S7_arr[::skip, 1]),
+    ax.plot(eq_S7_arr, np.cos(data_S7_arr[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S8_arr[::skip], np.cos(data_S8_arr[::skip, 1]),
+    ax.plot(eq_S8_arr, np.cos(data_S8_arr[:, 1]),
             color=UC.blue)
     fig.tight_layout()
     fig.savefig('img/reflect/'+exname+'/eqlead_vs_s3lat.jpg')
     plt.close()
+
+    del eq_N0_arr, eq_N1_arr, eq_N2_arr, eq_N3_arr, eq_N4_arr
+    del eq_N5_arr, eq_N6_arr, eq_N7_arr, eq_N8_arr
+    del eq_S0_arr, eq_S1_arr, eq_S2_arr, eq_S3_arr, eq_S4_arr
+    del eq_S5_arr, eq_S6_arr, eq_S7_arr, eq_S8_arr
 
     # Save the auroral footprint data
     # j = 0: moon_s3_obs (at the time of the footprint observation, t = t_obs) [deg]
@@ -702,7 +732,7 @@ def main():
     eq_N_fp = np.zeros((arr_size, 3+3*reflections))
     eq_S_fp = np.zeros((arr_size, 3+3*reflections))
     for i in range(arr_size):
-        # Footprintまでの伝搬時間
+        # Footprintまでの伝搬時間 [sec]
         tau_N0_fp = results_N[i][0][0][-1]
         tau_N1_fp = results_N[i][0][1][-1] + tau_N0_fp
         tau_N2_fp = results_N[i][0][2][-1] + tau_N1_fp
@@ -724,6 +754,13 @@ def main():
         eq_N_fp[i, 21] = tau_N7_fp*360.0/Psyn
         eq_N_fp[i, 24] = tau_N8_fp*360.0/Psyn
 
+        # eq_N_fp[i, 0] = results_N[i][0][0][-1]*360.0/Psyn
+        # for j in range(reflections):
+        #     j += 1
+        #     eq_N_fp[i, 3*j] = results_N[i][0][j][-1]*360.0/Psyn
+        #     for k in range(j):
+        #         eq_N_fp[i, 3*j] += results_N[i][0][k-1][-1]*360.0/Psyn
+
         # FootprintのSIII余緯度を格納 [rad]
         for j in range(1+reflections):
             eq_N_fp[i, 3*j+1] = results_N[i][1][j][-1]
@@ -732,7 +769,7 @@ def main():
         for j in range(1+reflections):
             eq_N_fp[i, 3*j+2] = results_N[i][2][j][-1]
 
-        # Footprintまでの伝搬時間
+        # Footprintまでの伝搬時間 [sec]
         tau_S0_fp = results_S[i][0][0][-1]
         tau_S1_fp = results_S[i][0][1][-1] + tau_S0_fp
         tau_S2_fp = results_S[i][0][2][-1] + tau_S1_fp
@@ -770,42 +807,81 @@ def main():
     # j = 4, 10: equatorial lead angle for 3 reflections
     # j = 5, 11: equatorial lead angle for 4 reflections
     # j = 6, 12: equatorial lead angle for 5 reflections
-    moon_s3_obs = np.linspace(0.0, 360.0, 1200)  # every 0.3 deg
+    moon_s3_obs = np.linspace(0.0, 360.0, 1500)  # every 0.24 deg
     data_fp_interp = np.zeros((moon_s3_obs.size, 1+3*(1+reflections)*2))
     data_fp_interp[:, 0] = moon_s3_obs
     for j in range(1+reflections):
-        # FootprintのSIII余緯度
+        # Interp前のSIII経度軸 [deg]
+        eq_wlon_arr = np.degrees(s3wlon_t0_arr)+eq_N_fp[:, 3*j]
+
+        # SIII経度の周期性で線形補間がバグるのでデカルト座標系で線形補間を行う
+        # eq_N_fp[:, 3*j+2]は西経なので注意
+        fp_x = np.cos(2*np.pi-eq_N_fp[:, 3*j+2])
+        fp_y = np.sin(2*np.pi-eq_N_fp[:, 3*j+2])
+        fp_x_interp = np.interp(moon_s3_obs,
+                                eq_wlon_arr,
+                                fp_x,
+                                period=360.0)
+        fp_y_interp = np.interp(moon_s3_obs,
+                                eq_wlon_arr,
+                                fp_y,
+                                period=360.0)
+
+        # FootprintのSIII余緯度 [rad]
         data_fp_interp[:, 3*j+1] = np.interp(moon_s3_obs,
-                                             np.degrees(s3wlon_t0_arr) +
-                                             eq_N_fp[:, 3*j],
-                                             eq_N_fp[:, 3*j+1])
-        # FootprintのSIII西経
-        data_fp_interp[:, 3*j+2] = np.interp(moon_s3_obs,
-                                             np.degrees(s3wlon_t0_arr) +
-                                             eq_N_fp[:, 3*j],
-                                             eq_N_fp[:, 3*j+2])
-        # Footprintの赤道リード角
+                                             eq_wlon_arr,
+                                             eq_N_fp[:, 3*j+1],
+                                             period=360.0)
+
+        # FootprintのSIII西経 [rad]
+        # data_fp_interp[:, 3*j+2] = np.interp(moon_s3_obs,
+        #                                      eq_wlon_arr,
+        #                                      eq_N_fp[:, 3*j+2])
+        data_fp_interp[:, 3*j+2] = 2*np.pi-np.arctan2(fp_y_interp, fp_x_interp)
+
+        # Footprintの赤道リード角 [deg]
         data_fp_interp[:, 3*j+3] = np.interp(moon_s3_obs,
-                                             np.degrees(s3wlon_t0_arr) +
+                                             eq_wlon_arr,
                                              eq_N_fp[:, 3*j],
-                                             eq_N_fp[:, 3*j])
+                                             period=360.0)
+
         # 反対半球
         jj = j+(1+reflections)
-        # FootprintのSIII余緯度
+
+        # Interp前のSIII経度軸 [deg]
+        eq_wlon_arr = np.degrees(s3wlon_t0_arr)+eq_S_fp[:, 3*j]
+
+        # SIII経度の周期性で線形補間がバグるのでデカルト座標系で線形補間を行う
+        fp_x = np.cos(2*np.pi-eq_S_fp[:, 3*j+2])
+        fp_y = np.sin(2*np.pi-eq_S_fp[:, 3*j+2])
+        fp_x_interp = np.interp(moon_s3_obs,
+                                eq_wlon_arr,
+                                fp_x,
+                                period=360.0)
+        fp_y_interp = np.interp(moon_s3_obs,
+                                eq_wlon_arr,
+                                fp_y,
+                                period=360.0)
+
+        # FootprintのSIII余緯度 [rad]
         data_fp_interp[:, 3*jj+1] = np.interp(moon_s3_obs,
-                                              np.degrees(s3wlon_t0_arr) +
-                                              eq_S_fp[:, 3*j],
-                                              eq_S_fp[:, 3*j+1])
-        # FootprintのSIII西経
-        data_fp_interp[:, 3*jj+2] = np.interp(moon_s3_obs,
-                                              np.degrees(s3wlon_t0_arr) +
-                                              eq_S_fp[:, 3*j],
-                                              eq_S_fp[:, 3*j+2])
-        # Footprintの赤道リード角
+                                              eq_wlon_arr,
+                                              eq_S_fp[:, 3*j+1],
+                                              period=360.0)
+
+        # FootprintのSIII西経 [rad]
+        # data_fp_interp[:, 3*jj+2] = np.interp(moon_s3_obs,
+        #                                       eq_wlon_arr,
+        #                                       eq_S_fp[:, 3*j+2],
+        #                                       period=360.0)
+        data_fp_interp[:, 3*jj+2] = 2*np.pi - \
+            np.arctan2(fp_y_interp, fp_x_interp)
+
+        # Footprintの赤道リード角 [deg]
         data_fp_interp[:, 3*jj+3] = np.interp(moon_s3_obs,
-                                              np.degrees(s3wlon_t0_arr) +
+                                              eq_wlon_arr,
                                               eq_S_fp[:, 3*j],
-                                              eq_S_fp[:, 3*j])
+                                              period=360.0)
 
     # Lead angle plot
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -827,33 +903,45 @@ def main():
 
     fig.tight_layout()
     fig.savefig('img/reflect/'+exname+'/moons3wlon_vs_eqlead.jpg')
-
     plt.close()
 
+    # Save the data
     np.savetxt('results/reflect/'+exname+'/data_N0_arr.txt',
-               np.vstack((data_N0_arr[::skip, :], data_N0_arr[-1, :])))
+               data_N0_arr)
     np.savetxt('results/reflect/'+exname+'/data_N1_arr.txt',
-               np.vstack((data_N1_arr[::skip, :], data_N1_arr[-1, :])))
+               data_N1_arr)
     np.savetxt('results/reflect/'+exname+'/data_N2_arr.txt',
-               np.vstack((data_N2_arr[::skip, :], data_N2_arr[-1, :])))
+               data_N2_arr)
     np.savetxt('results/reflect/'+exname+'/data_N3_arr.txt',
-               np.vstack((data_N3_arr[::skip, :], data_N3_arr[-1, :])))
+               data_N3_arr)
     np.savetxt('results/reflect/'+exname+'/data_N4_arr.txt',
-               np.vstack((data_N4_arr[::skip, :], data_N4_arr[-1, :])))
+               data_N4_arr)
     np.savetxt('results/reflect/'+exname+'/data_N5_arr.txt',
-               np.vstack((data_N5_arr[::skip, :], data_N5_arr[-1, :])))
+               data_N5_arr)
+    np.savetxt('results/reflect/'+exname+'/data_N6_arr.txt',
+               data_N6_arr)
+    np.savetxt('results/reflect/'+exname+'/data_N7_arr.txt',
+               data_N7_arr)
+    np.savetxt('results/reflect/'+exname+'/data_N8_arr.txt',
+               data_N8_arr)
     np.savetxt('results/reflect/'+exname+'/data_S0_arr.txt',
-               np.vstack((data_S0_arr[::skip, :], data_S0_arr[-1, :])))
+               data_S0_arr)
     np.savetxt('results/reflect/'+exname+'/data_S1_arr.txt',
-               np.vstack((data_S1_arr[::skip, :], data_S1_arr[-1, :])))
+               data_S1_arr)
     np.savetxt('results/reflect/'+exname+'/data_S2_arr.txt',
-               np.vstack((data_S2_arr[::skip, :], data_S2_arr[-1, :])))
+               data_S2_arr)
     np.savetxt('results/reflect/'+exname+'/data_S3_arr.txt',
-               np.vstack((data_S3_arr[::skip, :], data_S3_arr[-1, :])))
+               data_S3_arr)
     np.savetxt('results/reflect/'+exname+'/data_S4_arr.txt',
-               np.vstack((data_S4_arr[::skip, :], data_S4_arr[-1, :])))
+               data_S4_arr)
     np.savetxt('results/reflect/'+exname+'/data_S5_arr.txt',
-               np.vstack((data_S5_arr[::skip, :], data_S5_arr[-1, :])))
+               data_S5_arr)
+    np.savetxt('results/reflect/'+exname+'/data_S6_arr.txt',
+               data_S6_arr)
+    np.savetxt('results/reflect/'+exname+'/data_S7_arr.txt',
+               data_S7_arr)
+    np.savetxt('results/reflect/'+exname+'/data_S8_arr.txt',
+               data_S8_arr)
     np.savetxt('results/reflect/'+exname+'/data_fp_interp.txt',
                data_fp_interp)
     return None
