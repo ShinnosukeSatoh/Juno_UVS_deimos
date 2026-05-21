@@ -417,6 +417,12 @@ def calc(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, num_reflection):
 
 # %% calc function
 def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
+    """
+    Return:
+        tau_list ... time [sec]
+        theta_s3_list ... SIII colatitude [rad]
+        s3wlon_list ... SIII west longitude [rad]
+    """
     # Initialize the result list/array
     tau_list = []
 
@@ -537,8 +543,7 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
 def main():
     # the initial SIII w-longitude of the moon
     s3wlon_t0_arr = np.radians(np.arange(-95.0, 360.0+1.0, d_phi))
-    # s3wlon = 195 deg あたりに特異点がある?
-    # s3wlon_t0_arr = np.radians(np.arange(200.0, 230.0+1.0, d_phi))
+    s3wlon_180 = np.argmin(s3wlon_t0_arr-np.pi)
     arr_size = s3wlon_t0_arr.size
 
     Ai_best, ni_best, Ti_best, Hp_best = load_best_fit()
@@ -604,63 +609,63 @@ def main():
     # j = 0: tau_arr (Alfveen travel time array[sec])
     # j = 1: theta_s3_arr (SIII colatitude [rad])
     # j = 2: s3wlon_arr (SIII west longitude [rad])
-    data_N0_arr = np.zeros((results_N[0][0][0].size, 3))     # N MAW
-    data_N1_arr = np.zeros((results_N[0][0][1].size, 3))     # a reflection
-    data_N2_arr = np.zeros((results_N[0][0][2].size, 3))     # 2 reflections
-    data_N3_arr = np.zeros((results_N[0][0][3].size, 3))     # 3 reflections
-    data_N4_arr = np.zeros((results_N[0][0][4].size, 3))     # 4 reflections
-    data_N5_arr = np.zeros((results_N[0][0][5].size, 3))     # 5 reflections
-    data_N6_arr = np.zeros((results_N[0][0][6].size, 3))     # 6 reflections
-    data_N7_arr = np.zeros((results_N[0][0][7].size, 3))     # 7 reflections
-    data_N8_arr = np.zeros((results_N[0][0][8].size, 3))     # 8 reflections
-    data_S0_arr = np.zeros((results_S[0][0][0].size, 3))     # S MAW
-    data_S1_arr = np.zeros((results_S[0][0][1].size, 3))     # a reflection
-    data_S2_arr = np.zeros((results_S[0][0][2].size, 3))     # 2 reflections
-    data_S3_arr = np.zeros((results_S[0][0][3].size, 3))     # 3 reflections
-    data_S4_arr = np.zeros((results_S[0][0][4].size, 3))     # 4 reflections
-    data_S5_arr = np.zeros((results_S[0][0][5].size, 3))     # 5 reflections
-    data_S6_arr = np.zeros((results_S[0][0][6].size, 3))     # 6 reflections
-    data_S7_arr = np.zeros((results_S[0][0][7].size, 3))     # 7 reflections
-    data_S8_arr = np.zeros((results_S[0][0][8].size, 3))     # 8 reflections
+    data_N0 = np.zeros((results_N[s3wlon_180][0][0].size, 3))  # N MAW
+    data_N1 = np.zeros((results_N[s3wlon_180][0][1].size, 3))  # a reflection
+    data_N2 = np.zeros((results_N[s3wlon_180][0][2].size, 3))  # 2 reflections
+    data_N3 = np.zeros((results_N[s3wlon_180][0][3].size, 3))  # 3 reflections
+    data_N4 = np.zeros((results_N[s3wlon_180][0][4].size, 3))  # 4 reflections
+    data_N5 = np.zeros((results_N[s3wlon_180][0][5].size, 3))  # 5 reflections
+    data_N6 = np.zeros((results_N[s3wlon_180][0][6].size, 3))  # 6 reflections
+    data_N7 = np.zeros((results_N[s3wlon_180][0][7].size, 3))  # 7 reflections
+    data_N8 = np.zeros((results_N[s3wlon_180][0][8].size, 3))  # 8 reflections
+    data_S0 = np.zeros((results_S[s3wlon_180][0][0].size, 3))  # S MAW
+    data_S1 = np.zeros((results_S[s3wlon_180][0][1].size, 3))  # a reflection
+    data_S2 = np.zeros((results_S[s3wlon_180][0][2].size, 3))  # 2 reflections
+    data_S3 = np.zeros((results_S[s3wlon_180][0][3].size, 3))  # 3 reflections
+    data_S4 = np.zeros((results_S[s3wlon_180][0][4].size, 3))  # 4 reflections
+    data_S5 = np.zeros((results_S[s3wlon_180][0][5].size, 3))  # 5 reflections
+    data_S6 = np.zeros((results_S[s3wlon_180][0][6].size, 3))  # 6 reflections
+    data_S7 = np.zeros((results_S[s3wlon_180][0][7].size, 3))  # 7 reflections
+    data_S8 = np.zeros((results_S[s3wlon_180][0][8].size, 3))  # 8 reflections
     for j in range(3):
-        data_N0_arr[:, j] = results_N[0][j][0]
-        data_N1_arr[:, j] = results_N[0][j][1]
-        data_N2_arr[:, j] = results_N[0][j][2]
-        data_N3_arr[:, j] = results_N[0][j][3]
-        data_N4_arr[:, j] = results_N[0][j][4]
-        data_N5_arr[:, j] = results_N[0][j][5]
-        data_N6_arr[:, j] = results_N[0][j][6]
-        data_N7_arr[:, j] = results_N[0][j][7]
-        data_N8_arr[:, j] = results_N[0][j][8]
-        data_S0_arr[:, j] = results_S[0][j][0]
-        data_S1_arr[:, j] = results_S[0][j][1]
-        data_S2_arr[:, j] = results_S[0][j][2]
-        data_S3_arr[:, j] = results_S[0][j][3]
-        data_S4_arr[:, j] = results_S[0][j][4]
-        data_S5_arr[:, j] = results_S[0][j][5]
-        data_S6_arr[:, j] = results_S[0][j][6]
-        data_S7_arr[:, j] = results_S[0][j][7]
-        data_S8_arr[:, j] = results_S[0][j][8]
+        data_N0[:, j] = results_N[0][j][0]
+        data_N1[:, j] = results_N[0][j][1]
+        data_N2[:, j] = results_N[0][j][2]
+        data_N3[:, j] = results_N[0][j][3]
+        data_N4[:, j] = results_N[0][j][4]
+        data_N5[:, j] = results_N[0][j][5]
+        data_N6[:, j] = results_N[0][j][6]
+        data_N7[:, j] = results_N[0][j][7]
+        data_N8[:, j] = results_N[0][j][8]
+        data_S0[:, j] = results_S[0][j][0]
+        data_S1[:, j] = results_S[0][j][1]
+        data_S2[:, j] = results_S[0][j][2]
+        data_S3[:, j] = results_S[0][j][3]
+        data_S4[:, j] = results_S[0][j][4]
+        data_S5[:, j] = results_S[0][j][5]
+        data_S6[:, j] = results_S[0][j][6]
+        data_S7[:, j] = results_S[0][j][7]
+        data_S8[:, j] = results_S[0][j][8]
 
     # Equatorial lead angle array [deg]
-    eq_N0_arr = data_N0_arr[:, 0]*360.0/Psyn
-    eq_N1_arr = data_N1_arr[:, 0]*360.0/Psyn + eq_N0_arr[-1]
-    eq_N2_arr = data_N2_arr[:, 0]*360.0/Psyn + eq_N1_arr[-1]
-    eq_N3_arr = data_N3_arr[:, 0]*360.0/Psyn + eq_N2_arr[-1]
-    eq_N4_arr = data_N4_arr[:, 0]*360.0/Psyn + eq_N3_arr[-1]
-    eq_N5_arr = data_N5_arr[:, 0]*360.0/Psyn + eq_N4_arr[-1]
-    eq_N6_arr = data_N6_arr[:, 0]*360.0/Psyn + eq_N5_arr[-1]
-    eq_N7_arr = data_N7_arr[:, 0]*360.0/Psyn + eq_N6_arr[-1]
-    eq_N8_arr = data_N8_arr[:, 0]*360.0/Psyn + eq_N7_arr[-1]
-    eq_S0_arr = data_S0_arr[:, 0]*360.0/Psyn
-    eq_S1_arr = data_S1_arr[:, 0]*360.0/Psyn + eq_S0_arr[-1]
-    eq_S2_arr = data_S2_arr[:, 0]*360.0/Psyn + eq_S1_arr[-1]
-    eq_S3_arr = data_S3_arr[:, 0]*360.0/Psyn + eq_S2_arr[-1]
-    eq_S4_arr = data_S4_arr[:, 0]*360.0/Psyn + eq_S3_arr[-1]
-    eq_S5_arr = data_S5_arr[:, 0]*360.0/Psyn + eq_S4_arr[-1]
-    eq_S6_arr = data_S6_arr[:, 0]*360.0/Psyn + eq_S5_arr[-1]
-    eq_S7_arr = data_S7_arr[:, 0]*360.0/Psyn + eq_S6_arr[-1]
-    eq_S8_arr = data_S8_arr[:, 0]*360.0/Psyn + eq_S7_arr[-1]
+    eq_N0_arr = data_N0[:, 0]*360.0/Psyn
+    eq_N1_arr = data_N1[:, 0]*360.0/Psyn + eq_N0_arr[-1]
+    eq_N2_arr = data_N2[:, 0]*360.0/Psyn + eq_N1_arr[-1]
+    eq_N3_arr = data_N3[:, 0]*360.0/Psyn + eq_N2_arr[-1]
+    eq_N4_arr = data_N4[:, 0]*360.0/Psyn + eq_N3_arr[-1]
+    eq_N5_arr = data_N5[:, 0]*360.0/Psyn + eq_N4_arr[-1]
+    eq_N6_arr = data_N6[:, 0]*360.0/Psyn + eq_N5_arr[-1]
+    eq_N7_arr = data_N7[:, 0]*360.0/Psyn + eq_N6_arr[-1]
+    eq_N8_arr = data_N8[:, 0]*360.0/Psyn + eq_N7_arr[-1]
+    eq_S0_arr = data_S0[:, 0]*360.0/Psyn
+    eq_S1_arr = data_S1[:, 0]*360.0/Psyn + eq_S0_arr[-1]
+    eq_S2_arr = data_S2[:, 0]*360.0/Psyn + eq_S1_arr[-1]
+    eq_S3_arr = data_S3[:, 0]*360.0/Psyn + eq_S2_arr[-1]
+    eq_S4_arr = data_S4[:, 0]*360.0/Psyn + eq_S3_arr[-1]
+    eq_S5_arr = data_S5[:, 0]*360.0/Psyn + eq_S4_arr[-1]
+    eq_S6_arr = data_S6[:, 0]*360.0/Psyn + eq_S5_arr[-1]
+    eq_S7_arr = data_S7[:, 0]*360.0/Psyn + eq_S6_arr[-1]
+    eq_S8_arr = data_S8[:, 0]*360.0/Psyn + eq_S7_arr[-1]
 
     fig, ax = plt.subplots()
     ax.set_xlim(0.0, 90.0)
@@ -671,41 +676,41 @@ def main():
     ax.grid(color=UC.lightgray, linewidth=0.5)
     ax.set_xlabel('Equatorial lead angle [deg]')
     ax.set_ylabel(r'S${\rm III}$ latitude [deg]')
-    ax.plot(eq_N0_arr, np.cos(data_N0_arr[:, 1]),
+    ax.plot(eq_N0_arr, np.cos(data_N0[:, 1]),
             color=UC.red)
-    ax.plot(eq_N1_arr, np.cos(data_N1_arr[:, 1]),
+    ax.plot(eq_N1_arr, np.cos(data_N1[:, 1]),
             color=UC.red)
-    ax.plot(eq_N2_arr, np.cos(data_N2_arr[:, 1]),
+    ax.plot(eq_N2_arr, np.cos(data_N2[:, 1]),
             color=UC.red)
-    ax.plot(eq_N3_arr, np.cos(data_N3_arr[:, 1]),
+    ax.plot(eq_N3_arr, np.cos(data_N3[:, 1]),
             color=UC.red)
-    ax.plot(eq_N4_arr, np.cos(data_N4_arr[:, 1]),
+    ax.plot(eq_N4_arr, np.cos(data_N4[:, 1]),
             color=UC.red)
-    ax.plot(eq_N5_arr, np.cos(data_N5_arr[:, 1]),
+    ax.plot(eq_N5_arr, np.cos(data_N5[:, 1]),
             color=UC.red)
-    ax.plot(eq_N6_arr, np.cos(data_N6_arr[:, 1]),
+    ax.plot(eq_N6_arr, np.cos(data_N6[:, 1]),
             color=UC.red)
-    ax.plot(eq_N7_arr, np.cos(data_N7_arr[:, 1]),
+    ax.plot(eq_N7_arr, np.cos(data_N7[:, 1]),
             color=UC.red)
-    ax.plot(eq_N8_arr, np.cos(data_N8_arr[:, 1]),
+    ax.plot(eq_N8_arr, np.cos(data_N8[:, 1]),
             color=UC.red)
-    ax.plot(eq_S0_arr, np.cos(data_S0_arr[:, 1]),
+    ax.plot(eq_S0_arr, np.cos(data_S0[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S1_arr, np.cos(data_S1_arr[:, 1]),
+    ax.plot(eq_S1_arr, np.cos(data_S1[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S2_arr, np.cos(data_S2_arr[:, 1]),
+    ax.plot(eq_S2_arr, np.cos(data_S2[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S3_arr, np.cos(data_S3_arr[:, 1]),
+    ax.plot(eq_S3_arr, np.cos(data_S3[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S4_arr, np.cos(data_S4_arr[:, 1]),
+    ax.plot(eq_S4_arr, np.cos(data_S4[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S5_arr, np.cos(data_S5_arr[:, 1]),
+    ax.plot(eq_S5_arr, np.cos(data_S5[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S6_arr, np.cos(data_S6_arr[:, 1]),
+    ax.plot(eq_S6_arr, np.cos(data_S6[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S7_arr, np.cos(data_S7_arr[:, 1]),
+    ax.plot(eq_S7_arr, np.cos(data_S7[:, 1]),
             color=UC.blue)
-    ax.plot(eq_S8_arr, np.cos(data_S8_arr[:, 1]),
+    ax.plot(eq_S8_arr, np.cos(data_S8[:, 1]),
             color=UC.blue)
     fig.tight_layout()
     fig.savefig('img/reflect/'+exname+'/eqlead_vs_s3lat.jpg')
@@ -753,13 +758,6 @@ def main():
         eq_N_fp[i, 18] = tau_N6_fp*360.0/Psyn
         eq_N_fp[i, 21] = tau_N7_fp*360.0/Psyn
         eq_N_fp[i, 24] = tau_N8_fp*360.0/Psyn
-
-        # eq_N_fp[i, 0] = results_N[i][0][0][-1]*360.0/Psyn
-        # for j in range(reflections):
-        #     j += 1
-        #     eq_N_fp[i, 3*j] = results_N[i][0][j][-1]*360.0/Psyn
-        #     for k in range(j):
-        #         eq_N_fp[i, 3*j] += results_N[i][0][k-1][-1]*360.0/Psyn
 
         # FootprintのSIII余緯度を格納 [rad]
         for j in range(1+reflections):
@@ -907,41 +905,41 @@ def main():
 
     # Save the data
     np.savetxt('results/reflect/'+exname+'/data_N0_arr.txt',
-               data_N0_arr)
+               data_N0)
     np.savetxt('results/reflect/'+exname+'/data_N1_arr.txt',
-               data_N1_arr)
+               data_N1)
     np.savetxt('results/reflect/'+exname+'/data_N2_arr.txt',
-               data_N2_arr)
+               data_N2)
     np.savetxt('results/reflect/'+exname+'/data_N3_arr.txt',
-               data_N3_arr)
+               data_N3)
     np.savetxt('results/reflect/'+exname+'/data_N4_arr.txt',
-               data_N4_arr)
+               data_N4)
     np.savetxt('results/reflect/'+exname+'/data_N5_arr.txt',
-               data_N5_arr)
+               data_N5)
     np.savetxt('results/reflect/'+exname+'/data_N6_arr.txt',
-               data_N6_arr)
+               data_N6)
     np.savetxt('results/reflect/'+exname+'/data_N7_arr.txt',
-               data_N7_arr)
+               data_N7)
     np.savetxt('results/reflect/'+exname+'/data_N8_arr.txt',
-               data_N8_arr)
+               data_N8)
     np.savetxt('results/reflect/'+exname+'/data_S0_arr.txt',
-               data_S0_arr)
+               data_S0)
     np.savetxt('results/reflect/'+exname+'/data_S1_arr.txt',
-               data_S1_arr)
+               data_S1)
     np.savetxt('results/reflect/'+exname+'/data_S2_arr.txt',
-               data_S2_arr)
+               data_S2)
     np.savetxt('results/reflect/'+exname+'/data_S3_arr.txt',
-               data_S3_arr)
+               data_S3)
     np.savetxt('results/reflect/'+exname+'/data_S4_arr.txt',
-               data_S4_arr)
+               data_S4)
     np.savetxt('results/reflect/'+exname+'/data_S5_arr.txt',
-               data_S5_arr)
+               data_S5)
     np.savetxt('results/reflect/'+exname+'/data_S6_arr.txt',
-               data_S6_arr)
+               data_S6)
     np.savetxt('results/reflect/'+exname+'/data_S7_arr.txt',
-               data_S7_arr)
+               data_S7)
     np.savetxt('results/reflect/'+exname+'/data_S8_arr.txt',
-               data_S8_arr)
+               data_S8)
     np.savetxt('results/reflect/'+exname+'/data_fp_interp.txt',
                data_fp_interp)
     return None
@@ -949,10 +947,10 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_047'
+    exname = '003/20250516_070'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [3]
+    PJ_num = [21]
     hem = 'both'
     Ai_num = 3
     ni_num = 50
