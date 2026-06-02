@@ -543,7 +543,7 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
 def main():
     # the initial SIII w-longitude of the moon
     s3wlon_t0_arr = np.radians(np.arange(-95.0, 360.0+1.0, d_phi))
-    s3wlon_180 = np.argmin(s3wlon_t0_arr-np.pi)
+    s3wlon_180 = np.argmin(abs(s3wlon_t0_arr-np.pi))
     arr_size = s3wlon_t0_arr.size
 
     Ai_best, ni_best, Ti_best, Hp_best = load_best_fit()
@@ -628,24 +628,24 @@ def main():
     data_S7 = np.zeros((results_S[s3wlon_180][0][7].size, 3))  # 7 reflections
     data_S8 = np.zeros((results_S[s3wlon_180][0][8].size, 3))  # 8 reflections
     for j in range(3):
-        data_N0[:, j] = results_N[0][j][0]
-        data_N1[:, j] = results_N[0][j][1]
-        data_N2[:, j] = results_N[0][j][2]
-        data_N3[:, j] = results_N[0][j][3]
-        data_N4[:, j] = results_N[0][j][4]
-        data_N5[:, j] = results_N[0][j][5]
-        data_N6[:, j] = results_N[0][j][6]
-        data_N7[:, j] = results_N[0][j][7]
-        data_N8[:, j] = results_N[0][j][8]
-        data_S0[:, j] = results_S[0][j][0]
-        data_S1[:, j] = results_S[0][j][1]
-        data_S2[:, j] = results_S[0][j][2]
-        data_S3[:, j] = results_S[0][j][3]
-        data_S4[:, j] = results_S[0][j][4]
-        data_S5[:, j] = results_S[0][j][5]
-        data_S6[:, j] = results_S[0][j][6]
-        data_S7[:, j] = results_S[0][j][7]
-        data_S8[:, j] = results_S[0][j][8]
+        data_N0[:, j] = results_N[s3wlon_180][j][0]
+        data_N1[:, j] = results_N[s3wlon_180][j][1]
+        data_N2[:, j] = results_N[s3wlon_180][j][2]
+        data_N3[:, j] = results_N[s3wlon_180][j][3]
+        data_N4[:, j] = results_N[s3wlon_180][j][4]
+        data_N5[:, j] = results_N[s3wlon_180][j][5]
+        data_N6[:, j] = results_N[s3wlon_180][j][6]
+        data_N7[:, j] = results_N[s3wlon_180][j][7]
+        data_N8[:, j] = results_N[s3wlon_180][j][8]
+        data_S0[:, j] = results_S[s3wlon_180][j][0]
+        data_S1[:, j] = results_S[s3wlon_180][j][1]
+        data_S2[:, j] = results_S[s3wlon_180][j][2]
+        data_S3[:, j] = results_S[s3wlon_180][j][3]
+        data_S4[:, j] = results_S[s3wlon_180][j][4]
+        data_S5[:, j] = results_S[s3wlon_180][j][5]
+        data_S6[:, j] = results_S[s3wlon_180][j][6]
+        data_S7[:, j] = results_S[s3wlon_180][j][7]
+        data_S8[:, j] = results_S[s3wlon_180][j][8]
 
     # Equatorial lead angle array [deg]
     eq_N0_arr = data_N0[:, 0]*360.0/Psyn
@@ -947,10 +947,10 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_070'
+    exname = '003/20250516_047'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [21]
+    PJ_num = [3]
     hem = 'both'
     Ai_num = 3
     ni_num = 50
@@ -960,7 +960,7 @@ if __name__ == '__main__':
     reflections = 8         # fixed at 8
 
     # Number of parallel processes
-    parallel = 6
+    parallel = 9
 
     # Grid
     d_phi = 0.6    # [deg]

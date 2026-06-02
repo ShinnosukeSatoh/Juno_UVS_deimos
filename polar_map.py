@@ -544,10 +544,19 @@ def propagation_plot():
             color=UC.blue)
     ax.plot(eq_S8_arr, np.cos(data_S8[:, 1]),
             color=UC.blue)
+
+    title = 'PJ'+str(PJ_LIST[0]).zfill(2)
+    if TARGET_HEM != 'both':
+        title += TARGET_HEM
+    title += ' ('+r'$\lambda_{\rm III}^{\rm Io}=$'
+    title += str(round(np.mod(math.degrees(data_N0[0, 2]), 360.0), 1))
+    title += '˚W)'
+
     ax2 = ax.twiny()
     eqlead_max = eqlead_max
     tau_max = eqlead_max/(360.0/Psyn)   # [sec]
     print('tau_max [min]:', tau_max/60.0)
+    ax2.set_title(title)
     ax2.set_xlabel('Time [min]')
     ax2.set_xlim(0, tau_max/60.0)
     ax2.set_xticks(np.arange(0, 180+1, 20))
@@ -598,92 +607,214 @@ def leadangle_plot():
 
 
 # %% Polar plot
-def polar_plot(fp_traced_arr, target_moon_s3_obs):
-    fig, ax = plt.subplots(figsize=(9, 9), dpi=150)
-    ax.set_xlim(-1, 1)
-    ax.set_ylim(-1, 1)
+def polar_plot(fp_traced_arr,
+               target_moon_s3_obs,
+               target_wlon_fp,
+               target_err_wlon_fp,
+               target_lat_fp,
+               target_err_lat_fp,
+               target_et_fp):
+    savename = 'polar_NS'
+
+    F = ShareXaxis()
+    F.fontsize = 23
+    F.fontname = 'Liberation Sans Narrow'
+
+    title = 'PJ'+str(PJ_LIST[0]).zfill(2)
+    if TARGET_HEM != 'both':
+        title += TARGET_HEM
+    target_UTC = spice.et2utc(et=target_et_fp, format_str='C', prec=0)
+    print(target_UTC)
+    title += ' '+target_UTC
+    title += ' ('+r'$\lambda_{\rm III}^{\rm Io}=$'
+    title += str(round(target_moon_s3_obs, 2))
+    title += '˚W)'
+
+    F.set_figparams(nrows=1, figsize=(9, 9),
+                    ticksize=1.5, dpi='L')
+    F.initialize()
+
+    F.ax.set_title(title)
+    F.set_xaxis(label=r'$X$ [$R_{\rm J}$]',
+                min=-0.82, max=0.82,
+                ticks=np.linspace(-8, 8, 9)/10,
+                ticklabels=np.linspace(-8, 8, 9)/10,
+                minor_num=2)
+    F.set_yaxis(ax_idx=0, label=r'$Y$ [$R_{\rm J}$]',
+                min=-0.82, max=0.82,
+                ticks=np.linspace(-8, 8, 9)/10,
+                ticklabels=np.linspace(-8, 8, 9)/10,
+                minor_num=2)
+
     for j in range(2*(1+reflections)):
         colat = fp_traced_arr[3*j+1]    # [rad]
         wlon = fp_traced_arr[3*j+2]     # [rad]
         if 90.0-np.degrees(colat) >= 0:
-            ax.scatter(
+            F.ax.scatter(
                 np.sin(colat)*np.cos(2*np.pi-wlon),
                 np.sin(colat)*np.sin(2*np.pi-wlon),
-                fc=UC.red, ec='w', zorder=2.0
+                fc=UC.red, ec='w', s=20.0, zorder=2.0
             )
         else:
-            ax.scatter(
+            F.ax.scatter(
                 np.sin(colat)*np.cos(2*np.pi-wlon),
                 np.sin(colat)*np.sin(2*np.pi-wlon),
-                fc=UC.blue, ec='w', zorder=2.0,
+                fc=UC.blue, ec='w', s=20.0, zorder=2.0,
             )
         # print(90.0-np.degrees(colat), np.degrees(wlon))
 
     # Foot path
     _, pos_N_MAW, pos_S_MAW, _, _ = fp_path()
-    ax.scatter(
+    F.ax.scatter(
         np.sin(pos_N_MAW[:, 0])*np.cos(2*np.pi-pos_N_MAW[:, 1]),
         np.sin(pos_N_MAW[:, 0])*np.sin(2*np.pi-pos_N_MAW[:, 1]),
-        s=0.6, c=UC.red, zorder=1.0,
+        s=0.05, c=UC.red, zorder=1.0,
     )
-    ax.scatter(
+    F.ax.scatter(
         np.sin(pos_S_MAW[:, 0])*np.cos(2*np.pi-pos_S_MAW[:, 1]),
         np.sin(pos_S_MAW[:, 0])*np.sin(2*np.pi-pos_S_MAW[:, 1]),
-        s=0.6, c=UC.blue, zorder=1.0,
+        s=0.05, c=UC.blue, zorder=1.0,
     )
 
     # Instantaneous footprint positions
     insta_fp_pos_N, insta_fp_pos_S = instantaneous(target_moon_s3_obs)
-    ax.scatter(
+    F.ax.scatter(
         math.sin(insta_fp_pos_N[0])*math.cos(2*np.pi-insta_fp_pos_N[1]),
         math.sin(insta_fp_pos_N[0])*math.sin(2*np.pi-insta_fp_pos_N[1]),
-        marker='D', fc='k', ec='w',
+        marker='D', fc='k', ec='w', s=20.0,
     )
-    ax.scatter(
+    F.ax.scatter(
         math.sin(insta_fp_pos_S[0])*math.cos(2*np.pi-insta_fp_pos_S[1]),
         math.sin(insta_fp_pos_S[0])*math.sin(2*np.pi-insta_fp_pos_S[1]),
-        marker='D', fc='k', ec='w',
+        marker='D', fc='k', ec='w', s=20.0,
     )
 
-    # x = 0 and y = 0
-    phi_grid = np.radians(np.linspace(0, 360, 9))
+    # Observed footprint position
+    if target_wlon_fp > -990:
+        x_obs = math.sin(math.radians(90-target_lat_fp)) * \
+            math.cos(math.radians(360-target_wlon_fp))
+        y_obs = math.sin(math.radians(90-target_lat_fp)) * \
+            math.sin(math.radians(360-target_wlon_fp))
+        x_obs_1 = math.sin(math.radians(90-target_lat_fp)) * \
+            math.cos(math.radians(360-target_wlon_fp+target_err_wlon_fp))
+        x_obs_2 = math.sin(math.radians(90-target_lat_fp)) * \
+            math.cos(math.radians(360-target_wlon_fp-target_err_wlon_fp))
+        x_obs_3 = math.sin(math.radians(90-target_lat_fp+target_err_lat_fp)
+                           )*math.cos(math.radians(360-target_wlon_fp))
+        x_obs_4 = math.sin(math.radians(90-target_lat_fp-target_err_lat_fp)
+                           )*math.cos(math.radians(360-target_wlon_fp))
+        y_obs_1 = math.sin(math.radians(90-target_lat_fp)) * \
+            math.sin(math.radians(360-target_wlon_fp+target_err_wlon_fp))
+        y_obs_2 = math.sin(math.radians(90-target_lat_fp)) * \
+            math.sin(math.radians(360-target_wlon_fp-target_err_wlon_fp))
+        y_obs_3 = math.sin(math.radians(90-target_lat_fp+target_err_lat_fp)
+                           )*math.sin(math.radians(360-target_wlon_fp))
+        y_obs_4 = math.sin(math.radians(90-target_lat_fp-target_err_lat_fp)
+                           )*math.sin(math.radians(360-target_wlon_fp))
+        F.ax.plot(
+            [x_obs_1, x_obs_2], [y_obs_1, y_obs_2],
+            color='k', linewidth=1.0,
+            zorder=10,
+        )
+        F.ax.plot(
+            [x_obs_3, x_obs_4], [y_obs_3, y_obs_4],
+            color='k', linewidth=1.0,
+            zorder=10,
+        )
+        savename += '_UVS'
+
+    # Longitudinal grid
+    s3wlon_grid = np.linspace(0, 360, 9)
+    phi_grid = np.radians(360-s3wlon_grid)
     for i in range(phi_grid.size):
-        ax.plot((0, np.cos(phi_grid[i])),
-                (0, np.sin(phi_grid[i])),
-                color=UC.lightgray, linestyle='--',
-                linewidth=1.0, zorder=0.5)
+        F.ax.plot((0, np.cos(phi_grid[i])),
+                  (0, np.sin(phi_grid[i])),
+                  color=UC.lightgray, linestyle='--',
+                  linewidth=1.0, zorder=0.5)
+        if i in [7, phi_grid.size-1]:
+            continue
+        F.textbox(ax_idx=0,
+                  x=0.73*np.cos(phi_grid[i]),
+                  y=0.73*np.sin(phi_grid[i]),
+                  text=str(int(s3wlon_grid[i]))+'˚W',
+                  fontsize=F.fontsize*0.7,
+                  horizontalalignment='center',
+                  textshadow=False,
+                  textcolor='k',
+                  facealpha=0.0,
+                  edgecolor=(0, 0, 0, 0), )
 
-    """ax.axhline(y=0, linestyle='--', linewidth=1.0,
-               color=UC.lightgray, zorder=0.5)
-    ax.axvline(x=0, linestyle='--', linewidth=1.0,
-               color=UC.lightgray, zorder=0.5)"""
-
-    # Io orbit
-    for i in range(6):
+    # Latitudinal grid
+    lat_grid = np.arange(0, 90+1, 15)
+    for i in range(lat_grid.size):
         circle = plt.Circle(xy=(0, 0),
-                            radius=math.cos(math.radians(15.0*i)),
+                            radius=math.cos(math.radians(90.0-lat_grid[i])),
                             fill=False, ec=UC.lightgray, linewidth=1,
                             linestyle='--', zorder=0.5)
-        ax.add_patch(circle)
+        F.ax.add_patch(circle)
+        if i in [0, 1, lat_grid.size-1]:
+            continue
+        F.textbox(ax_idx=0,
+                  x=np.cos(math.radians(90.0-lat_grid[i]))/1.4142,
+                  y=np.cos(math.radians(90.0-lat_grid[i]))/1.4142,
+                  text=str(int(90-lat_grid[i]))+'˚N/S',
+                  fontsize=F.fontsize*0.7,
+                  horizontalalignment='center',
+                  textshadow=False,
+                  textcolor='k',
+                  facealpha=0.0,
+                  edgecolor=(0, 0, 0, 0), )
 
-    fig.tight_layout()
-    fig.savefig('img/reflect/'+exname+'/polar_NS.jpg')
+    F.fig.tight_layout()
+    F.fig.savefig('img/reflect/'+exname+'/'+savename+'.jpg')
     plt.close()
+
+    print('Equatorial lead angle [deg]: ==========')
+    for j in range(2*(1+reflections)):
+        eq_lead = fp_traced_arr[3*j+3]    # [deg]
+        if j in [0, reflections+1]:
+            print('  (MAW)  ', round(eq_lead, 3))
+        else:
+            print('  (RAW)  ', round(eq_lead, 3))
+    print('At 900 km [lat, wlongitude] [deg]: ==========')
+    for j in range(2*(1+reflections)):
+        colat = fp_traced_arr[3*j+1]    # [rad]
+        wlon = fp_traced_arr[3*j+2]     # [rad]
+        if j in [0, reflections+1]:
+            print(
+                '  (MAW)  ',
+                round(90.0-math.degrees(colat), 3),
+                round(np.mod(math.degrees(wlon), 360.0), 3)
+            )
+        else:
+            print(
+                '  (RAW)  ',
+                round(90.0-math.degrees(colat), 3),
+                round(np.mod(math.degrees(wlon), 360.0), 3)
+            )
 
     return 0
 
 
 # %% the main function
 def main():
+    # Observed footprint positions
     wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, _, et_fp, hem_fp, _ = Obsresults(
         PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP
     )
-
     _, _, _, _, _, _, moon_S3wlon0_arr = moonS3wlon_arr(et_fp, TARGET_MOON)
 
-    fp_traced_arr = fp_traced(moon_S3wlon0_arr[0])      # [deg]
-
-    polar_plot(fp_traced_arr, moon_S3wlon0_arr[0])
+    obs_select = 0      # Which obs time?
+    fp_traced_arr = fp_traced(moon_S3wlon0_arr[obs_select])      # [deg]
+    polar_plot(
+        fp_traced_arr,
+        moon_S3wlon0_arr[obs_select],
+        wlon_fp[obs_select],
+        err_wlon_fp[obs_select],
+        lat_fp[obs_select],
+        err_lat_fp[obs_select],
+        et_fp[obs_select]
+    )
 
     # 横軸をmoon_s3_wlonにする
     moon_s3_wlon, pos_N_MAW, pos_S_MAW, _, _ = fp_path()
@@ -714,19 +845,34 @@ def main():
     propagation_plot()
     leadangle_plot()
 
+    if TARGET_ET is not False:
+        _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(
+            TARGET_ET, moon=TARGET_MOON)
+        print('moon_S3wlon0:', moon_S3wlon0)
+        fp_traced_arr = fp_traced(moon_S3wlon0[0])      # [deg]
+        polar_plot(
+            fp_traced_arr,
+            moon_S3wlon0[0],
+            -9999.0,
+            -9999.0,
+            -9999.0,
+            -9999.0,
+            TARGET_ET[0]
+        )
+
     return None
 
 
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_058'
+    exname = '003/20250516_055'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
-    TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [11]
-    TARGET_HEM = 'N'
+    TARGET_FP = ['MAW']
+    PJ_LIST = [9]
+    TARGET_HEM = 'S'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
     ni_num = 50
@@ -734,6 +880,9 @@ if __name__ == '__main__':
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
     reflections = 8         # fixed at 8
+
+    # TARGET_ET = np.array([721041971.3])     # False or ET
+    TARGET_ET = False
 
     # Target select
     if TARGET_MOON == 'Io':
