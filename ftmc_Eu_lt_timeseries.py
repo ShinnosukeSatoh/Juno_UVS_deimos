@@ -77,7 +77,7 @@ elif target_moon == 'Ganymede':
 PJ_LIST = [3]+np.arange(4, 43+1, 1).tolist()
 
 
-# deta_load
+# data_load
 def data_load(exname):
     chi2_1d = np.loadtxt('results/fit/'+exname+'/params_chi2.txt')
     Ai_1d = np.loadtxt('results/fit/'+exname+'/params_Ai.txt')
