@@ -48,35 +48,26 @@ Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
 
 
 # %% Footprint obs. list (Ganymede)
-PJ_LIST = [3, 4, 5, 6,  # 3,
+PJ_LIST = [3, 4, 5, 6,
            7,  # 8,
-           11,  # 8,
-           8,
-           12, 12, 13,  # 14,
-           14,
-           15, 16, 17, 18,  # 19,
-           19, 20, 21, 22, 23,
-           # 3,
+           8, 11, 12,
+           12, 13, 14, 15,
+           16, 17, 19, 20, 21,
+           22, 23,
            ]
-HEM_LIST = ['both', 'both', 'S', 'both',  # 'N',
-            'S',  # 'both',
-            'N',  # 'N',
-            'S',
-            'N', 'S', 'both',  # 'N',
-            'S',
-            'N', 'S', 'S', 'S',  # 'N',
-            'S', 'N', 'S', 'N', 'both',
-            # 'S',
+HEM_LIST = ['S', 'both', 'S', 'both',
+            'S',  # 'N',
+            'S', 'N', 'N',
+            'S', 'both', 'S', 'N',
+            'S', 'S', 'S', 'N', 'S',
+            'N', 'both'
             ]
-EXNAME_LIST = ['001', '002', '003', '004',  # '005',
-               '007',  # '008',
-               '009',  # '010',
-               '011',
-               '012', '013', '014',  # '015',
-               '016',
-               '017', '018', '019', '020',  # '021',
-               '022', '023', '024', '025', '026',
-               # '027',
+EXNAME_LIST = ['030', '031', '032', '033',
+               '034',  # '035',
+               '036', '037', '038',
+               '039', '040', '042', '043',
+               '044', '045', '048', '049', '050',
+               '051', '052',
                ]
 
 
@@ -89,6 +80,7 @@ MU0 = 1.26E-6            # 真空中の透磁率
 AMU2KG = 1.66E-27        # 原子質量をkgに変換するファクタ [kg]
 RJ = 71492E+3            # JUPITER RADIUS [m]
 MJ = 1.90E+27            # JUPITER MASS [kg]
+OMGJ = 2*np.pi/(9.0*3600.0+55.5*60)  # JUPITER ANGULAR VELOCITY [rad/s]
 C = 2.99792E+8           # LIGHT SPEED [m/s]
 G = 6.67E-11             # 万有引力定数  [m^3 kg^-1 s^-2]
 
@@ -137,7 +129,10 @@ con20_mu_i_tot = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
 ni_best = np.zeros(len(PJ_LIST))
 ni_err_0 = np.zeros(len(PJ_LIST))
 ni_err_1 = np.zeros(len(PJ_LIST))
+Hp = np.zeros(len(PJ_LIST))
 D_thick = np.zeros(len(PJ_LIST))
+mu_i_Con2020 = np.zeros(len(PJ_LIST))
+rho_Con2020 = np.zeros(len(PJ_LIST))
 for i in range(len(PJ_LIST)):
     exname = exdir+'_'+EXNAME_LIST[i]
     chi2_1d = np.loadtxt('results/fit/'+exname+'/params_chi2.txt')
@@ -193,19 +188,37 @@ for i in range(len(PJ_LIST)):
     D_coef_err = np.loadtxt('results/magdisk_thickness_fit/' +
                             TARGET_MOON[0:2]+'_coef_1.txt')
 
-    D_disk = 3.6*RJ                          # [m]
-    Hp = (2/np.pi)*D_disk*D_coef[select_pj]  # [m]
-    D_thick[i] = D_disk*D_coef[select_pj]    # [m]
+    D_disk = 3.6*RJ                                      # [m]
+    Hp[i] = (2/np.sqrt(np.pi))*D_disk*D_coef[select_pj]  # [m]
+    D_thick[i] = D_disk*D_coef[select_pj]                # [m]
 
     # Best fit ion density
     d_chi2 = d_chi2_3d[:, 1, 0]
     print(d_chi2.shape)
     print(np.where(d_chi2 <= 9.00))
+    Ai_best = Ai_3d[0, 1, 0]
     ni_best[i] = ni_3d[:, 1, 0][np.argmin(d_chi2)]
     ni_err_0[i] = ni_best[i]-np.min(ni_3d[:, 1, 0][np.where(d_chi2 <= 9.00)])
     ni_err_1[i] = np.max(ni_3d[:, 1, 0][np.where(d_chi2 <= 9.00)])-ni_best[i]
     print('ni_best:', ni_best[i])
     print('ni_err:', ni_err_0[i], ni_err_1[i])
+
+    # Connerney+2020の結果から質量密度を類推する
+    mu_i_default = 139.6    # default: 139.6 [nT]
+    d_rj_default = 3.6      # default: 3.6 [RJ]
+    jm.Con2020.Config(mu_i=mu_i_default*mui_coef[select_pj],
+                      d=d_rj_default*D_coef[select_pj],
+                      equation_type='analytic')
+    Bx0, By0, Bz0 = jm.Internal.Field(r_moon/RJ, 0.0, 0.0)  # [nT]
+    Bx1, By1, Bz1 = jm.Con2020.Field(r_moon/RJ, 0.0, 0.0)   # [nT]
+    Bx = (Bx0+Bx1)*1E-9     # [T]
+    By = (By0+By1)*1E-9     # [T]
+    Bz = (Bz0+Bz1)*1E-9     # [T]
+    rho_Con2020[i] = - con20_mu_i_tot[select_pj] * \
+        (1E-9)*(2*(Bz0)*(1E-9)/(MU0*(OMGJ*r_moon)**2))
+    rho_Con2020[i] *= (1/AMU2KG)*1E-6      # [AMU cm-3]
+    mu_i_Con2020[i] = mu_i_default*mui_coef[select_pj]  # [nT]
+    print(rho_Con2020[i], '[AMU cm-3]')
 
 
 # %% Juno's perijove times
@@ -326,6 +339,7 @@ JUNO_PJ_LABELS = ['PJ1', '', '', '', '',
 
 
 # %% 横軸を時間でプロットする
+# ======================
 F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
@@ -361,9 +375,9 @@ ticklabels = F.ax.get_xticklabels()
 ticklabels[0].set_ha('center')
 F.set_yaxis(ax_idx=0,
             label=r'$n_{\rm i}$ [cm$^{-3}$]',
-            min=0, max=70,
-            ticks=np.linspace(0, 70, 8),
-            ticklabels=np.linspace(0, 70, 8),
+            min=0, max=30,
+            ticks=np.linspace(0, 30, 7),
+            ticklabels=np.linspace(0, 30, 7),
             minor_num=2)
 
 # Magnetodisk thickness [RJ]
@@ -381,6 +395,9 @@ for i in range(len(PJ_LIST)):
                   yerr=[[ni_err_0[i]], [ni_err_1[i]]],
                   elinewidth=1.1, linewidth=0., markersize=0,
                   color=UC.red)
+
+    # F.ax.scatter(x, rho_Con2020[i]/Ai_best,
+    #              marker='s', s=5.0, c=UC.orange)
 
     Rax.scatter(x, D_thick[i]/RJ, marker='s', s=5.0, c=UC.blue)
 
@@ -408,5 +425,80 @@ F.ax.axvspan(JUNO_PJ_TIMES[50], JUNO_PJ_TIMES[55],
 F.ax.axvspan(JUNO_PJ_TIMES[60], JUNO_PJ_TIMES[65],
              fc=UC.gray, ec=None, alpha=0.10)
 
-F.fig.savefig('Ga_ni_timeseries.jpg', bbox_inches='tight')
+F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ni_timeseries.jpg',
+              bbox_inches='tight')
+F.close()
+
+
+# %% 横軸: n_i / 縦軸: Current constant
+# ======================
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 5.0), dpi='L')
+F.initialize()
+# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
+
+F.set_xaxis(label=r'$n_{\rm i}$ [cm$^{-3}$]',
+            min=0, max=25,
+            ticks=np.linspace(0, 25, 6),
+            ticklabels=np.linspace(0, 25, 6),
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label='Current constant [nT]',
+            min=0, max=200,
+            ticks=np.linspace(0, 200, 5),
+            ticklabels=np.linspace(0, 200, 5),
+            minor_num=5)
+
+for i in range(len(PJ_LIST)):
+    x = ni_best[i]
+    y = mu_i_Con2020[i]
+    F.ax.scatter(x, y, marker='s', s=5.0, c=UC.red)
+    F.ax.errorbar(x=x, y=y,
+                  xerr=[[ni_err_0[i]], [ni_err_1[i]]],
+                  elinewidth=1.1, linewidth=0., markersize=0,
+                  color=UC.red)
+
+
+F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ni_vs_current.jpg',
+              bbox_inches='tight')
+F.close()
+
+
+# %% 横軸: FTMC / 縦軸: Current constant
+# ======================
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 5.0), dpi='L')
+F.initialize()
+# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
+
+F.set_xaxis(label=r'FTMC [10$^{-9}$ kg m$^{-2}$]',
+            min=0, max=0.2,
+            ticks=np.linspace(0, 2, 5)/10,
+            ticklabels=np.linspace(0, 2, 5)/10,
+            minor_num=5)
+F.set_yaxis(ax_idx=0,
+            label='Current constant [nT]',
+            min=0, max=200,
+            ticks=np.linspace(0, 200, 5),
+            ticklabels=np.linspace(0, 200, 5),
+            minor_num=5)
+
+for i in range(len(PJ_LIST)):
+    x = Ai_best*AMU2KG*ni_best[i]*1E+6*Hp[i]*np.sqrt(np.pi)
+    y = mu_i_Con2020[i]
+    F.ax.scatter(x*1E+9, y, marker='s', s=5.0, c=UC.red)
+    """F.ax.errorbar(x=x, y=y,
+                  xerr=[[ni_err_0[i]], [ni_err_1[i]]],
+                  elinewidth=1.1, linewidth=0., markersize=0,
+                  color=UC.red)"""
+    print(Hp[i]/RJ)
+
+F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ftmc_vs_current.jpg',
+              bbox_inches='tight')
 F.close()

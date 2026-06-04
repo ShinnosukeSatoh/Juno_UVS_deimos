@@ -805,8 +805,8 @@ def mode_select(H_1d):
     elif SELECT_MODE == '2':
         current_coef, _ = read_current_coef()
         D_coef, _ = read_disk_thick_coef()
-        D_disk = 3.6*RJ               # [m]
-        Hp = (2/np.pi)*D_disk*D_coef  # [m]
+        D_disk = 3.6*RJ                        # [m]
+        Hp = (2/np.sqrt(np.pi))*D_disk*D_coef  # [m]
         Wave.Awave().update_Con2020(current_coef=current_coef, thickness_coef=D_coef)
         H_1d = Hp*np.ones(H_1d.shape)
 
@@ -981,7 +981,7 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '1001/20260421_026'
+    exname = '1001/20260421_052'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
@@ -1002,7 +1002,7 @@ if __name__ == '__main__':
     Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 15
+    parallel = 16
 
     main()
 
