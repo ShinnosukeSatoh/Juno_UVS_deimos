@@ -48,26 +48,20 @@ Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
 
 
 # %% Footprint obs. list (Ganymede)
-PJ_LIST = [3, 4, 5, 6,
-           7,  # 8,
-           8, 11, 12,
-           12, 13, 14, 15,
-           16, 17, 19, 20, 21,
-           22, 23,
+PJ_LIST = [3, 4, 5, 6, 7,
+           8, 11, 12, 12, 13,
+           14, 15, 16, 17, 19,
+           20, 21, 22, 23,
            ]
-HEM_LIST = ['S', 'both', 'S', 'both',
-            'S',  # 'N',
-            'S', 'N', 'N',
-            'S', 'both', 'S', 'N',
-            'S', 'S', 'S', 'N', 'S',
-            'N', 'both'
+HEM_LIST = ['S', 'both', 'S', 'both', 'S',
+            'S', 'N', 'N', 'S', 'both',
+            'S', 'N', 'S', 'S', 'S',
+            'N', 'S', 'N', 'both'
             ]
-EXNAME_LIST = ['030', '031', '032', '033',
-               '034',  # '035',
-               '036', '037', '038',
-               '039', '040', '042', '043',
-               '044', '045', '048', '049', '050',
-               '051', '052',
+EXNAME_LIST = ['053', '054', '055', '056', '057',
+               '058', '059', '060', '061', '062',
+               '063', '064', '065', '066', '067',
+               '068', '069', '070', '071',
                ]
 
 
@@ -447,14 +441,17 @@ F.set_xaxis(label=r'$n_{\rm i}$ [cm$^{-3}$]',
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label='Current constant [nT]',
-            min=0, max=200,
-            ticks=np.linspace(0, 200, 5),
-            ticklabels=np.linspace(0, 200, 5),
+            min=50, max=200,
+            ticks=np.linspace(50, 200, 4),
+            ticklabels=np.linspace(50, 200, 4),
             minor_num=5)
 
 for i in range(len(PJ_LIST)):
+    for j in range(con20_pj_idx.size):
+        if con20_pj_idx[j] == int(PJ_LIST[i]):
+            y = con20_mu_i_tot[j]
+
     x = ni_best[i]
-    y = mu_i_Con2020[i]
     F.ax.scatter(x, y, marker='s', s=5.0, c=UC.red)
     F.ax.errorbar(x=x, y=y,
                   xerr=[[ni_err_0[i]], [ni_err_1[i]]],
@@ -484,19 +481,24 @@ F.set_xaxis(label=r'FTMC [10$^{-9}$ kg m$^{-2}$]',
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label='Current constant [nT]',
-            min=0, max=200,
-            ticks=np.linspace(0, 200, 5),
-            ticklabels=np.linspace(0, 200, 5),
+            min=50, max=200,
+            ticks=np.linspace(50, 200, 4),
+            ticklabels=np.linspace(50, 200, 4),
             minor_num=5)
 
 for i in range(len(PJ_LIST)):
-    x = Ai_best*AMU2KG*ni_best[i]*1E+6*Hp[i]*np.sqrt(np.pi)
-    y = mu_i_Con2020[i]
-    F.ax.scatter(x*1E+9, y, marker='s', s=5.0, c=UC.red)
-    """F.ax.errorbar(x=x, y=y,
-                  xerr=[[ni_err_0[i]], [ni_err_1[i]]],
+    for j in range(con20_pj_idx.size):
+        if con20_pj_idx[j] == int(PJ_LIST[i]):
+            y = con20_mu_i_tot[j]
+
+    x = Ai_best*AMU2KG*ni_best[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9
+    xerr = [[Ai_best*AMU2KG*ni_err_0[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9],
+            [Ai_best*AMU2KG*ni_err_1[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9]]
+    F.ax.scatter(x, y, marker='s', s=5.0, c=UC.red)
+    F.ax.errorbar(x=x, y=y,
+                  xerr=xerr,
                   elinewidth=1.1, linewidth=0., markersize=0,
-                  color=UC.red)"""
+                  color=UC.red)
     print(Hp[i]/RJ)
 
 F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ftmc_vs_current.jpg',

@@ -3412,12 +3412,16 @@ pp_ax22_L.set_xlabel(r'FTMC [$10^{-9}$ kg m$^{-2}$]')
 pp_ax22_L.set_ylabel(r'$D_{\rm sc}$ [$R_{\rm J}$]')
 pp_ax22_L.set_xlim(0.0, ftmc_max)
 pp_ax22_L.set_ylim(1.0, 5.0)
-pp_ax22_R.set_xlabel(r'Connerney+2020 [nT]')
-pp_ax22_R.set_ylabel(r'$D_{\rm sc}$ [$R_{\rm J}$]')
-pp_ax22_R.set_xlim(50.0, 200.0)
-pp_ax22_R.set_ylim(1.0, 5.0)
-pp_ax22_R.set_xticks(np.linspace(50.0, 200.0, 4))
-pp_ax22_R.set_yticks(np.linspace(1.0, 5.0, 5))
+pp_ax22_L.set_xticks(ticks)
+pp_ax22_L.set_yticks(np.linspace(1.0, 5.0, 5))
+pp_ax22_L.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax22_L.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax22_R.set_xlabel(r'FTMC [$10^{-9}$ kg m$^{-2}$]')
+pp_ax22_R.set_ylabel(r'Connerney+2020 [nT]')
+pp_ax22_R.set_xlim(0.0, ftmc_max)
+pp_ax22_R.set_ylim(50.0, 200.0)
+pp_ax22_R.set_xticks(ticks)
+pp_ax22_R.set_yticks(np.linspace(50.0, 200.0, 4))
 pp_ax22_R.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
 pp_ax22_R.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
 coef_idx = 0
@@ -3442,18 +3446,34 @@ for i in range(con20_pj_idx.size):
                                 np.min(column_mass),
                                 np.max(column_mass), width=0.1,
                                 ec=UC.blue, lw=1.)
-for i in range(con20_pj_idx.size):
-    for j in range(len(PJ_list)):
-        if con20_pj_idx[i] == PJ_list[j]:
-            # Current sheet half thickness
-            d_cs_default = 3.6      # default: 3.6 [RJ]
-            y_value = d_cs_default*d_cs_coef_ave[j]
 
-            pp_ax22_R.scatter(con20_mu_i_tot[i], y_value,
-                              marker='s', s=5.0, c=UC.blue,)
+            weighted_boxplot_h2(pp_ax22_R,
+                                con20_mu_i_tot[i],
+                                q1, medians, q3,
+                                np.min(column_mass),
+                                np.max(column_mass), width=2.0,
+                                ec=UC.blue, lw=1.)
 
 # 8th axis
 axpos = pp_ax22_L.get_position()
+pp_ax23_L = F.fig.add_axes([axpos.x0,
+                            axpos.y0-axpos.height*1.5,
+                            axpos.width,
+                            axpos.height])
+axpos = pp_ax22_R.get_position()
+pp_ax23_R = F.fig.add_axes([axpos.x0,
+                            axpos.y0-axpos.height*1.5,
+                            axpos.width,
+                            axpos.height])
+
+axpos = pp_ax23_R.get_position()
+pp_ax23_M = F.fig.add_axes([axpos.x1+axpos.width*0.5,
+                            axpos.y0,
+                            axpos.width,
+                            axpos.height])
+
+# 9th axis
+axpos = pp_ax23_L.get_position()
 pp_ax3_L = F.fig.add_axes([axpos.x0,
                           axpos.y0-axpos.height*1.5,
                           axpos.width*2,
@@ -3503,7 +3523,7 @@ F.draw_panel_name(ax=pp_ax2_L, panelname=' h ')
 F.draw_panel_name(ax=pp_ax2_R, panelname=' i ')
 F.draw_panel_name(ax=pp_ax22_L, panelname=' j ')
 F.draw_panel_name(ax=pp_ax22_R, panelname=' k ')
-F.draw_panel_name(ax=pp_ax3_L, panelname=' l ')
+F.draw_panel_name(ax=pp_ax3_L, panelname=' o ')
 
 savedir = 'img/ftmc/'+target_moon[0:2]+'/'+exdate
 F.fig.savefig(savedir+'/ftmc_lt_'+target_moon[0:2]+'_centrifugal_2.jpg',

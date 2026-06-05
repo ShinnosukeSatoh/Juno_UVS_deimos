@@ -803,11 +803,34 @@ def mode_select(H_1d):
         Wave.Awave().update_Con2020(current_coef=current_coef)
 
     elif SELECT_MODE == '2':
-        current_coef, _ = read_current_coef()
+        # 磁場モデルの設定
+        mu_i_default = 139.6    # default: 139.6 [nT]
+        d_rj_default = 3.6      # default: 3.6 [RJ]
+
+        # Data from Connerney+2020: PJ index
+        con20_pj_idx = np.array([1, 3, 4, 5, 6,
+                                7, 8, 9, 10, 11,
+                                12, 13, 14, 15, 16,
+                                17, 18, 19, 20, 21,
+                                22, 23, 24], dtype=int)
+
+        # Data from Connerney+2020: Current constant [nT]
+        con20_mu_i_tot = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
+                                   142.3, 140.1, 143.8, 137.0, 141.4,
+                                   124.2, 148.9, 145.3, 144.8, 149.9,
+                                   132.1, 133.5, 152.9, 138.5, 138.8,
+                                   156.1, 141.4, 146.3])
+
+        for i in range(con20_pj_idx.size):
+            if con20_pj_idx[i] == int(PJ_LIST[0]):
+                current_coef = con20_mu_i_tot[i]/mu_i_default
+                print('Current constant [nT]:', con20_mu_i_tot[i])
+
         D_coef, _ = read_disk_thick_coef()
         D_disk = 3.6*RJ                        # [m]
         Hp = (2/np.sqrt(np.pi))*D_disk*D_coef  # [m]
-        Wave.Awave().update_Con2020(current_coef=current_coef, thickness_coef=D_coef)
+        Wave.Awave().update_Con2020(current_coef=current_coef,
+                                    thickness_coef=D_coef)
         H_1d = Hp*np.ones(H_1d.shape)
 
     return H_1d
@@ -981,7 +1004,7 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '1001/20260421_052'
+    exname = '1001/20260421_071'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
