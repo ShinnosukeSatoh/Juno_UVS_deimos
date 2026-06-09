@@ -312,19 +312,38 @@ def read_current_coef():
 
 
 # %% GANYMEDE ONLY === read the magnetodisk thickness coefficient
-def read_disk_thick_coef():
+def read_disk_thick_coef(TARGET_MOON, TARGET_HEM, PJ_LIST):
+    view_angle_thres_degree = 30.0
+
+    pj_fp_ref = np.loadtxt('results/Mshell/'+TARGET_MOON[0:2]+'/pj_fp.txt')
+    hem_fp_ref = np.loadtxt('results/Mshell/'+TARGET_MOON[0:2]+'/hem_fp.txt')
+    view_angle = np.loadtxt(
+        'results/Mshell/'+TARGET_MOON[0:2]+'/view_angle.txt')
+
+    select_pj = np.where(pj_fp_ref == PJ_LIST[0])
+
     f0 = np.loadtxt('results/magdisk_thickness_fit/' +
                     TARGET_MOON[0:2]+'_coef_0.txt')
-    f1 = np.loadtxt('results/magdisk_thickness_fit/' +
-                    TARGET_MOON[0:2]+'_coef_1.txt')
-    con20_pj_idx = np.array([1, 3, 4, 5, 6,
-                             7, 8, 9, 10, 11,
-                             12, 13, 14, 15, 16,
-                             17, 18, 19, 20, 21,
-                             22, 23, 24])
 
-    select_pj = np.where(con20_pj_idx == PJ_LIST[0])
-    return f0[select_pj], f1[select_pj]
+    if TARGET_HEM == 'both':
+        d_cs_coef_subset = f0[select_pj]
+        view_angle_subset = view_angle[select_pj]
+    else:
+        if TARGET_HEM == 'S':
+            hem_subset_idx = np.where(hem_fp_ref[select_pj] > 0)
+        elif TARGET_HEM == 'N':
+            hem_subset_idx = np.where(hem_fp_ref[select_pj] < 0)
+        d_cs_coef_subset = f0[select_pj][hem_subset_idx]
+        view_angle_subset = view_angle[select_pj][hem_subset_idx]
+
+    view_angle_thres = np.where(view_angle_subset < view_angle_thres_degree)
+
+    # Calculate the mean thickness in the data subset
+    d_cs_coef_ave = np.average(d_cs_coef_subset[view_angle_thres])
+
+    print('view_angle_thres[0].size:', view_angle_thres[0].size)
+
+    return d_cs_coef_ave, d_cs_coef_ave
 
 
 # %% Read the viewing angle
@@ -826,7 +845,7 @@ def mode_select(H_1d):
                 current_coef = con20_mu_i_tot[i]/mu_i_default
                 print('Current constant [nT]:', con20_mu_i_tot[i])
 
-        D_coef, _ = read_disk_thick_coef()
+        D_coef, _ = read_disk_thick_coef(TARGET_MOON, TARGET_HEM, PJ_LIST)
         D_disk = 3.6*RJ                        # [m]
         Hp = (2/np.sqrt(np.pi))*D_disk*D_coef  # [m]
         Wave.Awave().update_Con2020(current_coef=current_coef,
@@ -1004,13 +1023,13 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '1001/20260421_071'
+    exname = '1001/20260421_084'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [23]
-    TARGET_HEM = 'both'   # 'both', 'N', or 'S'
+    PJ_LIST = [19]
+    TARGET_HEM = 'S'      # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'
 

@@ -1956,7 +1956,7 @@ for i in range(len(PJ_list)):
     mu_i_coef_1_ave[i] = np.average(
         [mu_i_coef_1_subset, mu_i_coef_2_subset, mu_i_coef_3_subset, mu_i_coef_4_subset])
 
-    # print('PJ'+str(ftmc_pj)+ftmc_hem, view_angle_thres[0].size)
+    print('PJ'+str(ftmc_pj)+ftmc_hem, view_angle_thres[0].size)
     if view_angle_thres[0].size > 0:
         np.savetxt('results/azimuthal_current_fit/'+target_moon[0:2]+'/PJ'+str(ftmc_pj)+ftmc_hem+'.txt',
                    np.array([mu_i_coef_ave[i], mu_i_coef_1_ave[i]]))

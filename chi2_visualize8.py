@@ -11,11 +11,13 @@ from matplotlib.ticker import AutoMinorLocator
 import math
 import datetime
 
-import Leadangle_wave as Wave
 from Leadangle_fit_JunoUVS import eqwlong_err
-from Leadangle_fit_JunoUVS import TEB_transit
-from Leadangle_fit_JunoUVS import create_argmesh
-from column_mass import calc as column_calc
+from Leadangle_fit_JunoUVS import read_disk_thick_coef
+
+from scipy.odr import ODR, Model, RealData
+from scipy.stats import spearmanr
+from scipy.stats import t
+
 from UniversalColor import UniversalColor
 from SharedX import ShareXaxis
 from legend_shadow import legend_shadow
@@ -49,19 +51,19 @@ Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
 
 # %% Footprint obs. list (Ganymede)
 PJ_LIST = [3, 4, 5, 6, 7,
-           8, 11, 12, 12, 13,
-           14, 15, 16, 17, 19,
-           20, 21, 22, 23,
+           8, 11, 12, 13,
+           14, 16, 17, 19,
+           20, 21, 22
            ]
 HEM_LIST = ['S', 'both', 'S', 'both', 'S',
-            'S', 'N', 'N', 'S', 'both',
-            'S', 'N', 'S', 'S', 'S',
-            'N', 'S', 'N', 'both'
+            'S', 'N', 'S', 'both',
+            'S', 'S', 'S', 'S',
+            'N', 'S', 'N',
             ]
-EXNAME_LIST = ['053', '054', '055', '056', '057',
-               '058', '059', '060', '061', '062',
-               '063', '064', '065', '066', '067',
-               '068', '069', '070', '071',
+EXNAME_LIST = ['072', '073', '074', '075', '076',
+               '077', '078', '080', '079',
+               '081', '082', '083', '067',
+               '068', '069', '070',
                ]
 
 
@@ -382,6 +384,7 @@ Rax.set_yticks(np.linspace(0, 5, 6))
 Rax.yaxis.set_minor_locator(AutoMinorLocator(2))  # minor ticks
 
 for i in range(len(PJ_LIST)):
+
     x = JUNO_PJ_TIMES[int(PJ_LIST[i]-1)]
     y = ni_best[i]
     F.ax.scatter(x, y, marker='s', s=5.0, c=UC.red)
@@ -390,10 +393,11 @@ for i in range(len(PJ_LIST)):
                   elinewidth=1.1, linewidth=0., markersize=0,
                   color=UC.red)
 
-    # F.ax.scatter(x, rho_Con2020[i]/Ai_best,
-    #              marker='s', s=5.0, c=UC.orange)
-
-    Rax.scatter(x, D_thick[i]/RJ, marker='s', s=5.0, c=UC.blue)
+    d_cs_coef, _, = read_disk_thick_coef(TARGET_MOON,
+                                         HEM_LIST[i],
+                                         [PJ_LIST[i]])
+    D_disk = 3.6*RJ     # [m]
+    Rax.scatter(x, D_disk*d_cs_coef/RJ, marker='s', s=5.0, c=UC.blue)
 
 # PJ numbers on the top horizontal axis
 PJax = F.ax.twiny()
@@ -424,8 +428,14 @@ F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ni_timeseries.jpg',
 F.close()
 
 
+# %% 1次関数フィッティング
+def fit_func(params, x):
+    a, b = params
+    return a*x + b
+
+
 # %% 横軸: n_i / 縦軸: Current constant
-# ======================
+# ===================================
 F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
@@ -441,25 +451,249 @@ F.set_xaxis(label=r'$n_{\rm i}$ [cm$^{-3}$]',
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label='Current constant [nT]',
-            min=50, max=200,
-            ticks=np.linspace(50, 200, 4),
-            ticklabels=np.linspace(50, 200, 4),
+            min=80, max=200,
+            ticks=np.linspace(80, 200, 7),
+            ticklabels=np.linspace(80, 200, 7, dtype=int),
             minor_num=5)
 
+x_data_arr = np.zeros(len(PJ_LIST))
+x_err_arr = np.zeros(len(PJ_LIST))
+y_data_arr = np.zeros(len(PJ_LIST))
 for i in range(len(PJ_LIST)):
     for j in range(con20_pj_idx.size):
         if con20_pj_idx[j] == int(PJ_LIST[i]):
             y = con20_mu_i_tot[j]
 
     x = ni_best[i]
-    F.ax.scatter(x, y, marker='s', s=5.0, c=UC.red)
+    F.ax.scatter(x, y, marker='s', s=8.0, c=UC.blue)
     F.ax.errorbar(x=x, y=y,
                   xerr=[[ni_err_0[i]], [ni_err_1[i]]],
-                  elinewidth=1.1, linewidth=0., markersize=0,
-                  color=UC.red)
+                  elinewidth=1.3, linewidth=0., markersize=0,
+                  color=UC.blue)
 
+    x_data_arr[i] = x
+    x_err_arr[i] = (ni_err_0[i]+ni_err_1[i])*0.5
+    y_data_arr[i] = y
+
+# データをy軸に対してソートする
+y_argsort = np.argsort(y_data_arr)
+x_data_arr, x_err_arr = x_data_arr[y_argsort], x_err_arr[y_argsort]
+y_data_arr = y_data_arr[y_argsort]
+# for i in np.array([2, 3]):
+#    F.ax.scatter(x_data_arr[i], y_data_arr[i], marker='s', s=8.0, c=UC.red)
+
+# 外れ値の除去
+x_data_arr = np.delete(x_data_arr, [3])
+x_err_arr = np.delete(x_err_arr, [3])
+y_data_arr = np.delete(y_data_arr, [3])
+
+# Scipy ODRでもやってみる
+data = RealData(y_data_arr, x_data_arr, sy=x_err_arr)
+model = Model(fit_func)
+beta0 = [1.0, 1.0]
+odr_instance = ODR(data, model, beta0=beta0)
+output = odr_instance.run()
+popt = output.beta
+perr = output.sd_beta
+cov = output.cov_beta*output.res_var
+y_fit = np.linspace(-300, 300, 150)
+x_fit = popt[0]*y_fit + popt[1]
+F.ax.plot(x_fit, y_fit, lw=0.8, color='k', zorder=0.9)
+
+# ヤコビアンの計算 (x = a*y + b)
+J_f0 = y_fit                    # aで偏微分
+J_f1 = 1.0*np.ones(J_f0.size)   # bで偏微分
+J_f = np.array([J_f0, J_f1])
+
+# sigma_fの計算
+sigma_f = np.zeros(y_fit.size)
+for i in range(y_fit.size):
+    sigma_f[i] = np.sqrt((J_f[:, i]@cov)@J_f[:, i].T)
+
+# 信頼区間1σ
+x_fit_up = x_fit + 1.0*sigma_f
+x_fit_dw = x_fit - 1.0*sigma_f
+y_fit_dw_interp = np.interp(x_fit_up, x_fit_dw, y_fit)
+F.ax.plot(x_fit_up, y_fit, lw=0.6, color=UC.lighterblue, zorder=0.9)
+F.ax.plot(x_fit_up, y_fit_dw_interp, lw=0.6,
+          color=UC.lighterblue, zorder=0.9)
+F.ax.fill_between(x_fit_up, y_fit_dw_interp, y_fit,
+                  color=UC.lighterblue, alpha=0.4,
+                  edgecolor='none',
+                  zorder=0.01)
+
+# 相関係数
+correlation, pvalue = spearmanr(x_data_arr, y_data_arr)
+print('Correlation coef: ', correlation)
+
+# t検定
+n_data = x_data_arr.size
+t_value = correlation*math.sqrt((n_data-2)/(1-correlation**2))
+print('t value:', t_value)
+print('n_data:', n_data)
+
+# 両側p値
+p_two_sided = 2*(1-t.cdf(np.abs(t_value), n_data-2))
+print('p value:', p_two_sided)
+
+# ラベル
+label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
+label_tvalue = r'$t =$'+str(round(t_value, 2))
+label_pvalue = r'$p =$'+str(round(p_two_sided, 4))
+
+# Dummy
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_corrcoef)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_tvalue)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_pvalue)
+
+# Legends
+legend_ncol = 3
+legend = F.legend(ax_idx=0,
+                  ncol=legend_ncol, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=0.01,
+                  textcolor=False,
+                  title='Rank correlation',
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
 F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ni_vs_current.jpg',
+              bbox_inches='tight')
+F.close()
+
+
+# %% 横軸: rho_i / 縦軸: Current constant
+# =====================================
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(5.0, 5.0), dpi='L')
+F.initialize()
+# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
+
+F.set_xaxis(label=r'$\rho_{\rm i}$ [AMU cm$^{-3}$]',
+            min=0, max=360,
+            ticks=np.linspace(0, 360, 7),
+            ticklabels=np.linspace(0, 360, 7, dtype=int),
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label='Current constant [nT]',
+            min=80, max=200,
+            ticks=np.linspace(80, 200, 7),
+            ticklabels=np.linspace(80, 200, 7, dtype=int),
+            minor_num=5)
+
+x_data_arr = np.zeros(len(PJ_LIST))
+x_err_arr = np.zeros(len(PJ_LIST))
+y_data_arr = np.zeros(len(PJ_LIST))
+for i in range(len(PJ_LIST)):
+    for j in range(con20_pj_idx.size):
+        if con20_pj_idx[j] == int(PJ_LIST[i]):
+            y = con20_mu_i_tot[j]
+
+    x = ni_best[i]*Ai_best
+    F.ax.scatter(x, y, marker='s', s=8.0, c=UC.blue)
+    F.ax.errorbar(x=x, y=y,
+                  xerr=[[ni_err_0[i]*Ai_best], [ni_err_1[i]*Ai_best]],
+                  elinewidth=1.3, linewidth=0., markersize=0,
+                  color=UC.blue)
+
+    x_data_arr[i] = x
+    x_err_arr[i] = (ni_err_0[i]+ni_err_1[i])*Ai_best*0.5
+    y_data_arr[i] = y
+
+# データをy軸に対してソートする
+y_argsort = np.argsort(y_data_arr)
+x_data_arr, x_err_arr = x_data_arr[y_argsort], x_err_arr[y_argsort]
+y_data_arr = y_data_arr[y_argsort]
+# for i in np.array([4, 5]):
+#     F.ax.scatter(x_data_arr[i], y_data_arr[i], marker='s', s=8.0, c=UC.red)
+
+# 外れ値の除去
+# x_data_arr = np.delete(x_data_arr, [4, 5])
+# x_err_arr = np.delete(x_err_arr, [4, 5])
+# y_data_arr = np.delete(y_data_arr, [4, 5])
+
+# Scipy ODRでもやってみる
+data = RealData(y_data_arr, x_data_arr, sx=x_err_arr)
+model = Model(fit_func)
+beta0 = [1.0, 1.0]
+odr_instance = ODR(data, model, beta0=beta0)
+output = odr_instance.run()
+popt = output.beta
+perr = output.sd_beta
+cov = output.cov_beta*output.res_var
+y_fit = np.linspace(-300, 300, 150)
+x_fit = popt[0]*y_fit + popt[1]
+F.ax.plot(x_fit, y_fit, lw=0.8, color='k', zorder=0.9)
+
+# ヤコビアンの計算 (x = a*y + b)
+J_f0 = y_fit                    # aで偏微分
+J_f1 = 1.0*np.ones(J_f0.size)   # bで偏微分
+J_f = np.array([J_f0, J_f1])
+
+# sigma_fの計算
+sigma_f = np.zeros(y_fit.size)
+for i in range(y_fit.size):
+    sigma_f[i] = np.sqrt((J_f[:, i]@cov)@J_f[:, i].T)
+
+# 信頼区間1σ
+x_fit_up = x_fit + 1.0*sigma_f
+x_fit_dw = x_fit - 1.0*sigma_f
+y_fit_dw_interp = np.interp(x_fit_up, x_fit_dw, y_fit)
+F.ax.plot(x_fit_up, y_fit, lw=0.6, color=UC.lighterblue, zorder=0.9)
+F.ax.plot(x_fit_up, y_fit_dw_interp, lw=0.6,
+          color=UC.lighterblue, zorder=0.9)
+F.ax.fill_between(x_fit_up, y_fit, y_fit_dw_interp,
+                  color=UC.lighterblue, alpha=0.4,
+                  edgecolor='none',
+                  zorder=0.01)
+
+# 相関係数
+correlation, pvalue = spearmanr(x_data_arr, y_data_arr)
+print('Correlation coef: ', correlation)
+
+# t検定
+n_data = x_data_arr.size
+t_value = correlation*math.sqrt((n_data-2)/(1-correlation**2))
+print('t value:', t_value)
+print('n_data:', n_data)
+
+# 両側p値
+p_two_sided = 2*(1-t.cdf(np.abs(t_value), n_data-2))
+print('p value:', p_two_sided)
+
+# ラベル
+label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
+label_tvalue = r'$t =$'+str(round(t_value, 2))
+label_pvalue = r'$p =$'+str(round(p_two_sided, 4))
+
+# Dummy
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_corrcoef)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_tvalue)
+F.ax.plot([-999, -998], [-999, -998], color='w',
+          label=label_pvalue)
+
+# Legends
+legend_ncol = 3
+legend = F.legend(ax_idx=0,
+                  ncol=legend_ncol, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=0.01,
+                  textcolor=False,
+                  title='Rank correlation',
+                  fontsize_scale=0.65,
+                  handletextpad=0.2)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
+
+F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/rho_i_vs_current.jpg',
               bbox_inches='tight')
 F.close()
 
@@ -499,7 +733,7 @@ for i in range(len(PJ_LIST)):
                   xerr=xerr,
                   elinewidth=1.1, linewidth=0., markersize=0,
                   color=UC.red)
-    print(Hp[i]/RJ)
+    # print(Hp[i]/RJ)
 
 F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ftmc_vs_current.jpg',
               bbox_inches='tight')
