@@ -62,8 +62,8 @@ HEM_LIST = ['S', 'both', 'S', 'both', 'S',
             ]
 EXNAME_LIST = ['072', '073', '074', '075', '076',
                '077', '078', '080', '079',
-               '081', '082', '083', '067',
-               '068', '069', '070',
+               '081', '082', '083', '084',
+               '085', '086', '087',
                ]
 
 
@@ -611,16 +611,16 @@ for i in range(len(PJ_LIST)):
 y_argsort = np.argsort(y_data_arr)
 x_data_arr, x_err_arr = x_data_arr[y_argsort], x_err_arr[y_argsort]
 y_data_arr = y_data_arr[y_argsort]
-# for i in np.array([4, 5]):
-#     F.ax.scatter(x_data_arr[i], y_data_arr[i], marker='s', s=8.0, c=UC.red)
+# for i in np.array([2, 3]):
+#    F.ax.scatter(x_data_arr[i], y_data_arr[i], marker='s', s=8.0, c=UC.red)
 
 # 外れ値の除去
-# x_data_arr = np.delete(x_data_arr, [4, 5])
-# x_err_arr = np.delete(x_err_arr, [4, 5])
-# y_data_arr = np.delete(y_data_arr, [4, 5])
+x_data_arr = np.delete(x_data_arr, [3])
+x_err_arr = np.delete(x_err_arr, [3])
+y_data_arr = np.delete(y_data_arr, [3])
 
 # Scipy ODRでもやってみる
-data = RealData(y_data_arr, x_data_arr, sx=x_err_arr)
+data = RealData(y_data_arr, x_data_arr, sy=x_err_arr)
 model = Model(fit_func)
 beta0 = [1.0, 1.0]
 odr_instance = ODR(data, model, beta0=beta0)
@@ -649,7 +649,7 @@ y_fit_dw_interp = np.interp(x_fit_up, x_fit_dw, y_fit)
 F.ax.plot(x_fit_up, y_fit, lw=0.6, color=UC.lighterblue, zorder=0.9)
 F.ax.plot(x_fit_up, y_fit_dw_interp, lw=0.6,
           color=UC.lighterblue, zorder=0.9)
-F.ax.fill_between(x_fit_up, y_fit, y_fit_dw_interp,
+F.ax.fill_between(x_fit_up, y_fit_dw_interp, y_fit,
                   color=UC.lighterblue, alpha=0.4,
                   edgecolor='none',
                   zorder=0.01)
