@@ -104,7 +104,15 @@ for PJ in PJ_LIST:
     z_arr = np.zeros(wlon_fp.size)
 
     mu_i_default = 139.6    # default: 139.6 [nT]
-    jm.Con2020.Config(mu_i=mu_i_default*1.0, equation_type='analytic')
+    i_rho_default = 16.7    # default: 16.7 [MA]
+    i_rho_arr = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
+                          20.2, 12.2, 21.1, 20.9, 10.7,
+                          26.3, 16.4, 12.0, 19.6, 12.0,
+                          13.6, 20.0, 12.8, 16.0, 17.3,
+                          9.9, 16.1, 10.3])
+    jm.Con2020.Config(mu_i=mu_i_default*1.0,
+                      i_rho=i_rho_default,
+                      equation_type='analytic')
     for i in range(rho_arr.size):
         latitude = lat_fp[i]
         theta = np.radians(90.0-latitude)

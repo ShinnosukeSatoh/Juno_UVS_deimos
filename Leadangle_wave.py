@@ -47,6 +47,7 @@ class Awave():
     def update_Con2020(self,
                        current_coef=1.0,
                        thickness_coef=1.0,
+                       i_rho=16.7,
                        equation_type='analytic'):
 
         # 磁場モデルの設定
@@ -54,6 +55,7 @@ class Awave():
         d_rj_default = 3.6      # default: 3.6 [RJ]
         jm.Con2020.Config(mu_i=mu_i_default*current_coef,
                           d=d_rj_default*thickness_coef,
+                          i_rho=i_rho,
                           equation_type='analytic')
 
         return None
