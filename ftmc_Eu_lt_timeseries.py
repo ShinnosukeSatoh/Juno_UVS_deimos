@@ -3094,12 +3094,12 @@ pp_ax_R = F.fig.add_axes([axpos.x0+axpos.width*0.6,
                           axpos.width*0.4,
                           axpos.height])
 pp_ax_L.set_xlabel('Connerney+2020 [nT]')
-pp_ax_L.set_ylabel('Latitudinal shift [nT]')
-pp_ax_L.set_xlim(50.0, 200.0)
+pp_ax_L.set_ylabel(r'$\mu_0 I_{\varphi}/2\pi$ [nT]')
+pp_ax_L.set_xlim(100.0, 180.0)
 pp_ax_L.set_ylim(50.0, 200.0)
-pp_ax_L.set_xticks(np.linspace(50.0, 200.0, 4))
+pp_ax_L.set_xticks(np.linspace(100.0, 180.0, 5))
 pp_ax_L.set_yticks(np.linspace(50.0, 200.0, 4))
-pp_ax_L.xaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+pp_ax_L.xaxis.set_minor_locator(ptick.AutoMinorLocator(4))
 pp_ax_L.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
 pp_ax_L.plot([0.0, 200.0], [0.0, 200.0], linewidth=1.0, color=UC.gray)
 for i in range(con20_pj_idx.size):
@@ -3465,6 +3465,27 @@ pp_ax23_R = F.fig.add_axes([axpos.x0,
                             axpos.y0-axpos.height*1.5,
                             axpos.width,
                             axpos.height])
+pp_ax23_L.set_xlabel('Connerney+2020 [nT]')
+pp_ax23_L.set_ylabel(r'Relative difference')
+pp_ax23_L.set_xlim(100.0, 180.0)
+pp_ax23_L.set_ylim(-1.0, 0.5)
+pp_ax23_L.set_xticks(np.linspace(100.0, 180.0, 5))
+pp_ax23_L.set_yticks(np.linspace(-1.0, 0.5, 4))
+pp_ax23_L.xaxis.set_minor_locator(ptick.AutoMinorLocator(4))
+pp_ax23_L.yaxis.set_minor_locator(ptick.AutoMinorLocator(5))
+for i in range(con20_pj_idx.size):
+    for j in range(len(PJ_list)):
+        if con20_pj_idx[i] == PJ_list[j]:
+            pp_ax23_L.scatter(con20_mu_i_tot[i],
+                              (mu_i_ave[j]-con20_mu_i_tot[i]) /
+                              con20_mu_i_tot[i],
+                              marker='s', s=5.0, c=UC.blue,)
+            pp_ax23_L.errorbar(x=con20_mu_i_tot[i],
+                               y=(mu_i_ave[j]-con20_mu_i_tot[i]) /
+                               con20_mu_i_tot[i],
+                               yerr=mu_i_1_ave[j]/con20_mu_i_tot[i],
+                               elinewidth=1.1, linewidth=0., markersize=0,
+                               color=UC.blue)
 
 axpos = pp_ax23_R.get_position()
 pp_ax23_M = F.fig.add_axes([axpos.x1+axpos.width*0.5,

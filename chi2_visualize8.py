@@ -483,6 +483,7 @@ y_data_arr = y_data_arr[y_argsort]
 #    F.ax.scatter(x_data_arr[i], y_data_arr[i], marker='s', s=8.0, c=UC.red)
 
 # 外れ値の除去
+F.ax.scatter(x_data_arr[3], y_data_arr[3], marker='s', s=8.0, c=UC.red)
 x_data_arr = np.delete(x_data_arr, [3])
 x_err_arr = np.delete(x_err_arr, [3])
 y_data_arr = np.delete(y_data_arr, [3])
@@ -704,36 +705,77 @@ F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=1, figsize=(5.0, 5.0), dpi='L')
+F.set_figparams(nrows=1, figsize=(5.5, 5.0), dpi='L')
 F.initialize()
 # F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
 F.set_xaxis(label=r'FTMC [10$^{-9}$ kg m$^{-2}$]',
-            min=0, max=0.2,
-            ticks=np.linspace(0, 2, 5)/10,
-            ticklabels=np.linspace(0, 2, 5)/10,
+            min=0, max=0.25,
+            ticks=np.linspace(0, 2.5, 6)/10,
+            ticklabels=np.linspace(0, 2.5, 6)/10,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label='Current constant [nT]',
-            min=50, max=200,
-            ticks=np.linspace(50, 200, 4),
-            ticklabels=np.linspace(50, 200, 4),
+            min=80, max=200,
+            ticks=np.linspace(80, 200, 7),
+            ticklabels=np.linspace(80, 200, 7, dtype=int),
             minor_num=5)
 
+# カラーマップの離散化
+vmin, vmax = 1, 25
+cmap_turbo = plt.get_cmap('turbo')
+N_color = 4		# 取り出したい色数
+dN = int(256/N_color-1)
+color_list = []
+for i in range(N_color):
+    color_list += [cmap_turbo(i*dN)]
+cmap = mplcolors.ListedColormap(color_list)
+norm = mplcolors.Normalize(vmin=vmin, vmax=vmax)
+
+# プロットする
+x_arr = np.zeros(con20_pj_idx.size)
+x_err_arr = np.zeros(con20_pj_idx.size)
+y_arr = np.zeros(con20_pj_idx.size)
+z_arr = np.zeros(con20_pj_idx.size)
 for i in range(len(PJ_LIST)):
     for j in range(con20_pj_idx.size):
         if con20_pj_idx[j] == int(PJ_LIST[i]):
-            y = con20_mu_i_tot[j]
+            y_arr[j] = con20_mu_i_tot[j]
+            z_arr[j] = con20_pj_idx[j]
 
-    x = Ai_best*AMU2KG*ni_best[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9
-    xerr = [[Ai_best*AMU2KG*ni_err_0[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9],
-            [Ai_best*AMU2KG*ni_err_1[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9]]
-    F.ax.scatter(x, y, marker='s', s=5.0, c=UC.red)
-    F.ax.errorbar(x=x, y=y,
-                  xerr=xerr,
-                  elinewidth=1.1, linewidth=0., markersize=0,
-                  color=UC.red)
-    # print(Hp[i]/RJ)
+            x_arr[j] = Ai_best*AMU2KG*ni_best[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9
+            x_err_arr[j] = np.max([Ai_best*AMU2KG*ni_err_0[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9,
+                                   Ai_best*AMU2KG*ni_err_1[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9])
+
+print(x_arr)
+
+p = F.ax.scatter(x_arr, y_arr, marker='s', s=8.0,
+                 c=UC.blue)
+for j in range(con20_pj_idx.size):
+    F.ax.errorbar(x=x_arr[j], y=y_arr[j],
+                  xerr=x_err_arr[j],
+                  elinewidth=1.3, linewidth=0., markersize=0,
+                  color=UC.blue)
+
+"""
+# PJの色をつける
+p = F.ax.scatter(x_arr, y_arr, marker='s', s=8.0,
+                 c=z_arr, vmin=vmin, vmax=vmax, cmap=cmap)
+
+for j in range(con20_pj_idx.size):
+    F.ax.errorbar(x=x_arr[j], y=y_arr[j],
+                  xerr=x_err_arr[j],
+                  elinewidth=1.3, linewidth=0., markersize=0,
+                  color=cmap(norm(z_arr[j])))
+
+# カラーバー
+cax = F.fig.colorbar(p, ax=F.ax)
+cax.ax.set_yticks(np.linspace(1, 25, 4))
+cax.ax.set_yticklabels(np.linspace(1, 25, 4, dtype=int),
+                       fontsize=F.fontsize*0.85)
+cax.ax.yaxis.set_minor_locator(ptick.AutoMinorLocator(4))
+cax.ax.set_ylabel(r'Perijove', fontsize=F.fontsize*0.85)
+"""
 
 F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ftmc_vs_current.jpg',
               bbox_inches='tight')
