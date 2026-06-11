@@ -146,32 +146,41 @@ con20_pj_idx = np.array([1, 3, 4, 5, 6,
                          12, 13, 14, 15, 16,
                          17, 18, 19, 20, 21,
                          22, 23, 24])
+con20_pj_idx = np.array([1, 3, 4])
 
 
-# %% Data from Connerney+2020: Current constant [nT]
-con20_mu_i_tot = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
+# %% Data from Connerney+2020: Azimuthal urrent constant [nT]
+con20_mu_i_azi = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
                            142.3, 140.1, 143.8, 137.0, 141.4,
                            124.2, 148.9, 145.3, 144.8, 149.9,
                            132.1, 133.5, 152.9, 138.5, 138.8,
                            156.1, 141.4, 146.3])
 
+# %% Data from Connerney+2020: Current constant [nT]
+con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
+                           20.2, 12.2, 21.1, 20.9, 10.7,
+                           26.3, 16.4, 12.0, 19.6, 12.0,
+                           13.6, 20.0, 12.8, 16.0, 17.3,
+                           9.9, 16.1, 10.3])
+
 
 # %%
-def calc2(x0, y0, z0, mu_i):
+def calc2(x0, y0, z0, mu_i_azi, mu_i_rho=16.7):
     start_loop = time.time()
 
     coef_arr = np.arange(0.62, 1.34, 0.01)
 
     # 中央値
-    rho_arr = np.zeros(coef_arr.size)
-    z_arr = np.zeros(coef_arr.size)
+    rho_eq_arr = np.zeros(coef_arr.size)
+    phi_eq_arr = np.zeros(coef_arr.size)
 
     for i in range(coef_arr.size):
         coef = coef_arr[i]
 
         # 磁場モデルの設定
         d_rj_default = 3.6      # default: 3.6 [RJ]
-        jm.Con2020.Config(mu_i=mu_i,
+        jm.Con2020.Config(mu_i=mu_i_azi,
+                          i_rho=mu_i_rho,
                           d__cs_half_thickness_rj=d_rj_default*coef,
                           equation_type='analytic')
 
@@ -188,16 +197,17 @@ def calc2(x0, y0, z0, mu_i):
         # Satellite orbital plane
         idx_z0 = np.argmin(np.abs(z1))
 
-        # phi_z0 = np.arctan2(y1[idx_z0], x1[idx_z0])  # in SIII RH [rad]
-        rho_arr[i] = rho[idx_z0]
+        phi_eq_arr[i] = np.arctan2(y1[idx_z0], x1[idx_z0])  # in SIII RH [rad]
+        rho_eq_arr[i] = rho[idx_z0]
         # z_arr = T1.z[0][idx_z0]
 
-    idx_rho_best = np.argmin(np.abs(rho_arr-r_moon/RJ))
+    idx_rho_best = np.argmin(np.abs(rho_eq_arr-r_moon/RJ))
     coef_best = coef_arr[idx_rho_best]
+    rho_eq = rho_eq_arr[idx_rho_best]
 
     print('------ Loop time [sec]:', round(time.time()-start_loop, 4))
-    print('----------------- [RJ]:', round(rho_arr[idx_rho_best], 3))
-    return coef_best
+    print('----------------- [RJ]:', round(rho_eq_arr[idx_rho_best], 3))
+    return np.array([coef_best, rho_eq])
 
 
 # %%
@@ -248,13 +258,16 @@ def main2():
         z0[i] = r*z0_norm[i]
 
     mu_i_default = 139.6    # default: 139.6 [nT]
-    mu_i_arr = np.ones(lat_fp.size)*mu_i_default
+    mu_i_azi_arr = np.ones(lat_fp.size)*mu_i_default    # [nT]
+    mu_i_rho_arr = np.ones(lat_fp.size)*16.7            # [MA]
     for i in range(con20_pj_idx.size):
         for j in range(len(pj_fp)):
             if con20_pj_idx[i] == round(pj_fp[j]):
-                mu_i_arr[j] = con20_mu_i_tot[i]
+                mu_i_azi_arr[j] = con20_mu_i_azi[i]
+                if radial_current_var:
+                    mu_i_rho_arr[j] = con20_mu_i_rho[i]
 
-    xyz0_zip = list(zip(x0, y0, z0, mu_i_arr))
+    xyz0_zip = list(zip(x0, y0, z0, mu_i_azi_arr, mu_i_rho_arr))
     with Pool(processes=parallel) as pool:
         results_list = list(pool.starmap(calc2, xyz0_zip))
 
@@ -263,74 +276,9 @@ def main2():
 
     print('--- Total time [sec]:', round(time.time()-start_all, 4))
 
-    np.savetxt('results/magdisk_thickness_fit/'+TARGET_MOON[0:2]+'_coef_'+str(error_num)+'.txt',
+    np.savetxt('results/magdisk_thickness_fit/'+TARGET_MOON[0:2]+'_coef_'+str(error_num)+'_radial.txt',
                coef_best_arr)
     return None
-
-
-# %%
-def main3():
-    print('Target moon:', TARGET_MOON)
-    print('Target fp:', TARGET_FP)
-    print('Target hemisphere:', TARGET_HEM)
-    start_all = time.time()
-
-    latitude = []
-    wlongitude = []
-    mu_i_list = []
-    for i in range(con20_pj_idx.size):
-        for j in range(len(pj_fp)):
-            if con20_pj_idx[i] == round(pj_fp[j]):
-                wlongitude += [wlon_fp[j]]
-                mu_i_list += [con20_mu_i_tot[i]]
-                if error_num == 0:
-                    latitude += [lat_fp[j]]
-                elif error_num == 1:
-                    if lat_fp[j] >= 0.0:
-                        latitude += [lat_fp[j] + err_lat_fp[j]]
-                    else:
-                        latitude += [lat_fp[j] - err_lat_fp[j]]
-                elif error_num == 2:
-                    if lat_fp[j] >= 0.0:
-                        latitude += [lat_fp[j] - err_lat_fp[j]]
-                    else:
-                        latitude += [lat_fp[j] + err_lat_fp[j]]
-
-    latitude = np.array(latitude)
-    wlongitude = np.array(wlongitude)
-    mu_i_arr = np.array(mu_i_list)
-
-    theta = np.radians(90.0-latitude)
-    phi = np.radians(360.0-wlongitude)
-
-    x0_norm = np.sin(theta)*np.cos(phi)
-    y0_norm = np.sin(theta)*np.sin(phi)
-    z0_norm = np.cos(theta)
-
-    x0 = np.zeros(latitude.size)
-    y0 = np.zeros(latitude.size)
-    z0 = np.zeros(latitude.size)
-    for i in range(latitude.size):
-        # テーブルを参照し距離を確定
-        dis = np.abs(theta[i]-theta_e)
-        idx = np.argmin(dis)
-        r = r_e[idx]
-
-        x0[i] = r*x0_norm[i]
-        y0[i] = r*y0_norm[i]
-        z0[i] = r*z0_norm[i]
-
-    xyz0_zip = list(zip(x0, y0, z0, mu_i_arr))
-    with Pool(processes=parallel) as pool:
-        results_list = list(pool.starmap(calc2, xyz0_zip))
-
-    coef_best_arr = np.array(results_list)
-    print(coef_best_arr.shape)
-
-    print('--- Total time [sec]:', round(time.time()-start_all, 4))
-
-    np.savetxt('results/magdisk_thickness_fit/'+TARGET_MOON[0:2]+'_coef_'+str(error_num)+'.txt',
-               coef_best_arr)
 
 
 # %% EXECUTE
@@ -339,7 +287,10 @@ if __name__ == '__main__':
     error_num = 4
 
     # Number of parallel processes
-    parallel = 30
+    parallel = 2
 
-    # main2()
+    # Radial current variation?
+    radial_current_var = True
+
+
     main2()
