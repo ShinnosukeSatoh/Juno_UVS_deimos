@@ -292,5 +292,4 @@ if __name__ == '__main__':
     # Radial current variation?
     radial_current_var = True
 
-
     main2()
