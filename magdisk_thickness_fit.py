@@ -103,21 +103,13 @@ elif TARGET_MOON == 'Ganymede':
     PJ_LIST.pop(68-21)
     r_moon = 15.0*RJ
 
+# テスト用
+# PJ_LIST = [3, 4]
 
 # %% Load the observation data
 wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, moon_S3wlon, et_fp, hem_fp, pj_fp = Obsresults(
     PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM=TARGET_HEM, FLIP=False
 )
-
-
-# %% Calculate the lead angle
-eqlead_fp, eqlead_fp_0, eqlead_fp_1, wlon_fp_eq = calc_eqlead(wlon_fp,
-                                                              err_wlon_fp,
-                                                              lat_fp,
-                                                              err_lat_fp,
-                                                              hem_fp,
-                                                              moon_S3wlon,
-                                                              TARGET_MOON)
 
 
 # %% Load the viewing angle
@@ -146,7 +138,6 @@ con20_pj_idx = np.array([1, 3, 4, 5, 6,
                          12, 13, 14, 15, 16,
                          17, 18, 19, 20, 21,
                          22, 23, 24])
-con20_pj_idx = np.array([1, 3, 4])
 
 
 # %% Data from Connerney+2020: Azimuthal urrent constant [nT]
@@ -162,6 +153,41 @@ con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
                            26.3, 16.4, 12.0, 19.6, 12.0,
                            13.6, 20.0, 12.8, 16.0, 17.3,
                            9.9, 16.1, 10.3])
+
+
+# %% Data select
+def data_select():
+    """
+    Conditions
+    (1) If the PJ data is available in Con2020 Table 2
+    (2) If the UVS observation meets the viewing angle <= 30.0 degs
+    """
+    latitude = []
+    err_latitude = []
+    wlongitude = []
+    err_wlongitude = []
+    pj_select = []
+    hem_select = []
+    moon_S3wlon_select = []
+    for i in range(con20_pj_idx.size):
+        for j in range(len(pj_fp)):
+            if view_angle[j] <= 30.0:
+                if con20_pj_idx[i] == round(pj_fp[j]):
+                    latitude += [lat_fp[j]]
+                    err_latitude += [err_lat_fp[j]]
+                    wlongitude += [wlon_fp[j]]
+                    err_wlongitude += [err_wlon_fp[j]]
+                    pj_select += [pj_fp[j]]
+                    hem_select += [hem_fp[j]]
+                    moon_S3wlon_select = [moon_S3wlon[j]]
+    pj_select = np.array(pj_select)
+    latitude = np.array(latitude)
+    wlongitude = np.array(wlongitude)
+    err_wlongitude = np.array(err_wlongitude)
+    err_latitude = np.array(err_latitude)
+    hem_select = np.array(hem_select)
+    moon_S3wlon_select = np.array(moon_S3wlon_select)
+    return pj_select, hem_select, latitude, wlongitude, err_latitude, moon_S3wlon_select
 
 
 # %%
@@ -197,17 +223,18 @@ def calc2(x0, y0, z0, mu_i_azi, mu_i_rho=16.7):
         # Satellite orbital plane
         idx_z0 = np.argmin(np.abs(z1))
 
-        phi_eq_arr[i] = np.arctan2(y1[idx_z0], x1[idx_z0])  # in SIII RH [rad]
-        rho_eq_arr[i] = rho[idx_z0]
+        phi_eq_arr[i] = np.arctan2(y1[idx_z0], x1[idx_z0])  # East long. [rad]
+        rho_eq_arr[i] = rho[idx_z0]                         # Distance [RJ]
         # z_arr = T1.z[0][idx_z0]
 
     idx_rho_best = np.argmin(np.abs(rho_eq_arr-r_moon/RJ))
     coef_best = coef_arr[idx_rho_best]
-    rho_eq = rho_eq_arr[idx_rho_best]
+    rho_eq = rho_eq_arr[idx_rho_best]   # Distance [RJ]
+    phi_eq = phi_eq_arr[idx_rho_best]   # East longitude [rad]
 
     print('------ Loop time [sec]:', round(time.time()-start_loop, 4))
-    print('----------------- [RJ]:', round(rho_eq_arr[idx_rho_best], 3))
-    return np.array([coef_best, rho_eq])
+    print('----------------- [RJ]:', round(rho_eq, 3))
+    return np.array([coef_best, rho_eq, phi_eq])
 
 
 # %%
@@ -217,24 +244,23 @@ def main2():
     print('Target hemisphere:', TARGET_HEM)
     start_all = time.time()
 
-    latitude = lat_fp
-    wlongitude = wlon_fp
+    pj_select, hem_select, latitude, wlongitude, err_latitude, moon_S3wlon_select = data_select()
 
     if error_num == 1:
         for i in range(latitude.size):
             if latitude[i] >= 0.0:
-                latitude[i] = latitude[i] + err_lat_fp[i]
+                latitude[i] = latitude[i] + err_latitude[i]
             else:
-                latitude[i] = latitude[i] - err_lat_fp[i]
+                latitude[i] = latitude[i] - err_latitude[i]
     elif error_num == 2:
         for i in range(latitude.size):
             if latitude[i] >= 0.0:
-                latitude[i] = latitude[i] - err_lat_fp[i]
+                latitude[i] = latitude[i] - err_latitude[i]
             else:
-                latitude[i] = latitude[i] + err_lat_fp[i]
+                latitude[i] = latitude[i] + err_latitude[i]
 
-    theta = np.radians(90.0-latitude)
-    phi = np.radians(360.0-wlongitude)
+    theta = np.radians(90.0-latitude)   # [rad]
+    phi = np.radians(360.0-wlongitude)  # [rad]
     if error_num == 3:
         phi = np.radians(360.0-(wlongitude+err_wlon_fp))
     elif error_num == 4:
@@ -244,10 +270,10 @@ def main2():
     y0_norm = np.sin(theta)*np.sin(phi)
     z0_norm = np.cos(theta)
 
-    x0 = np.zeros(lat_fp.size)
-    y0 = np.zeros(lat_fp.size)
-    z0 = np.zeros(lat_fp.size)
-    for i in range(lat_fp.size):
+    x0 = np.zeros(latitude.size)
+    y0 = np.zeros(latitude.size)
+    z0 = np.zeros(latitude.size)
+    for i in range(latitude.size):
         # テーブルを参照し距離を確定
         dis = np.abs(theta[i]-theta_e)
         idx = np.argmin(dis)
@@ -258,11 +284,11 @@ def main2():
         z0[i] = r*z0_norm[i]
 
     mu_i_default = 139.6    # default: 139.6 [nT]
-    mu_i_azi_arr = np.ones(lat_fp.size)*mu_i_default    # [nT]
-    mu_i_rho_arr = np.ones(lat_fp.size)*16.7            # [MA]
+    mu_i_azi_arr = np.ones(latitude.size)*mu_i_default    # [nT]
+    mu_i_rho_arr = np.ones(latitude.size)*16.7            # [MA]
     for i in range(con20_pj_idx.size):
-        for j in range(len(pj_fp)):
-            if con20_pj_idx[i] == round(pj_fp[j]):
+        for j in range(len(pj_select)):
+            if con20_pj_idx[i] == round(pj_select[j]):
                 mu_i_azi_arr[j] = con20_mu_i_azi[i]
                 if radial_current_var:
                     mu_i_rho_arr[j] = con20_mu_i_rho[i]
@@ -271,25 +297,61 @@ def main2():
     with Pool(processes=parallel) as pool:
         results_list = list(pool.starmap(calc2, xyz0_zip))
 
-    coef_best_arr = np.array(results_list)
-    print(coef_best_arr.shape)
+    results_arr = np.array(results_list)
+    print(results_arr.shape)      # >>> (XXX, 3)
+    thick_coef_best_arr = results_arr[:, 0]
+    rho_eq_best_arr = results_arr[:, 1]*RJ                  # [m]
+    phi_eq_best_arr = np.mod(results_arr[:, 2], 2*np.pi)    # [rad]
 
     print('--- Total time [sec]:', round(time.time()-start_all, 4))
 
-    np.savetxt('results/magdisk_thickness_fit/'+TARGET_MOON[0:2]+'_coef_'+str(error_num)+'_radial.txt',
-               coef_best_arr)
+    # Average at each PJ
+    thick_coef_best_pj_ave = np.zeros(con20_pj_idx.size)
+    for i in range(con20_pj_idx.size):
+        idx = np.where(pj_select == con20_pj_idx[i])
+        thick_coef_best_pj_ave[i] = np.average(thick_coef_best_arr[idx])
+        print('PJ'+str(con20_pj_idx[i])+' H = ' +
+              str(thick_coef_best_pj_ave[i]*3.6)+' [RJ]')
+
+    # Equatorial lead angle
+    wlong_eq_best = np.mod(360.0 - np.degrees(phi_eq_best_arr), 360.0)
+    eqlead_best = wlong_eq_best - moon_S3wlon_select
+    print(np.where(eqlead_best < 0.0), np.where(eqlead_best > 360.0))
+
+    savedir = 'results/magdisk_thickness_fit/'+TARGET_MOON[0:2]
+    np.savetxt(savedir+'/diskthick_coef_'+str(error_num)+'.txt',
+               thick_coef_best_pj_ave)
+    np.savetxt(savedir+'/instantaneous_rho_eq_'+str(error_num)+'.txt',
+               rho_eq_best_arr)
+    np.savetxt(savedir+'/instantaneous_phi_eq_'+str(error_num)+'.txt',
+               phi_eq_best_arr)
+    np.savetxt(savedir+'/pj_select.txt',
+               pj_select)
+    np.savetxt(savedir+'/hem_fp.txt',
+               hem_select)
+    np.savetxt(savedir+'/latitude_fp_deg.txt',
+               latitude)
+    np.savetxt(savedir+'/wlongitude_fp_deg.txt',
+               wlongitude)
+    np.savetxt(savedir+'/eqlead_best_deg.txt',
+               eqlead_best)
     return None
 
 
 # %% EXECUTE
 if __name__ == '__main__':
     # Input about Juno observation
-    error_num = 4
+    error_num = 0
 
     # Number of parallel processes
-    parallel = 2
+    parallel = 6
 
     # Radial current variation?
     radial_current_var = True
 
     main2()
+
+    # Notes
+    # 計算の順番
+    # (1) Radial currentの観測値を使った計算
+    # (2) Radial currentの代表値(16.7 MA)を使った計算

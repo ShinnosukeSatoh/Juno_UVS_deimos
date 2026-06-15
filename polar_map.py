@@ -866,23 +866,62 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_055'
+    exname = '003/20250516_065'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
     TARGET_FP = ['MAW']
-    PJ_LIST = [9]
-    TARGET_HEM = 'S'
+    PJ_LIST = [16]
+    TARGET_HEM = 'both'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
     ni_num = 50
     Ti_num = 60
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
-    Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
+    Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
     reflections = 8         # fixed at 8
 
+    # PJ03 2016-12-11T17:51:10
+    target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])
+
+    # PJ03 2016-12-11T18:18:27
+    target_et_pj3 = np.array([spice.utc2et('2016-12-11T18:18:27')])
+
+    # PJ07 2017-07-11T02:53:44
+    target_et_pj7 = np.array([spice.utc2et('2017-07-11T02:53:44')])
+
+    # PJ09 2017-10-24T16:47:54
+    target_et_pj9 = np.array([spice.utc2et('2017-10-24T16:47:54')])
+
+    # PJ09 2017-10-24T16:48:54
+    target_et_pj9 = np.array([spice.utc2et('2017-10-24T16:48:54')])
+
+    # PJ09 2017-10-24T19:05:59
+    target_et_pj9 = np.array([spice.utc2et('2017-10-24T19:05:59')])
+
+    # PJ09 2017-10-24T19:24:10
+    target_et_pj9 = np.array([spice.utc2et('2017-10-24T19:24:10')])
+
+    # PJ11 2018-02-07T13:16:12
+    target_et_pj11 = np.array([spice.utc2et('2018-02-07T13:16:12')])
+
+    # PJ11 2018-02-07T13:21:13
+    target_et_pj11 = np.array([spice.utc2et('2018-02-07T13:21:13')])
+
+    # PJ13 2018-05-24T06:54:42
+    target_et_pj13 = np.array([spice.utc2et('2018-05-24T06:54:42')])
+
+    # PJ16 2018-10-29T21:57:21
+    target_et_pj16 = np.array([spice.utc2et('2018-10-29T21:57:21')])
+
+    # PJ16 2018-10-29T21:58:21
+    target_et_pj16 = np.array([spice.utc2et('2018-10-29T21:58:21')])
+
+    # PJ16 2018-10-29T22:10:23
+    target_et_pj16 = np.array([spice.utc2et('2018-10-29T22:10:23')])
+
     # TARGET_ET = np.array([721041971.3])     # False or ET
-    TARGET_ET = False
+    TARGET_ET = target_et_pj16
 
     # Target select
     if TARGET_MOON == 'Io':
