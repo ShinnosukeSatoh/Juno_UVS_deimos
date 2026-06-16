@@ -420,7 +420,7 @@ def instantaneous(target_moon_s3_obs):
                                    0.0)
 
     # Initital trace
-    # -> Instantaneous position at 900 km altitude
+    # -> Instantaneous position at a selected altitude
     hem = -1    # North
     _, rs_t1, s3wlon_t1, theta_s3_t1, _ = Wave.Awave().trace3_reflect(r_moon,
                                                                       s3wlon_t0,
@@ -435,7 +435,7 @@ def instantaneous(target_moon_s3_obs):
     insta_fp_pos_N[0] = theta_s3_t1[-1]     # Colatitude [rad]
     insta_fp_pos_N[1] = s3wlon_t1[-1]       # West longitude [rad]
 
-    # -> Instantaneous position at 900 km altitude
+    # -> Instantaneous position at a selected altitude
     hem = 1    # South
     _, rs_t1, s3wlon_t1, theta_s3_t1, _ = Wave.Awave().trace3_reflect(r_moon,
                                                                       s3wlon_t0,
@@ -476,6 +476,25 @@ def propagation_plot():
     data_S6 = np.loadtxt('results/reflect/'+exname+'/data_S6_arr.txt')
     data_S7 = np.loadtxt('results/reflect/'+exname+'/data_S7_arr.txt')
     data_S8 = np.loadtxt('results/reflect/'+exname+'/data_S8_arr.txt')
+    if altitude == 400:
+        data_N0 = np.loadtxt('results/reflect/'+exname+'/data_N0_arr_400.txt')
+        data_N1 = np.loadtxt('results/reflect/'+exname+'/data_N1_arr_400.txt')
+        data_N2 = np.loadtxt('results/reflect/'+exname+'/data_N2_arr_400.txt')
+        data_N3 = np.loadtxt('results/reflect/'+exname+'/data_N3_arr_400.txt')
+        data_N4 = np.loadtxt('results/reflect/'+exname+'/data_N4_arr_400.txt')
+        data_N5 = np.loadtxt('results/reflect/'+exname+'/data_N5_arr_400.txt')
+        data_N6 = np.loadtxt('results/reflect/'+exname+'/data_N6_arr_400.txt')
+        data_N7 = np.loadtxt('results/reflect/'+exname+'/data_N7_arr_400.txt')
+        data_N8 = np.loadtxt('results/reflect/'+exname+'/data_N8_arr_400.txt')
+        data_S0 = np.loadtxt('results/reflect/'+exname+'/data_S0_arr_400.txt')
+        data_S1 = np.loadtxt('results/reflect/'+exname+'/data_S1_arr_400.txt')
+        data_S2 = np.loadtxt('results/reflect/'+exname+'/data_S2_arr_400.txt')
+        data_S3 = np.loadtxt('results/reflect/'+exname+'/data_S3_arr_400.txt')
+        data_S4 = np.loadtxt('results/reflect/'+exname+'/data_S4_arr_400.txt')
+        data_S5 = np.loadtxt('results/reflect/'+exname+'/data_S5_arr_400.txt')
+        data_S6 = np.loadtxt('results/reflect/'+exname+'/data_S6_arr_400.txt')
+        data_S7 = np.loadtxt('results/reflect/'+exname+'/data_S7_arr_400.txt')
+        data_S8 = np.loadtxt('results/reflect/'+exname+'/data_S8_arr_400.txt')
     print('data_N0.shape', data_N0.shape)
 
     # Equatorial lead angle array [deg]
@@ -572,6 +591,9 @@ def propagation_plot():
 # %% Lead angle plot
 def leadangle_plot():
     interp = np.loadtxt('results/reflect/'+exname+'/data_fp_interp.txt')
+    if altitude == 400:
+        interp = np.loadtxt('results/reflect/'+exname +
+                            '/data_fp_interp_400.txt')
     moon_s3_obs = interp[:, 0]
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -880,6 +902,7 @@ if __name__ == '__main__':
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
     reflections = 8         # fixed at 8
+    altitude = 400          # [km] and the default is 900 km.
 
     # PJ03 2016-12-11T17:51:10
     target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])

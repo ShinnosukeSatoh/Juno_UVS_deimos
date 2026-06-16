@@ -190,10 +190,10 @@ ax.set_ylabel('Diff [deg]')
 j = 0
 for PJ in PJ_LIST:
     data_a = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-                        TARGET_MOON[0]+'FP_info_v900km_fixed.txt')
+                        TARGET_MOON[0]+'FP_info_v900km_fixed_origin.txt')
 
     data_b = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-                        TARGET_MOON[0]+'FP_info_v900km_radialcurrent.txt')
+                        TARGET_MOON[0]+'FP_info_v900km_fixed.txt')
 
     rho_a, phi_a = data_a[0, :], data_a[1, :]
     et_fp_a, hem_a = data_a[2, :], data_a[3, :]
@@ -239,10 +239,10 @@ F.set_yaxis(ax_idx=0,
             minor_num=5)
 for PJ in PJ_LIST:
     data_a = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-                        TARGET_MOON[0]+'FP_info_v900km_fixed.txt')
+                        TARGET_MOON[0]+'FP_info_v900km_fixed_origin.txt')
 
     data_b = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-                        TARGET_MOON[0]+'FP_info_v900km_radialcurrent.txt')
+                        TARGET_MOON[0]+'FP_info_v900km_fixed.txt')
 
     rho_a, phi_a = data_a[0, :], data_a[1, :]
     et_fp_a, hem_a = data_a[2, :], data_a[3, :]
@@ -292,10 +292,10 @@ F.set_yaxis(ax_idx=0,
             minor_num=5)
 for PJ in PJ_LIST:
     data_a = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-                        TARGET_MOON[0]+'FP_info_v900km_fixed.txt')
+                        TARGET_MOON[0]+'FP_info_v900km_fixed_origin.txt')
 
     data_b = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-                        TARGET_MOON[0]+'FP_info_v900km_radialcurrent.txt')
+                        TARGET_MOON[0]+'FP_info_v900km_fixed.txt')
 
     rho_a, phi_a = data_a[0, :], data_a[1, :]
     et_fp_a, hem_a = data_a[2, :], data_a[3, :]
@@ -319,5 +319,5 @@ for PJ in PJ_LIST:
 
 F.manage(ax_idx=0, id=fig_id, color=UC.lightgray)
 F.fig.savefig(
-    'img/'+TARGET_MOON[0:2]+'_eqlead_fixed.jpg', bbox_inches='tight')
+    'img/'+TARGET_MOON[0:2]+'_eqlead_fixed_origin.jpg', bbox_inches='tight')
 F.close()

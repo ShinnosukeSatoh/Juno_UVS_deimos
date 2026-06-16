@@ -637,7 +637,7 @@ class Awave():
                     y_ref = r_h*np.sin(theta_h)*np.sin(phi)
                     z_ref = r_h*np.cos(theta_h)
                     dis = math.sqrt((x-x_ref)**2 + (y-y_ref)**2 + (z-z_ref)**2)
-                    if dis < 9.0E+3:
+                    if dis < altitude*1E+3:
                         # print('i:', i)
                         # print('dis [m]:', dis)
                         rs = r_h
