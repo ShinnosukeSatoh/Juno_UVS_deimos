@@ -434,8 +434,10 @@ def fit_func(params, x):
     return a*x + b
 
 
-# %% 横軸: n_i / 縦軸: Current constant
+# %% ================================
+# 横軸: n_i / 縦軸: Current constant
 # ===================================
+fig_id = 'SS260616.001'
 F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
@@ -562,13 +564,17 @@ legend = F.legend(ax_idx=0,
                   handletextpad=0.2)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
+F.manage(ax_idx=0, id=fig_id, color=UC.lightgray)
+
 F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ni_vs_current.jpg',
               bbox_inches='tight')
 F.close()
 
 
-# %% 横軸: rho_i / 縦軸: Current constant
-# =====================================
+# %% ================================
+# 横軸: rho_i / 縦軸: Current constant
+# ===================================
+fig_id = 'SS260616.002'
 F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
@@ -694,13 +700,17 @@ legend = F.legend(ax_idx=0,
                   handletextpad=0.2)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax, d=0.7)
 
+F.manage(ax_idx=0, id=fig_id, color=UC.lightgray)
+
 F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/rho_i_vs_current.jpg',
               bbox_inches='tight')
 F.close()
 
 
-# %% 横軸: FTMC / 縦軸: Current constant
-# ======================
+# %% ================================
+# 横軸: FTMC / 縦軸: Current constant
+# ===================================
+fig_id = 'SS260616.003'
 F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
@@ -776,6 +786,8 @@ cax.ax.set_yticklabels(np.linspace(1, 25, 4, dtype=int),
 cax.ax.yaxis.set_minor_locator(ptick.AutoMinorLocator(4))
 cax.ax.set_ylabel(r'Perijove', fontsize=F.fontsize*0.85)
 """
+
+F.manage(ax_idx=0, id=fig_id, color=UC.lightgray)
 
 F.fig.savefig('img/ftmc/'+TARGET_MOON[0:2]+'/' + exdir + '/ftmc_vs_current.jpg',
               bbox_inches='tight')

@@ -971,6 +971,27 @@ class ShareXaxis():
         pp_ax.patch.set_alpha(0.)
         return pp_ax
 
+    def manage(self, ax_idx, id, color, loc='out'):
+        if self.nrows == 1:
+            ax = self.ax
+        else:
+            ax = self.ax[ax_idx]
+
+        x_value = 1.03
+        fontsize_coef = 1/2.8
+        if loc == 'in':
+            x_value = 0.985
+            fontsize_coef = 1/3.0
+        self.ax.text(x_value, 0.,
+                     "  "+id,
+                     transform=ax.transAxes,
+                     rotation=90,
+                     fontsize=self.fontsize*fontsize_coef,
+                     color=color,
+                     ha="center",
+                     zorder=0.001)
+        return None
+
     # Locally used
     def _generate_cmap(self, colors):
         values = range(len(colors))
