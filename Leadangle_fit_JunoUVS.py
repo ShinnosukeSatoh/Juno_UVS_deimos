@@ -840,16 +840,26 @@ def mode_select(H_1d):
                                    132.1, 133.5, 152.9, 138.5, 138.8,
                                    156.1, 141.4, 146.3])
 
+        # %% Data from Connerney+2020: Radial current constant [MA]
+        con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
+                                   20.2, 12.2, 21.1, 20.9, 10.7,
+                                   26.3, 16.4, 12.0, 19.6, 12.0,
+                                   13.6, 20.0, 12.8, 16.0, 17.3,
+                                   9.9, 16.1, 10.3])
+
         for i in range(con20_pj_idx.size):
             if con20_pj_idx[i] == int(PJ_LIST[0]):
                 current_coef = con20_mu_i_tot[i]/mu_i_default
+                i_rho = con20_mu_i_rho[i]
                 print('Current constant [nT]:', con20_mu_i_tot[i])
+                print('i_rho [MA]:', con20_mu_i_rho[i])
 
         D_coef, _ = read_disk_thick_coef(TARGET_MOON, TARGET_HEM, PJ_LIST)
         D_disk = 3.6*RJ                        # [m]
         Hp = (2/np.sqrt(np.pi))*D_disk*D_coef  # [m]
         Wave.Awave().update_Con2020(current_coef=current_coef,
-                                    thickness_coef=D_coef)
+                                    thickness_coef=D_coef,
+                                    i_rho=i_rho)
         H_1d = Hp*np.ones(H_1d.shape)
 
     return H_1d
@@ -1023,13 +1033,13 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '1001/20260421_087'
+    exname = '1001/20260421_093'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [22]
-    TARGET_HEM = 'N'      # 'both', 'N', or 'S'
+    PJ_LIST = [8]
+    TARGET_HEM = 'S'      # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'
 
