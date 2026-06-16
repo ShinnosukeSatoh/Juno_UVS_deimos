@@ -147,7 +147,7 @@ con20_mu_i_azi = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
                            132.1, 133.5, 152.9, 138.5, 138.8,
                            156.1, 141.4, 146.3])
 
-# %% Data from Connerney+2020: Current constant [nT]
+# %% Data from Connerney+2020: Radial current constant [MA]
 con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
                            20.2, 12.2, 21.1, 20.9, 10.7,
                            26.3, 16.4, 12.0, 19.6, 12.0,
