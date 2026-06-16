@@ -8,6 +8,7 @@ import JupiterMag as jm
 
 from Leadangle_fit_JunoUVS import Obsresults
 from Leadangle_fit_JunoUVS import calc_eqlead
+from Leadangle_fit_JunoUVS import moonS3wlon_arr
 
 import os
 from IPython.display import clear_output
@@ -28,7 +29,7 @@ PJ_LIST = [1, 3, 4, 5, 6,
            7, 8, 9, 10, 11,
            12, 13, 14, 15, 16,
            17, 18, 19, 20, 21,
-           22, 23, 24]      # Connerney+2020のテーブル
+           22, 23]      # Connerney+2020のテーブル
 
 
 # %% Constants
@@ -60,31 +61,34 @@ def calc_r_surf(lat):
 # %% Select moon synodic orbital period
 if TARGET_MOON == 'Ganymede':
     Psyn = Psyn_ga
-    PJ_LIST.pop(24-2)
-    PJ_LIST.pop(31-3)
-    PJ_LIST.pop(39-4)
-    PJ_LIST.pop(43-5)
-    PJ_LIST.pop(44-6)
-    PJ_LIST.pop(45-7)
-    PJ_LIST.pop(51-8)
-    PJ_LIST.pop(52-9)
-    PJ_LIST.pop(53-10)
-    PJ_LIST.pop(54-11)
-    PJ_LIST.pop(55-12)
-    PJ_LIST.pop(56-13)
-    PJ_LIST.pop(61-14)
-    PJ_LIST.pop(62-15)
-    PJ_LIST.pop(63-16)
-    PJ_LIST.pop(64-17)
-    PJ_LIST.pop(65-18)
-    PJ_LIST.pop(66-19)
-    PJ_LIST.pop(67-20)
-    PJ_LIST.pop(68-21)
     r_moon = 15.0*RJ
-# print(PJ_LIST)
+
+
+# %% Data from Connerney+2020: PJ index
+con20_pj_idx = np.array([1, 3, 4, 5, 6,
+                         7, 8, 9, 10, 11,
+                         12, 13, 14, 15, 16,
+                         17, 18, 19, 20, 21,
+                         22, 23, 24])
+
+
+# %% Data from Connerney+2020: Azimuthal urrent constant [nT]
+con20_mu_i_azi = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
+                           142.3, 140.1, 143.8, 137.0, 141.4,
+                           124.2, 148.9, 145.3, 144.8, 149.9,
+                           132.1, 133.5, 152.9, 138.5, 138.8,
+                           156.1, 141.4, 146.3])
+
+# %% Data from Connerney+2020: Current constant [nT]
+con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
+                           20.2, 12.2, 21.1, 20.9, 10.7,
+                           26.3, 16.4, 12.0, 19.6, 12.0,
+                           13.6, 20.0, 12.8, 16.0, 17.3,
+                           9.9, 16.1, 10.3])
 
 
 # %% Data load
+j = 0
 for PJ in PJ_LIST:
     wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, moon_S3wlon, et_fp, hem_fp, pj_fp = Obsresults(
         [PJ], TARGET_MOON, TARGET_FP, TARGET_HEM='both', FLIP=False
@@ -98,7 +102,7 @@ for PJ in PJ_LIST:
                                       moon_S3wlon,
                                       TARGET_MOON)
 
-    # %% Backtraced field line position on the equatorial plane
+    # Backtraced field line position on the equatorial plane
     rho_arr = np.zeros(wlon_fp.size)
     phi_arr = np.zeros(wlon_fp.size)
     z_arr = np.zeros(wlon_fp.size)
@@ -106,7 +110,7 @@ for PJ in PJ_LIST:
     mu_i_default = 139.6    # default: 139.6 [nT]
     i_rho_default = 16.7    # default: 16.7 [MA]
     jm.Con2020.Config(mu_i=mu_i_default*1.0,
-                      i_rho=i_rho_default,
+                      i_rho=con20_mu_i_rho[j],
                       equation_type='analytic')
     for i in range(rho_arr.size):
         latitude = lat_fp[i]
@@ -134,10 +138,8 @@ for PJ in PJ_LIST:
         # Satellite orbital plane
         idx_z0 = np.argmin(np.abs(z1))
 
-        phi_z0 = np.arctan2(y1[idx_z0], x1[idx_z0])  # in SIII RH [rad]
-        phi_z0 = 360.0-np.degrees(phi_z0)
-        if phi_z0 >= 360.0:
-            phi_z0 += -360.0
+        phi_z0 = np.arctan2(y1[idx_z0], x1[idx_z0])        # in SIII RH [rad]
+        phi_z0 = np.mod(360.0-np.degrees(phi_z0), 360.0)   # LH [rad]
         rho_arr[i] = rho[idx_z0]
         phi_arr[i] = phi_z0
         z_arr = T1.z[0][idx_z0]
@@ -156,6 +158,7 @@ for PJ in PJ_LIST:
     fig.tight_layout()
     fig.savefig('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
                 TARGET_MOON[0]+'FP.jpg', bbox_inches='tight')
+    plt.close()
 
     savefile = np.array([rho_arr,
                          phi_arr,
@@ -169,4 +172,152 @@ for PJ in PJ_LIST:
     # savefile[3,:] -> hemisphere & type of footprints (+/-1, +/-101)
 
     np.savetxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-               TARGET_MOON[0]+'FP_info_v900km_fixed.txt', savefile)
+               TARGET_MOON[0]+'FP_info_v900km_radialcurrent.txt', savefile)
+
+    j += 1
+
+
+# %% ========================================================
+# Comparison
+# (a) Radial current is constant at 16.7 MA.
+# (b) Temporal variation of the radial current is considered.
+# ===========================================================
+fig, ax = plt.subplots(dpi=150)
+ax.set_xlim(0, 360)
+ax.set_xlabel('SIII w. longitude [deg]')
+ax.set_ylim(-5, 5)
+ax.set_ylabel('Diff [deg]')
+j = 0
+for PJ in PJ_LIST:
+    data_a = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
+                        TARGET_MOON[0]+'FP_info_v900km_fixed.txt')
+
+    data_b = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
+                        TARGET_MOON[0]+'FP_info_v900km_radialcurrent.txt')
+
+    rho_a, phi_a = data_a[0, :], data_a[1, :]
+    et_fp_a, hem_a = data_a[2, :], data_a[3, :]
+
+    rho_b, phi_b = data_b[0, :], data_b[1, :]
+    et_fp_b, hem_b = data_b[2, :], data_b[3, :]
+
+    _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(
+        et_fp=et_fp_a, moon=TARGET_MOON)
+
+    ax.scatter(moon_S3wlon0, phi_a-phi_b, s=2.0)
+
+fig.tight_layout()
+fig.savefig(
+    'img/'+TARGET_MOON[0:2]+'_eqwlon_comparison_radialcurrent.jpg', bbox_inches='tight')
+plt.close()
+
+
+# %% ========================================================
+# SIII longitude vs equatorial lead angle
+# (a) Radial current is constant at 16.7 MA.
+# (b) Temporal variation of the radial current is considered.
+# ===========================================================
+F = ShareXaxis()
+fig_id = 'SS260616.004a'
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(7.0, 4.0), dpi='M')
+F.initialize()
+
+F.set_xaxis(label=r"Moon SIII longitude $\lambda_{\rm III}$ [deg]",
+            min=0, max=360,
+            ticks=np.arange(0, 360+1, 45),
+            ticklabels=np.arange(0, 360+1, 45, dtype=int),
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label='Eq. lead angle [deg]',
+            min=-5, max=30,
+            ticks=np.arange(-5, 30+1, 5),
+            ticklabels=np.arange(-5, 30+1, 5, dtype=int),
+            minor_num=5)
+for PJ in PJ_LIST:
+    data_a = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
+                        TARGET_MOON[0]+'FP_info_v900km_fixed.txt')
+
+    data_b = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
+                        TARGET_MOON[0]+'FP_info_v900km_radialcurrent.txt')
+
+    rho_a, phi_a = data_a[0, :], data_a[1, :]
+    et_fp_a, hem_a = data_a[2, :], data_a[3, :]
+
+    rho_b, phi_b = data_b[0, :], data_b[1, :]
+    et_fp_b, hem_b = data_b[2, :], data_b[3, :]
+
+    _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(
+        et_fp=et_fp_b, moon=TARGET_MOON)
+
+    for i in range(et_fp_b.size):
+        if hem_b[i] == 1:
+            color = UC.blue
+        elif hem_b[i] == 101:
+            color = UC.lightblue
+        elif hem_b[i] == -1:
+            color = UC.red
+        elif hem_b[i] == -101:
+            color = UC.pink
+        F.ax.scatter(moon_S3wlon0[i], moon_S3wlon0[i]-phi_b[i], s=3.0, c=color)
+
+F.manage(ax_idx=0, id=fig_id, color=UC.lightgray)
+F.fig.savefig(
+    'img/'+TARGET_MOON[0:2]+'_eqlead_radialcurrent.jpg', bbox_inches='tight')
+F.close()
+
+
+F = ShareXaxis()
+fig_id = 'SS260616.004b'
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=1, figsize=(7.0, 4.0), dpi='M')
+F.initialize()
+
+F.set_xaxis(label=r"Moon SIII longitude $\lambda_{\rm III}$ [deg]",
+            min=0, max=360,
+            ticks=np.arange(0, 360+1, 45),
+            ticklabels=np.arange(0, 360+1, 45, dtype=int),
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label='Eq. lead angle [deg]',
+            min=-5, max=30,
+            ticks=np.arange(-5, 30+1, 5),
+            ticklabels=np.arange(-5, 30+1, 5, dtype=int),
+            minor_num=5)
+for PJ in PJ_LIST:
+    data_a = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
+                        TARGET_MOON[0]+'FP_info_v900km_fixed.txt')
+
+    data_b = np.loadtxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
+                        TARGET_MOON[0]+'FP_info_v900km_radialcurrent.txt')
+
+    rho_a, phi_a = data_a[0, :], data_a[1, :]
+    et_fp_a, hem_a = data_a[2, :], data_a[3, :]
+
+    rho_b, phi_b = data_b[0, :], data_b[1, :]
+    et_fp_b, hem_b = data_b[2, :], data_b[3, :]
+
+    _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(
+        et_fp=et_fp_a, moon=TARGET_MOON)
+
+    for i in range(et_fp_a.size):
+        if hem_a[i] == 1:
+            color = UC.blue
+        elif hem_a[i] == 101:
+            color = UC.lightblue
+        elif hem_a[i] == -1:
+            color = UC.red
+        elif hem_a[i] == -101:
+            color = UC.pink
+        F.ax.scatter(moon_S3wlon0[i], moon_S3wlon0[i]-phi_a[i], s=3.0, c=color)
+
+F.manage(ax_idx=0, id=fig_id, color=UC.lightgray)
+F.fig.savefig(
+    'img/'+TARGET_MOON[0:2]+'_eqlead_fixed.jpg', bbox_inches='tight')
+F.close()
