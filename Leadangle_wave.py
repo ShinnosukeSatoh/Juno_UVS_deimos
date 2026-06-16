@@ -502,7 +502,8 @@ class Awave():
                        NS: float,
                        limit=0,
                        current_coef=1.0,
-                       thickness_coef=1.0,):
+                       thickness_coef=1.0,
+                       altitude=900):
         """
         `r_A0` Radial distance of the Alfven launch site [m] \\
         `S3wlon_A0` System III west longitude of the Alfven launch site [rad] \\
@@ -515,8 +516,9 @@ class Awave():
         """
         Niter = int(750000)
 
-        # 経度0度(y=0)平面のx-z対応テーブル (高度900 km)
-        extradius = np.loadtxt('data/Alt_900km/rthetaphi.txt')
+        # 経度0度(y=0)平面のx-z対応テーブル (高度デフォ900 km)
+        altitude_str = str(int(altitude))
+        extradius = np.loadtxt('data/Alt_'+altitude_str+'km/rthetaphi_2.txt')
         r_ref = extradius[0, :]*RJ        # [m]
         theta_ref = np.radians(extradius[1, :])    # [rad]
         phi_ref = np.radians(extradius[2, :])      # [rad]

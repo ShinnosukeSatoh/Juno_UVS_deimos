@@ -866,13 +866,13 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_065'
+    exname = '003/20250516_054'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
     TARGET_FP = ['MAW']
-    PJ_LIST = [16]
-    TARGET_HEM = 'both'
+    PJ_LIST = [9]
+    TARGET_HEM = 'N'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
     ni_num = 50
@@ -891,16 +891,16 @@ if __name__ == '__main__':
     target_et_pj7 = np.array([spice.utc2et('2017-07-11T02:53:44')])
 
     # PJ09 2017-10-24T16:47:54
-    target_et_pj9 = np.array([spice.utc2et('2017-10-24T16:47:54')])
+    target_et_pj9n = np.array([spice.utc2et('2017-10-24T16:47:54')])
 
     # PJ09 2017-10-24T16:48:54
-    target_et_pj9 = np.array([spice.utc2et('2017-10-24T16:48:54')])
+    target_et_pj9n = np.array([spice.utc2et('2017-10-24T16:48:54')])
 
     # PJ09 2017-10-24T19:05:59
-    target_et_pj9 = np.array([spice.utc2et('2017-10-24T19:05:59')])
+    target_et_pj9s = np.array([spice.utc2et('2017-10-24T19:05:59')])
 
     # PJ09 2017-10-24T19:24:10
-    target_et_pj9 = np.array([spice.utc2et('2017-10-24T19:24:10')])
+    target_et_pj9s = np.array([spice.utc2et('2017-10-24T19:24:10')])
 
     # PJ11 2018-02-07T13:16:12
     target_et_pj11 = np.array([spice.utc2et('2018-02-07T13:16:12')])
@@ -921,7 +921,7 @@ if __name__ == '__main__':
     target_et_pj16 = np.array([spice.utc2et('2018-10-29T22:10:23')])
 
     # TARGET_ET = np.array([721041971.3])     # False or ET
-    TARGET_ET = target_et_pj16
+    TARGET_ET = target_et_pj9n
 
     # Target select
     if TARGET_MOON == 'Io':

@@ -416,7 +416,7 @@ def calc(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, num_reflection):
 
 
 # %% calc function
-def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
+def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections, alt):
     """
     Return:
         tau_list ... time [sec]
@@ -435,7 +435,8 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
                                                                               Ai,
                                                                               ni,
                                                                               Hp,
-                                                                              hem)
+                                                                              hem,
+                                                                              altitude=alt)
     z_t1 = rs_t1*math.cos(theta_s3_t1[-1])
 
     # 1st reflection
@@ -447,7 +448,9 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections):
                                                                               Ai,
                                                                               ni,
                                                                               Hp,
-                                                                              hem*(-1))
+                                                                              hem *
+                                                                              (-1),
+                                                                              altitude=alt)
 
     # 2nd reflection
     # -> 1st RAW position at 900 km altitude on the same hemisphere as MAW
@@ -573,7 +576,8 @@ def main():
                     0.0*np.ones(arr_size),
                     S_A0_arr,
                     NS*np.ones(arr_size, dtype=int),
-                    reflections*np.ones(arr_size, dtype=int)))
+                    reflections*np.ones(arr_size, dtype=int),
+                    altitude*np.ones(arr_size, dtype=int)))
 
     # Parallelized
     time_start = time.time()
@@ -592,7 +596,8 @@ def main():
                     0.0*np.ones(arr_size),
                     S_A0_arr*np.ones(arr_size),
                     NS*np.ones(arr_size, dtype=int),
-                    reflections*np.ones(arr_size, dtype=int)))
+                    reflections*np.ones(arr_size, dtype=int),
+                    altitude*np.ones(arr_size, dtype=int)))
 
     # Parallelized
     time_start = time.time()
@@ -713,7 +718,7 @@ def main():
     ax.plot(eq_S8_arr, np.cos(data_S8[:, 1]),
             color=UC.blue)
     fig.tight_layout()
-    fig.savefig('img/reflect/'+exname+'/eqlead_vs_s3lat.jpg')
+    fig.savefig('img/reflect/'+exname+'/eqlead_vs_s3lat_'+alt_str+'.jpg')
     plt.close()
 
     del eq_N0_arr, eq_N1_arr, eq_N2_arr, eq_N3_arr, eq_N4_arr
@@ -900,64 +905,65 @@ def main():
                 color=UC.blue)
 
     fig.tight_layout()
-    fig.savefig('img/reflect/'+exname+'/moons3wlon_vs_eqlead.jpg')
+    fig.savefig('img/reflect/'+exname+'/moons3wlon_vs_eqlead_'+alt_str+'.jpg')
     plt.close()
 
     # Save the data
-    np.savetxt('results/reflect/'+exname+'/data_N0_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_N0_arr_'+alt_str+'.txt',
                data_N0)
-    np.savetxt('results/reflect/'+exname+'/data_N1_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_N1_arr_'+alt_str+'.txt',
                data_N1)
-    np.savetxt('results/reflect/'+exname+'/data_N2_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_N2_arr_'+alt_str+'.txt',
                data_N2)
-    np.savetxt('results/reflect/'+exname+'/data_N3_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_N3_arr_'+alt_str+'.txt',
                data_N3)
-    np.savetxt('results/reflect/'+exname+'/data_N4_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_N4_arr_'+alt_str+'.txt',
                data_N4)
-    np.savetxt('results/reflect/'+exname+'/data_N5_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_N5_arr_'+alt_str+'.txt',
                data_N5)
-    np.savetxt('results/reflect/'+exname+'/data_N6_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_N6_arr_'+alt_str+'.txt',
                data_N6)
-    np.savetxt('results/reflect/'+exname+'/data_N7_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_N7_arr_'+alt_str+'.txt',
                data_N7)
-    np.savetxt('results/reflect/'+exname+'/data_N8_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_N8_arr_'+alt_str+'.txt',
                data_N8)
-    np.savetxt('results/reflect/'+exname+'/data_S0_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_S0_arr_'+alt_str+'.txt',
                data_S0)
-    np.savetxt('results/reflect/'+exname+'/data_S1_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_S1_arr_'+alt_str+'.txt',
                data_S1)
-    np.savetxt('results/reflect/'+exname+'/data_S2_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_S2_arr_'+alt_str+'.txt',
                data_S2)
-    np.savetxt('results/reflect/'+exname+'/data_S3_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_S3_arr_'+alt_str+'.txt',
                data_S3)
-    np.savetxt('results/reflect/'+exname+'/data_S4_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_S4_arr_'+alt_str+'.txt',
                data_S4)
-    np.savetxt('results/reflect/'+exname+'/data_S5_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_S5_arr_'+alt_str+'.txt',
                data_S5)
-    np.savetxt('results/reflect/'+exname+'/data_S6_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_S6_arr_'+alt_str+'.txt',
                data_S6)
-    np.savetxt('results/reflect/'+exname+'/data_S7_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_S7_arr_'+alt_str+'.txt',
                data_S7)
-    np.savetxt('results/reflect/'+exname+'/data_S8_arr.txt',
+    np.savetxt('results/reflect/'+exname+'/data_S8_arr_'+alt_str+'.txt',
                data_S8)
-    np.savetxt('results/reflect/'+exname+'/data_fp_interp.txt',
+    np.savetxt('results/reflect/'+exname+'/data_fp_interp_'+alt_str+'.txt',
                data_fp_interp)
     return None
 
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_047'
+    exname = '003/20250516_054'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [3]
-    hem = 'both'
+    PJ_num = [9]
+    hem = 'N'
     Ai_num = 3
     ni_num = 50
     Ti_num = 60
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
     reflections = 8         # fixed at 8
+    altitude = 400          # default 900 [km]
 
     # Number of parallel processes
     parallel = 9
@@ -976,4 +982,5 @@ if __name__ == '__main__':
         Psyn = Psyn_ga
         r_moon = 15.0*RJ
 
+    alt_str = str(int(altitude))
     main()
