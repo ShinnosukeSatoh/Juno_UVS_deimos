@@ -973,10 +973,10 @@ def main():
                                        np.radians(S3wlon_A0[i]),
                                        z_A0[i]
                                        )
-        print('r_A0[i]:', r_A0[i]/RJ)
-        print('z_A0[i]:', z_A0[i]/RJ)
-        print('S3wlon_A0[i]:', S3wlon_A0[i])
-        print('S_A0/RJ:', S_A0/RJ)
+        # print('r_A0[i]:', r_A0[i]/RJ)
+        # print('z_A0[i]:', z_A0[i]/RJ)
+        # print('S3wlon_A0[i]:', S3wlon_A0[i])
+        # print('S_A0/RJ:', S_A0/RJ)
 
         args = list(zip(
             Ai_1d,

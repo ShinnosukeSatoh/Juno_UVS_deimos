@@ -338,20 +338,6 @@ def main2():
         print('PJ'+str(con20_pj_idx[i])+' H = ' +
               str(thick_coef_best_pj_ave[i]*3.6)+' [RJ]')
 
-        savefile = np.array([rho_eq_best_arr[idx],
-                             phi_eq_best_arr[idx],
-                             et_fp[idx],
-                             hem_fp[idx],
-                             ])
-        print('savefile.shape:', savefile.shape)  # -> (3, N)
-
-        np.savetxt('data/Backtraced/PJ'+str(con20_pj_idx[i]).zfill(2)+'/' +
-                   TARGET_MOON[0]+'FP_info_v900km_fixed.txt', savefile)
-        # savefile[0,:] -> rho_arr [RJ] (equatorial radial distance)
-        # savefile[1,:] -> phi_arr [deg] (equatorial west longitude)
-        # savefile[2,:] -> et_fp [et]
-        # savefile[3,:] -> hemisphere & type of footprints (+/-1, +/-101)
-
     # Equatorial lead angle
     eqlead_best = moon_S3wlon_select-phi_eq_best_arr
     print(np.where(eqlead_best < 0.0), np.where(eqlead_best > 360.0))

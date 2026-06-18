@@ -612,37 +612,45 @@ class Awave():
             # if rs < 1.0*RJ+900.0E+3:
             #     break
 
-            # 高度900 kmの座標テーブルを参照
+            # 高度h [km]の座標テーブルを参照
             if i > 3000:
                 if rs < (1.0*RJ+3000.0E+3):
                     ds = 5000.0     # 線要素長を短く [m]
-                    dis = np.abs(theta-theta_ref)
-                    # idx = np.argmin(dis)
-                    # r_h = r_ref[idx]
-                    # theta_h = theta_ref[idx]
 
-                    # 線形補間する場合
-                    idx_0 = np.argmin(dis)
-                    idx_1 = idx_0 + 1
+                    r_h, theta_h, dis = self.distance_from_h_km(x, y, z,
+                                                                theta,
+                                                                phi,
+                                                                r_ref,
+                                                                theta_ref)
+                    """# 高度h [km]上の球面でreferenceテーブルの緯度を参照
+                    dis = np.abs(theta-theta_ref)
+
+                    idx_0 = np.argmin(dis)  # 最も近い緯度グリッド
+                    idx_1 = idx_0 + 1       # 次に近い緯度グリッド
                     if abs(theta-theta_ref[idx_0-1]) < abs(theta-theta_ref[idx_0+1]):
                         idx_1 = idx_0 - 1
-                    X0 = theta_ref[idx_0]
-                    X1 = theta_ref[idx_1]
-                    Y0 = r_ref[idx_0]
-                    Y1 = r_ref[idx_1]
-                    r_h = (Y1-Y0)*(theta-X0)/(X1-X0) + Y0
-                    theta_h = theta
 
+                    # 高度h [km]上の球面で線形補間する
+                    X0 = theta_ref[idx_0]   # 最も近い緯度グリッド
+                    X1 = theta_ref[idx_1]   # 次に近い緯度グリッド
+                    Y0 = r_ref[idx_0]       # 最も近い動径距離グリッド
+                    Y1 = r_ref[idx_1]       # 次に近い動径距離グリッド
+                    r_h = (Y1-Y0)*(theta-X0)/(X1-X0) + Y0   # 線形補間した動径距離
+                    theta_h = theta         # 実際の緯度
+
+                    # 高度h [km]上のref点座標
                     x_ref = r_h*np.sin(theta_h)*np.cos(phi)
                     y_ref = r_h*np.sin(theta_h)*np.sin(phi)
                     z_ref = r_h*np.cos(theta_h)
-                    dis = math.sqrt((x-x_ref)**2 + (y-y_ref)**2 + (z-z_ref)**2)
-                    if dis < altitude*1E+3:
+
+                    # 高度h [km]上のref点座標とWavefrontの距離
+                    dis = math.sqrt((x-x_ref)**2 + (y-y_ref)**2 + (z-z_ref)**2)"""
+
+                    if dis <= 0.5*ds:
                         # print('i:', i)
                         # print('dis [m]:', dis)
                         rs = r_h
                         theta = theta_h
-                        z = z_ref
                         flag = 1
                         break
 
@@ -710,3 +718,31 @@ class Awave():
         del T, rho
 
         return cent_lat, z_max*RJ
+
+    def distance_from_h_km(self, x_in, y_in, z_in,
+                           theta_in, phi_in, r_ref, theta_ref):
+        # 高度h [km]上の球面でreferenceテーブルの緯度を参照
+        dis = np.abs(theta_in-theta_ref)
+
+        idx_0 = np.argmin(dis)  # 最も近い緯度グリッド
+        idx_1 = idx_0 + 1       # 次に近い緯度グリッド
+        if abs(theta_in-theta_ref[idx_0-1]) < abs(theta_in-theta_ref[idx_0+1]):
+            idx_1 = idx_0 - 1
+
+        # 高度h [km]上の球面で線形補間する
+        X0 = theta_ref[idx_0]   # 最も近い緯度グリッド
+        X1 = theta_ref[idx_1]   # 次に近い緯度グリッド
+        Y0 = r_ref[idx_0]       # 最も近い動径距離グリッド
+        Y1 = r_ref[idx_1]       # 次に近い動径距離グリッド
+        r_h = (Y1-Y0)*(theta_in-X0)/(X1-X0) + Y0   # 線形補間した動径距離
+        theta_h = theta_in      # 実際の緯度
+
+        # 高度h [km]上のref点座標
+        x_ref = r_h*np.sin(theta_h)*np.cos(phi_in)
+        y_ref = r_h*np.sin(theta_h)*np.sin(phi_in)
+        z_ref = r_h*np.cos(theta_h)
+
+        # 高度h [km]上のref点座標とWavefrontの距離
+        dis = math.sqrt((x_in-x_ref)**2 + (y_in-y_ref)**2 + (z_in-z_ref)**2)
+
+        return r_h, theta_h, dis
