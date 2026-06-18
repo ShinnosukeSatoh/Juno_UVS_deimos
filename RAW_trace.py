@@ -24,7 +24,9 @@ from UniversalColor import UniversalColor
 from SharedX import ShareXaxis
 from legend_shadow import legend_shadow
 
+from Leadangle_fit_JunoUVS import moonS3wlon_arr
 import Leadangle_wave as Wave
+
 import time
 # import os
 from scipy.io import readsav
@@ -62,6 +64,46 @@ Psyn_ga = (10.53)*3600      # Moon's synodic period [sec]
 Fllen_io = 14.78*RJ     # Field line length [m]
 Fllen_eu = 24.22*RJ     # Field line length [m]
 Fllen_ga = 39.17*RJ     # Field line length [m]
+
+
+# ------------------------------------------------------------
+# Hardcoded Juno Perijove UTC times
+# ------------------------------------------------------------
+JUNO_PJ_TIMES = {
+    0: "2016-07-05 02:47:31.851",
+    1: "2016-08-27 12:50:44.060",
+    2: "2016-10-19 18:10:53.669",
+    3: "2016-12-11 17:03:40.665",
+    4: "2017-02-02 12:57:08.935",
+    5: "2017-03-27 08:51:51.552",
+    6: "2017-05-19 06:00:46.945",
+    7: "2017-07-11 01:54:42.322",
+    8: "2017-09-01 21:48:50.499",
+    9: "2017-10-24 17:42:31.438",
+    10: "2017-12-16 17:56:58.997",
+    11: "2018-02-07 13:51:29.722",
+    12: "2018-04-01 09:45:42.502",
+    13: "2018-05-24 05:39:50.502",
+    14: "2018-07-16 05:17:21.832",
+    15: "2018-09-07 01:11:40.519",
+    16: "2018-10-29 21:05:59.956",
+    17: "2018-12-21 16:59:48.319",
+    18: "2019-02-12 17:34:30.940",
+    19: "2019-04-06 12:14:22.473",
+    20: "2019-05-29 08:08:18.282",
+    21: "2019-07-21 04:02:43.348",
+    22: "2019-09-12 03:40:44.422",
+    23: "2019-11-03 22:18:13.850",
+    24: "2019-12-26 17:36:12.571",
+    25: "2020-02-17 17:51:55.133",
+    26: "2020-04-10 13:47:40.171",
+    27: "2020-06-02 10:20:02.882",
+    28: "2020-07-25 06:15:27.223",
+    29: "2020-09-16 02:10:52.328",
+    30: "2020-11-08 01:49:42.104",
+    31: "2020-12-30 21:45:44.567",
+    32: "2021-02-21 17:40:34.245",
+}
 
 
 # %% Calculate position of the target moon using Spiceypy
@@ -126,35 +168,6 @@ def local_time_moon(et: float, MOON: str, abcorr='none'):
     #     local_time += -24
 
     return local_time
-
-
-# %% System III position of the target moon from et_fp array.
-def moonS3wlon_arr(et_fp, moon: str):
-    if moon == 'Io':
-        target = 'IO'
-    elif moon == 'Europa':
-        target = 'EUROPA'
-    elif moon == 'Ganymede':
-        target = 'GANYMEDE'
-
-    moon_x0 = np.zeros(et_fp.shape)
-    moon_y0 = np.zeros(et_fp.shape)
-    moon_z0 = np.zeros(et_fp.shape)
-    moon_r0 = np.zeros(et_fp.shape)
-    moon_theta0 = np.zeros(et_fp.shape)
-    moon_phi0 = np.zeros(et_fp.shape)
-    moon_S3wlon0 = np.zeros(et_fp.shape)
-    for i in range(et_fp.size):
-        x0, y0, z0, r0, theta0, phi0, S3wlon0 = spice_moonS3(
-            et=et_fp[i], MOON=target)
-        moon_x0[i] = x0
-        moon_y0[i] = y0
-        moon_z0[i] = z0
-        moon_r0[i] = r0
-        moon_theta0[i] = theta0
-        moon_phi0[i] = phi0
-        moon_S3wlon0[i] = S3wlon0
-    return moon_x0, moon_y0, moon_z0, moon_r0, moon_theta0, moon_phi0, moon_S3wlon0
 
 
 # %% Read the savfile
@@ -971,6 +984,10 @@ if __name__ == '__main__':
     # Grid
     d_phi = 0.6    # [deg]
 
+    # PJ et
+    utc = JUNO_PJ_TIMES[PJ_num[0]]
+    et_fp = spice.utc2et(utc)
+
     # Target select
     if TARGET_MOON == 'Io':
         Psyn = Psyn_io
@@ -981,6 +998,12 @@ if __name__ == '__main__':
     elif TARGET_MOON == 'Ganymede':
         Psyn = Psyn_ga
         r_moon = 15.0*RJ
+
+    # Orbital distance at the PJ time
+    _, _, _, r_moon_obs, _, _, _ = moonS3wlon_arr(np.array([et_fp]),
+                                                  TARGET_MOON)
+    r_moon = r_moon_obs[0]
+    print('Orbital distance [RJ]:', r_moon/RJ)
 
     alt_str = str(int(altitude))
     main()
