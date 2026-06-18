@@ -679,7 +679,7 @@ class Awave():
                 r_h, theta_h, dis = self.distance_from_h_km(x, y, z,
                                                             theta,
                                                             phi,
-                                                            r_ref,
+                                                            r_ref[flag],
                                                             theta_ref[flag])
                 if dis <= 0.5*ds:
                     rs = r_h
