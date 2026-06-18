@@ -173,6 +173,7 @@ for PJ in PJ_LIST:
                          hem_fp,
                          ])
     print(savefile.shape)  # -> (3, N)
+    # savefile: this is not filtered by the viewing angle.
     # savefile[0,:] -> rho_arr [RJ] (equatorial radial distance)
     # savefile[1,:] -> phi_arr [deg] (equatorial west longitude)
     # savefile[2,:] -> et_fp [et]

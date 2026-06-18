@@ -502,8 +502,7 @@ class Awave():
                        NS: float,
                        limit=0,
                        current_coef=1.0,
-                       thickness_coef=1.0,
-                       altitude=900):
+                       thickness_coef=1.0):
         """
         `r_A0` Radial distance of the Alfven launch site [m] \\
         `S3wlon_A0` System III west longitude of the Alfven launch site [rad] \\
@@ -514,14 +513,38 @@ class Awave():
         `Hp` Scale height of the plasma sheet [m] \\
         `NS` Tracing direction North=-1 or South=1 \\
         """
-        Niter = int(750000)
+        Niter = int(760000)
 
         # 経度0度(y=0)平面のx-z対応テーブル (高度デフォ900 km)
-        altitude_str = str(int(altitude))
-        extradius = np.loadtxt('data/Alt_'+altitude_str+'km/rthetaphi_2.txt')
-        r_ref = extradius[0, :]*RJ        # [m]
+        extradius = np.loadtxt('data/Alt_0km/rthetaphi_2.txt')
+        r_ref = extradius[0, :]*RJ                 # [m]
         theta_ref = np.radians(extradius[1, :])    # [rad]
         phi_ref = np.radians(extradius[2, :])      # [rad]
+
+        extradius_5 = np.loadtxt('data/Alt_5km/rthetaphi_2.txt')
+        r_ref_5 = extradius_5[0, :]*RJ               # [m]
+        theta_ref_5 = np.radians(extradius_5[1, :])  # [rad]
+
+        extradius_400 = np.loadtxt('data/Alt_400km/rthetaphi_2.txt')
+        r_ref_400 = extradius_400[0, :]*RJ               # [m]
+        theta_ref_400 = np.radians(extradius_400[1, :])  # [rad]
+
+        extradius_900 = np.loadtxt('data/Alt_900km/rthetaphi_2.txt')
+        r_ref_900 = extradius_900[0, :]*RJ               # [m]
+        theta_ref_900 = np.radians(extradius_900[1, :])  # [rad]
+
+        extradius_1500 = np.loadtxt('data/Alt_1500km/rthetaphi_2.txt')
+        r_ref_1500 = extradius_1500[0, :]*RJ               # [m]
+        theta_ref_1500 = np.radians(extradius_1500[1, :])  # [rad]
+
+        # Initial reference table (the highest altitude)
+        flag = 0
+        alt_ref = [1500, 900, 400, 5]   # [km]
+        r_ref = [r_ref_1500, r_ref_900, r_ref_400, r_ref_5]
+        theta_ref = [theta_ref_1500, theta_ref_900, theta_ref_400, theta_ref_5]
+
+        # 高度のピンを立てる
+        altitude_arr = np.zeros(Niter)
 
         # 磁力線に沿ってトレースしたい
         rs = copy.copy(r_A0)           # [m]
@@ -550,9 +573,6 @@ class Awave():
 
         # 遠心力赤道 s=0 における質量密度
         rho_0 = Ai*AMU2KG*ni*(1E+6)
-
-        # FLAG
-        flag = 0
 
         # Direction of tracing
         if NS == -1:       # Northern MAW
@@ -613,45 +633,63 @@ class Awave():
             #     break
 
             # 高度h [km]の座標テーブルを参照
-            if i > 3000:
-                if rs < (1.0*RJ+3000.0E+3):
-                    ds = 5000.0     # 線要素長を短く [m]
+            if (i > 3500) and (rs < (1.0*RJ+3000.0E+3)):
+                ds = 6000.0     # 線要素長を短く [m]
 
-                    r_h, theta_h, dis = self.distance_from_h_km(x, y, z,
-                                                                theta,
-                                                                phi,
-                                                                r_ref,
-                                                                theta_ref)
-                    """# 高度h [km]上の球面でreferenceテーブルの緯度を参照
-                    dis = np.abs(theta-theta_ref)
+                """r_h, theta_h, dis = self.distance_from_h_km(x, y, z,
+                                                            theta,
+                                                            phi,
+                                                            r_ref,
+                                                            theta_ref)"""
+                """# 高度h [km]上の球面でreferenceテーブルの緯度を参照
+                dis = np.abs(theta-theta_ref)
 
-                    idx_0 = np.argmin(dis)  # 最も近い緯度グリッド
-                    idx_1 = idx_0 + 1       # 次に近い緯度グリッド
-                    if abs(theta-theta_ref[idx_0-1]) < abs(theta-theta_ref[idx_0+1]):
-                        idx_1 = idx_0 - 1
+                idx_0 = np.argmin(dis)  # 最も近い緯度グリッド
+                idx_1 = idx_0 + 1       # 次に近い緯度グリッド
+                if abs(theta-theta_ref[idx_0-1]) < abs(theta-theta_ref[idx_0+1]):
+                    idx_1 = idx_0 - 1
 
-                    # 高度h [km]上の球面で線形補間する
-                    X0 = theta_ref[idx_0]   # 最も近い緯度グリッド
-                    X1 = theta_ref[idx_1]   # 次に近い緯度グリッド
-                    Y0 = r_ref[idx_0]       # 最も近い動径距離グリッド
-                    Y1 = r_ref[idx_1]       # 次に近い動径距離グリッド
-                    r_h = (Y1-Y0)*(theta-X0)/(X1-X0) + Y0   # 線形補間した動径距離
-                    theta_h = theta         # 実際の緯度
+                # 高度h [km]上の球面で線形補間する
+                X0 = theta_ref[idx_0]   # 最も近い緯度グリッド
+                X1 = theta_ref[idx_1]   # 次に近い緯度グリッド
+                Y0 = r_ref[idx_0]       # 最も近い動径距離グリッド
+                Y1 = r_ref[idx_1]       # 次に近い動径距離グリッド
+                r_h = (Y1-Y0)*(theta-X0)/(X1-X0) + Y0   # 線形補間した動径距離
+                theta_h = theta         # 実際の緯度
 
-                    # 高度h [km]上のref点座標
-                    x_ref = r_h*np.sin(theta_h)*np.cos(phi)
-                    y_ref = r_h*np.sin(theta_h)*np.sin(phi)
-                    z_ref = r_h*np.cos(theta_h)
+                # 高度h [km]上のref点座標
+                x_ref = r_h*np.sin(theta_h)*np.cos(phi)
+                y_ref = r_h*np.sin(theta_h)*np.sin(phi)
+                z_ref = r_h*np.cos(theta_h)
 
-                    # 高度h [km]上のref点座標とWavefrontの距離
-                    dis = math.sqrt((x-x_ref)**2 + (y-y_ref)**2 + (z-z_ref)**2)"""
+                # 高度h [km]上のref点座標とWavefrontの距離
+                dis = math.sqrt((x-x_ref)**2 + (y-y_ref)**2 + (z-z_ref)**2)"""
 
-                    if dis <= 0.5*ds:
-                        # print('i:', i)
-                        # print('dis [m]:', dis)
-                        rs = r_h
-                        theta = theta_h
-                        flag = 1
+                """if dis <= 0.5*ds:
+                    # print('i:', i)
+                    # print('dis [m]:', dis)
+                    rs = r_h
+                    theta = theta_h
+                    flag = 1
+                    break"""
+
+                # ============================================
+                # Altitude 1500 km -> 900 km -> 400 km -> 5 km
+                # ============================================
+                r_h, theta_h, dis = self.distance_from_h_km(x, y, z,
+                                                            theta,
+                                                            phi,
+                                                            r_ref,
+                                                            theta_ref[flag])
+                if dis <= 0.5*ds:
+                    rs = r_h
+                    theta = theta_h
+                    altitude_arr[i] = alt_ref[flag]
+                    flag += 1
+                    print('Reached at' +
+                          str(alt_ref[flag]) +
+                          ' km altitude.')
+                    if flag == len(theta_ref):
                         break
 
             # 配列格納
@@ -665,10 +703,11 @@ class Awave():
         theta_arr = theta_arr[:i]
         phi_arr = phi_arr[:i]
         tau_arr = tau_arr[:i]
+        altitude_arr = altitude_arr[:i]
 
         # print('Iter flag:', flag)
 
-        return tau_arr, rs, 2*np.pi-phi_arr, theta_arr, s
+        return tau_arr, rs, 2*np.pi-phi_arr, theta_arr, s, altitude_arr
 
     def centri_eq(self, r_rj, theta, phi, current_coef=1.0,
                   thickness_coef=1.0,):
