@@ -315,15 +315,17 @@ def read_current_coef():
 def read_disk_thick_coef(TARGET_MOON, TARGET_HEM, PJ_LIST):
     view_angle_thres_degree = 30.0
 
-    pj_fp_ref = np.loadtxt('results/Mshell/'+TARGET_MOON[0:2]+'/pj_fp.txt')
-    hem_fp_ref = np.loadtxt('results/Mshell/'+TARGET_MOON[0:2]+'/hem_fp.txt')
-    view_angle = np.loadtxt(
-        'results/Mshell/'+TARGET_MOON[0:2]+'/view_angle.txt')
+    pj_fp_ref = np.loadtxt('results/magdisk_thickness_fit/' +
+                           TARGET_MOON[0:2]+'/pj_select.txt')
+    hem_fp_ref = np.loadtxt('results/magdisk_thickness_fit/' +
+                            TARGET_MOON[0:2]+'/hem_fp.txt')
+    view_angle = np.loadtxt('results/magdisk_thickness_fit/' +
+                            TARGET_MOON[0:2]+'/view_angle_select.txt')
 
     select_pj = np.where(pj_fp_ref == PJ_LIST[0])
 
     f0 = np.loadtxt('results/magdisk_thickness_fit/' +
-                    TARGET_MOON[0:2]+'_coef_0.txt')
+                    TARGET_MOON[0:2]+'/diskthick_coef_0.txt')
 
     if TARGET_HEM == 'both':
         d_cs_coef_subset = f0[select_pj]
@@ -729,15 +731,18 @@ def eV2speed(energy):
 
 
 # %% Transit time of TEB from one to the other hemisphere.
-def TEB_transit(r_moon, s3wlon, target_moon):
+def TEB_transit(r_moon, s3wlon, target_moon, length=False):
     if target_moon == 'Io':
         v_e = C
+        Fllen_alt = Fllen_io
     elif target_moon == 'Europa':
         TEB_en = 3600.0  # TEB ENERGY [eV]
         v_e = eV2speed(TEB_en)
+        Fllen_alt = Fllen_eu
     elif target_moon == 'Ganymede':
         TEB_en = 3600.0  # TEB ENERGY [eV]
         v_e = eV2speed(TEB_en)
+        Fllen_alt = Fllen_ga
 
     phi = math.radians(360.0-200.0)    # [rad]
     x0 = (r_moon/RJ)*np.cos(phi)        # [RJ]
@@ -754,7 +759,15 @@ def TEB_transit(r_moon, s3wlon, target_moon):
                        MinStep=0.00001)
 
     Fllen = T2.equator.fllen*RJ
+    if Fllen > 50*RJ:
+        print('Field line is longer than 50 RJ. Use alternate length.')
+        Fllen = Fllen_alt
+    elif Fllen < 2*RJ:
+        print('Field line is too short. Use alternate length.')
+        Fllen = Fllen_alt
     transit_time = Fllen/v_e      # [sec]
+    if length:
+        print('Field line length [RJ]:', Fllen/RJ)
 
     return transit_time
 
@@ -843,7 +856,7 @@ def mode_select(H_1d):
         # %% Data from Connerney+2020: Radial current constant [MA]
         con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
                                    20.2, 12.2, 21.1, 20.9, 10.7,
-                                   26.3, 16.4, 12.0, 19.6, 12.0,
+                                   26.26, 16.4, 12.0, 19.6, 12.0,
                                    13.6, 20.0, 12.8, 16.0, 17.3,
                                    9.9, 16.1, 10.3])
 
@@ -857,6 +870,7 @@ def mode_select(H_1d):
         D_coef, _ = read_disk_thick_coef(TARGET_MOON, TARGET_HEM, PJ_LIST)
         D_disk = 3.6*RJ                        # [m]
         Hp = (2/np.sqrt(np.pi))*D_disk*D_coef  # [m]
+        print('Scale height [RJ]:', Hp/RJ)
         Wave.Awave().update_Con2020(current_coef=current_coef,
                                     thickness_coef=D_coef,
                                     i_rho=i_rho)
@@ -903,6 +917,10 @@ def main():
                                                       TARGET_HEM,
                                                       FLIP)
 
+        # Equatorial lead angle:
+        # phi_arr is the backtraced west longitude of the footprint
+        # field line, and the equatorial lead angle is defined as
+        # below.
         eqlead_fp = moon_S3wlon - phi_arr
         for i in range(eqlead_fp.size):
             if eqlead_fp[i] < 0:
@@ -955,6 +973,10 @@ def main():
                                        np.radians(S3wlon_A0[i]),
                                        z_A0[i]
                                        )
+        print('r_A0[i]:', r_A0[i]/RJ)
+        print('z_A0[i]:', z_A0[i]/RJ)
+        print('S3wlon_A0[i]:', S3wlon_A0[i])
+        print('S_A0/RJ:', S_A0/RJ)
 
         args = list(zip(
             Ai_1d,
@@ -971,10 +993,14 @@ def main():
         tau = np.array(results_list)    # [sec]
 
         if (hem_fp[i] == 101) or (hem_fp[i] == -101):
-            tau += TEB_transit(r_A0[i], S3wlon_A0[i], TARGET_MOON)
+            tau += TEB_transit(r_A0[i], S3wlon_A0[i], TARGET_MOON, length=True)
 
-        print(str(i).zfill(2), '- Loop time [sec]:', round(
-            time.time()-start_1loop, 4))
+        print(str(i).zfill(2),
+              '- Loop time [sec]:',
+              round(time.time()-start_1loop, 4),
+              '//',
+              'Radial distance [RJ]:',
+              r_A0[i]/RJ)
 
         y_obs[i, :] = eqlead_fp[i]*np.ones(arg_size)
         # sigma_y[i] = eqlead_fp_0[i]
@@ -1033,12 +1059,12 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '1001/20260421_093'
+    exname = '1001/20260421_097'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [8]
+    PJ_LIST = [14]
     TARGET_HEM = 'S'      # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'

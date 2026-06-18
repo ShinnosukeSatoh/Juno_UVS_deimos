@@ -9,6 +9,7 @@ import JupiterMag as jm
 from Leadangle_fit_JunoUVS import Obsresults
 from Leadangle_fit_JunoUVS import calc_eqlead
 from Leadangle_fit_JunoUVS import moonS3wlon_arr
+from Leadangle_fit_JunoUVS import read_disk_thick_coef
 
 import os
 from IPython.display import clear_output
@@ -101,6 +102,10 @@ for PJ in PJ_LIST:
                                       hem_fp,
                                       moon_S3wlon,
                                       TARGET_MOON)
+    print('PJ', PJ)
+    D_coef, _ = read_disk_thick_coef(TARGET_MOON,
+                                     TARGET_HEM='both',
+                                     PJ_LIST=[PJ])
 
     # Backtraced field line position on the equatorial plane
     rho_arr = np.zeros(wlon_fp.size)
@@ -109,7 +114,9 @@ for PJ in PJ_LIST:
 
     mu_i_default = 139.6    # default: 139.6 [nT]
     i_rho_default = 16.7    # default: 16.7 [MA]
-    jm.Con2020.Config(mu_i=mu_i_default*1.0,
+    d_rj_default = 3.6      # default: 3.6 [RJ]
+    jm.Con2020.Config(mu_i=con20_mu_i_azi[j],
+                      d=d_rj_default*D_coef,
                       i_rho=con20_mu_i_rho[j],
                       equation_type='analytic')
     for i in range(rho_arr.size):
@@ -166,13 +173,13 @@ for PJ in PJ_LIST:
                          hem_fp,
                          ])
     print(savefile.shape)  # -> (3, N)
-    # savefile[0,:] -> rho_arr [RJ]
-    # savefile[1,:] -> phi_arr [deg] (west longitude)
+    # savefile[0,:] -> rho_arr [RJ] (equatorial radial distance)
+    # savefile[1,:] -> phi_arr [deg] (equatorial west longitude)
     # savefile[2,:] -> et_fp [et]
     # savefile[3,:] -> hemisphere & type of footprints (+/-1, +/-101)
 
     np.savetxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-               TARGET_MOON[0]+'FP_info_v900km_radialcurrent.txt', savefile)
+               TARGET_MOON[0]+'FP_info_v900km_fixed.txt', savefile)
 
     j += 1
 

@@ -13,6 +13,7 @@ import JupiterMag as jm
 
 from Leadangle_fit_JunoUVS import Obsresults
 from Leadangle_fit_JunoUVS import viewingangle
+from Leadangle_fit_JunoUVS import moonS3wlon_arr
 from Leadangle_fit_JunoUVS import calc_eqlead
 from Leadangle_fit_JunoUVS import local_time_moon
 
@@ -112,6 +113,10 @@ wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, moon_S3wlon, et_fp, hem_fp, pj_fp = Ob
 )
 
 
+# %% 観測時の衛星軌道動径距離
+_, _, moon_z0, r_moon_arr, _, _, _ = moonS3wlon_arr(et_fp, TARGET_MOON)
+
+
 # %% Load the viewing angle
 view_angle = np.zeros(3)
 for i in PJ_LIST:
@@ -147,10 +152,10 @@ con20_mu_i_azi = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
                            132.1, 133.5, 152.9, 138.5, 138.8,
                            156.1, 141.4, 146.3])
 
-# %% Data from Connerney+2020: Current constant [nT]
+# %% Data from Connerney+2020: Radial current constant [MA]
 con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
                            20.2, 12.2, 21.1, 20.9, 10.7,
-                           26.3, 16.4, 12.0, 19.6, 12.0,
+                           26.26, 16.4, 12.0, 19.6, 12.0,
                            13.6, 20.0, 12.8, 16.0, 17.3,
                            9.9, 16.1, 10.3])
 
@@ -169,6 +174,9 @@ def data_select():
     pj_select = []
     hem_select = []
     moon_S3wlon_select = []
+    r_moon_select = []
+    moon_z0_select = []
+    view_angle_select = []
     for i in range(con20_pj_idx.size):
         for j in range(len(pj_fp)):
             if view_angle[j] <= 30.0:
@@ -179,7 +187,10 @@ def data_select():
                     err_wlongitude += [err_wlon_fp[j]]
                     pj_select += [pj_fp[j]]
                     hem_select += [hem_fp[j]]
-                    moon_S3wlon_select = [moon_S3wlon[j]]
+                    moon_S3wlon_select += [moon_S3wlon[j]]
+                    r_moon_select += [r_moon_arr[j]]
+                    moon_z0_select += [moon_z0[j]]
+                    view_angle_select += [view_angle[j]]
     pj_select = np.array(pj_select)
     latitude = np.array(latitude)
     wlongitude = np.array(wlongitude)
@@ -187,11 +198,14 @@ def data_select():
     err_latitude = np.array(err_latitude)
     hem_select = np.array(hem_select)
     moon_S3wlon_select = np.array(moon_S3wlon_select)
-    return pj_select, hem_select, latitude, wlongitude, err_latitude, moon_S3wlon_select
+    r_moon_select = np.array(r_moon_select)
+    moon_z0_select = np.array(moon_z0_select)
+    view_angle_select = np.array(view_angle_select)
+    return pj_select, hem_select, latitude, wlongitude, err_latitude, moon_S3wlon_select, r_moon_select, moon_z0_select, view_angle_select
 
 
 # %%
-def calc2(x0, y0, z0, mu_i_azi, mu_i_rho=16.7):
+def calc2(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi, mu_i_rho=16.7):
     start_loop = time.time()
 
     coef_arr = np.arange(0.62, 1.34, 0.01)
@@ -215,19 +229,19 @@ def calc2(x0, y0, z0, mu_i_azi, mu_i_rho=16.7):
                            IntModel='jrm33', ExtModel='Con2020',
                            MaxStep=0.0003,
                            MaxLen=800000, ErrMax=0.000001)
-        x1 = T1.x[0][~np.isnan(T1.x[0])]
-        y1 = T1.y[0][~np.isnan(T1.y[0])]
-        z1 = T1.z[0][~np.isnan(T1.z[0])]
+        x1 = T1.x[0][~np.isnan(T1.x[0])]    # [RJ]
+        y1 = T1.y[0][~np.isnan(T1.y[0])]    # [RJ]
+        z1 = T1.z[0][~np.isnan(T1.z[0])]    # [RJ]
         rho = np.sqrt(x1**2 + y1**2 + z1**2)
 
         # Satellite orbital plane
-        idx_z0 = np.argmin(np.abs(z1))
+        idx_z0 = np.argmin(np.abs(z1-moon_z0/RJ))
 
         phi_eq_arr[i] = np.arctan2(y1[idx_z0], x1[idx_z0])  # East long. [rad]
         rho_eq_arr[i] = rho[idx_z0]                         # Distance [RJ]
         # z_arr = T1.z[0][idx_z0]
 
-    idx_rho_best = np.argmin(np.abs(rho_eq_arr-r_moon/RJ))
+    idx_rho_best = np.argmin(np.abs(rho_eq_arr-r_moon_obs/RJ))
     coef_best = coef_arr[idx_rho_best]
     rho_eq = rho_eq_arr[idx_rho_best]   # Distance [RJ]
     phi_eq = phi_eq_arr[idx_rho_best]   # East longitude [rad]
@@ -244,7 +258,7 @@ def main2():
     print('Target hemisphere:', TARGET_HEM)
     start_all = time.time()
 
-    pj_select, hem_select, latitude, wlongitude, err_latitude, moon_S3wlon_select = data_select()
+    pj_select, hem_select, latitude, wlongitude, err_latitude, moon_S3wlon_select, r_moon_select, moon_z0_select, view_angle_select = data_select()
 
     if error_num == 1:
         for i in range(latitude.size):
@@ -293,15 +307,26 @@ def main2():
                 if radial_current_var:
                     mu_i_rho_arr[j] = con20_mu_i_rho[i]
 
-    xyz0_zip = list(zip(x0, y0, z0, mu_i_azi_arr, mu_i_rho_arr))
+    print('Size check')
+    print('latitude.size:', latitude.size)
+    print('r_moon_select.size:', r_moon_select.size)
+    print('r_moon_arr.size:', r_moon_arr.size)
+    print('x0.size:', x0.size)
+
+    xyz0_zip = list(zip(x0, y0, z0,
+                        r_moon_select,
+                        moon_z0_select,
+                        mu_i_azi_arr,
+                        mu_i_rho_arr))
     with Pool(processes=parallel) as pool:
         results_list = list(pool.starmap(calc2, xyz0_zip))
 
     results_arr = np.array(results_list)
     print(results_arr.shape)      # >>> (XXX, 3)
     thick_coef_best_arr = results_arr[:, 0]
-    rho_eq_best_arr = results_arr[:, 1]*RJ                  # [m]
-    phi_eq_best_arr = np.mod(results_arr[:, 2], 2*np.pi)    # [rad]
+    rho_eq_best_arr = results_arr[:, 1]  # [RJ]
+    phi_eq_best_arr = np.mod(
+        360.0-np.degrees(results_arr[:, 2]), 360.0)    # [deg]
 
     print('--- Total time [sec]:', round(time.time()-start_all, 4))
 
@@ -313,14 +338,29 @@ def main2():
         print('PJ'+str(con20_pj_idx[i])+' H = ' +
               str(thick_coef_best_pj_ave[i]*3.6)+' [RJ]')
 
+        savefile = np.array([rho_eq_best_arr[idx],
+                             phi_eq_best_arr[idx],
+                             et_fp[idx],
+                             hem_fp[idx],
+                             ])
+        print('savefile.shape:', savefile.shape)  # -> (3, N)
+
+        np.savetxt('data/Backtraced/PJ'+str(con20_pj_idx[i]).zfill(2)+'/' +
+                   TARGET_MOON[0]+'FP_info_v900km_fixed.txt', savefile)
+        # savefile[0,:] -> rho_arr [RJ] (equatorial radial distance)
+        # savefile[1,:] -> phi_arr [deg] (equatorial west longitude)
+        # savefile[2,:] -> et_fp [et]
+        # savefile[3,:] -> hemisphere & type of footprints (+/-1, +/-101)
+
     # Equatorial lead angle
-    wlong_eq_best = np.mod(360.0 - np.degrees(phi_eq_best_arr), 360.0)
-    eqlead_best = wlong_eq_best - moon_S3wlon_select
+    eqlead_best = moon_S3wlon_select-phi_eq_best_arr
     print(np.where(eqlead_best < 0.0), np.where(eqlead_best > 360.0))
 
     savedir = 'results/magdisk_thickness_fit/'+TARGET_MOON[0:2]
-    np.savetxt(savedir+'/diskthick_coef_'+str(error_num)+'.txt',
+    np.savetxt(savedir+'/diskthick_coef_'+str(error_num)+'_ave.txt',
                thick_coef_best_pj_ave)
+    np.savetxt(savedir+'/diskthick_coef_'+str(error_num)+'.txt',
+               thick_coef_best_arr)
     np.savetxt(savedir+'/instantaneous_rho_eq_'+str(error_num)+'.txt',
                rho_eq_best_arr)
     np.savetxt(savedir+'/instantaneous_phi_eq_'+str(error_num)+'.txt',
@@ -335,6 +375,8 @@ def main2():
                wlongitude)
     np.savetxt(savedir+'/eqlead_best_deg.txt',
                eqlead_best)
+    np.savetxt(savedir+'/view_angle_select.txt',
+               view_angle_select)
     return None
 
 
@@ -344,7 +386,7 @@ if __name__ == '__main__':
     error_num = 0
 
     # Number of parallel processes
-    parallel = 6
+    parallel = 16
 
     # Radial current variation?
     radial_current_var = True

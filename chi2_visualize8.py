@@ -60,10 +60,10 @@ HEM_LIST = ['S', 'both', 'S', 'both', 'S',
             'S', 'S', 'S', 'S',
             'N', 'S', 'N',
             ]
-EXNAME_LIST = ['072', '073', '074', '075', '076',
-               '077', '078', '080', '079',
-               '081', '082', '083', '084',
-               '085', '086', '087',
+EXNAME_LIST = ['088', '089', '090', '091', '092',
+               '093', '094', '096', '095',
+               '097', '098', '099', '100',
+               '101', '102', '103',
                ]
 
 
@@ -477,6 +477,9 @@ for i in range(len(PJ_LIST)):
     x_err_arr[i] = (ni_err_0[i]+ni_err_1[i])*0.5
     y_data_arr[i] = y
 
+# print('PJ_LIST:', PJ_LIST)
+# print('x_err_arr:', x_err_arr)
+
 # データをy軸に対してソートする
 y_argsort = np.argsort(y_data_arr)
 x_data_arr, x_err_arr = x_data_arr[y_argsort], x_err_arr[y_argsort]
@@ -485,10 +488,12 @@ y_data_arr = y_data_arr[y_argsort]
 #    F.ax.scatter(x_data_arr[i], y_data_arr[i], marker='s', s=8.0, c=UC.red)
 
 # 外れ値の除去
+print('PJ sorted:', np.array(PJ_LIST)[y_argsort])
 F.ax.scatter(x_data_arr[3], y_data_arr[3], marker='s', s=8.0, c=UC.red)
-x_data_arr = np.delete(x_data_arr, [3])
-x_err_arr = np.delete(x_err_arr, [3])
-y_data_arr = np.delete(y_data_arr, [3])
+F.ax.scatter(x_data_arr[11], y_data_arr[11], marker='s', s=8.0, c=UC.yellow)
+x_data_arr = np.delete(x_data_arr, [3, 11])
+x_err_arr = np.delete(x_err_arr, [3, 11])
+y_data_arr = np.delete(y_data_arr, [3, 11])
 
 # Scipy ODRでもやってみる
 data = RealData(y_data_arr, x_data_arr, sy=x_err_arr)
@@ -756,8 +761,6 @@ for i in range(len(PJ_LIST)):
             x_arr[j] = Ai_best*AMU2KG*ni_best[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9
             x_err_arr[j] = np.max([Ai_best*AMU2KG*ni_err_0[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9,
                                    Ai_best*AMU2KG*ni_err_1[i]*1E+6*Hp[i]*np.sqrt(np.pi)*1E+9])
-
-print(x_arr)
 
 p = F.ax.scatter(x_arr, y_arr, marker='s', s=8.0,
                  c=UC.blue)

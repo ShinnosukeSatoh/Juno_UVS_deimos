@@ -8,6 +8,7 @@ import JupiterMag as jm
 
 from Leadangle_fit_JunoUVS import Obsresults
 from Leadangle_fit_JunoUVS import calc_eqlead
+from Leadangle_fit_JunoUVS import moonS3wlon_arr
 
 import os
 from IPython.display import clear_output
@@ -125,6 +126,9 @@ for PJ in PJ_LIST:
                                       hem_fp,
                                       moon_S3wlon,
                                       TARGET_MOON)
+
+    # 観測時の衛星軌道動径距離
+    _, _, moon_z0, r_moon_arr, _, _, _ = moonS3wlon_arr(et_fp, TARGET_MOON)
 
     # %% Backtraced field line position on the equatorial plane
     rho_arr = np.zeros(wlon_fp.size)

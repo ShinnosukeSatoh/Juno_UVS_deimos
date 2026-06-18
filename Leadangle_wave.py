@@ -98,7 +98,7 @@ class Awave():
         tau = 0     # [sec]
 
         # 線要素
-        ds = 30000     # [m]
+        ds = 20000     # [m]
 
         # 衛星の沿磁力線座標を初期化
         S0 = 0.
@@ -112,7 +112,7 @@ class Awave():
             lineNS = -1     # 元々: 北向きにトレースする
             # print(z/RJ, z_Cent0/RJ, 'Launch site is in South.')
 
-        for _ in range(300000):
+        for _ in range(500000):
             # Community codes
             Bx0, By0, Bz0 = jm.Internal.Field(x/RJ, y/RJ, z/RJ)  # [nT]
             Bx1, By1, Bz1 = jm.Con2020.Field(x/RJ, y/RJ, z/RJ)   # [nT]
