@@ -685,12 +685,12 @@ class Awave():
                     rs = r_h
                     theta = theta_h
                     altitude_arr[i] = alt_ref[flag]
-                    flag += 1
                     print('Reached at' +
                           str(alt_ref[flag]) +
                           ' km altitude.')
                     if flag == len(theta_ref):
                         break
+                    flag += 1
 
             # 配列格納
             Va_arr[i] = Va          # [m/s]
