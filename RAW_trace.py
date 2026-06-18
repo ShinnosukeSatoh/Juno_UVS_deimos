@@ -453,9 +453,19 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
 
     # =======================================
     # altitude_flagを使って反射高度の特定をする
+    # 反射高度を900 kmにする
     # =======================================
-    print('Altitude 1500 km: ')
-    print(np.where(altitude_flag == 1500))
+    reflect_idx = np.where(altitude_flag == 1500)
+    print('Altitude 1500 km:', tau_t1[reflect_idx])
+
+    reflect_idx = np.where(altitude_flag == 900)
+    print('Altitude 900 km:', tau_t1[reflect_idx])
+
+    reflect_idx = np.where(altitude_flag == 400)
+    print('Altitude 400 km:', tau_t1[reflect_idx])
+
+    reflect_idx = np.where(altitude_flag == 5)
+    print('Altitude 5 km:', tau_t1[reflect_idx])
 
     # 1st reflection
     # -> 1st RAW position at 900 km altitude on the opposite hemisphere

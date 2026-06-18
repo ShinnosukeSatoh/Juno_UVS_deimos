@@ -688,10 +688,11 @@ class Awave():
                     rs = r_h
                     theta = theta_h
                     altitude_arr[i] = alt_ref[alt_flag]
-                    print('Reached at' +
-                          str(alt_ref[alt_flag]) +
-                          ' km altitude.')
+                    # print('Reached at' +
+                    #       str(alt_ref[alt_flag]) +
+                    #       ' km altitude.')
                     if alt_flag == (len(theta_ref)-1):
+                        i += 1
                         break
                     alt_flag += 1
 
