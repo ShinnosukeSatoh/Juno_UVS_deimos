@@ -538,7 +538,7 @@ class Awave():
         theta_ref_1500 = np.radians(extradius_1500[1, :])  # [rad]
 
         # Initial reference table (the highest altitude)
-        flag = 0
+        alt_flag = 0
         alt_ref = [1500, 900, 400, 5]   # [km]
         r_ref = [r_ref_1500, r_ref_900, r_ref_400, r_ref_5]
         theta_ref = [theta_ref_1500, theta_ref_900, theta_ref_400, theta_ref_5]
@@ -676,22 +676,24 @@ class Awave():
                 # ============================================
                 # Altitude 1500 km -> 900 km -> 400 km -> 5 km
                 # ============================================
+                if alt_flag > len(theta_ref):
+                    print('`alt_flag` is bigger than expected.')
+                    print(alt_flag)
                 r_h, theta_h, dis = self.distance_from_h_km(x, y, z,
                                                             theta,
                                                             phi,
-                                                            r_ref[flag],
-                                                            theta_ref[flag])
+                                                            r_ref[alt_flag],
+                                                            theta_ref[alt_flag])
                 if dis <= 0.5*ds:
                     rs = r_h
                     theta = theta_h
-                    altitude_arr[i] = alt_ref[flag]
+                    altitude_arr[i] = alt_ref[alt_flag]
                     print('Reached at' +
-                          str(alt_ref[flag]) +
+                          str(alt_ref[alt_flag]) +
                           ' km altitude.')
-                    if flag == len(theta_ref):
+                    if alt_flag == (len(theta_ref)-1):
                         break
-                    flag += 1
-                    print('flag updated:', flag)
+                    alt_flag += 1
 
             # 配列格納
             Va_arr[i] = Va          # [m/s]
@@ -705,8 +707,6 @@ class Awave():
         phi_arr = phi_arr[:i]
         tau_arr = tau_arr[:i]
         altitude_arr = altitude_arr[:i]
-
-        # print('Iter flag:', flag)
 
         return tau_arr, rs, 2*np.pi-phi_arr, theta_arr, s, altitude_arr
 

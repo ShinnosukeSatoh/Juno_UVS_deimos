@@ -429,7 +429,7 @@ def calc(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, num_reflection):
 
 
 # %% calc function
-def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections, alt):
+def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
     """
     Return:
         tau_list ... time [sec]
@@ -441,29 +441,33 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflections, alt):
 
     # Initital trace
     # -> MAW position at 900 km altitude
-    tau_t1, rs_t1, s3wlon_t1, theta_s3_t1, s_t1 = Wave.Awave().trace3_reflect(r_t0,
-                                                                              s3wlon_t0,
-                                                                              z_t0,
-                                                                              s_t0,
-                                                                              Ai,
-                                                                              ni,
-                                                                              Hp,
-                                                                              hem,
-                                                                              altitude=alt)
+    tau_t1, rs_t1, s3wlon_t1, theta_s3_t1, s_t1, altitude_flag = Wave.Awave().trace3_reflect(r_t0,
+                                                                                             s3wlon_t0,
+                                                                                             z_t0,
+                                                                                             s_t0,
+                                                                                             Ai,
+                                                                                             ni,
+                                                                                             Hp,
+                                                                                             hem,)
     z_t1 = rs_t1*math.cos(theta_s3_t1[-1])
+
+    # =======================================
+    # altitude_flagを使って反射高度の特定をする
+    # =======================================
+    print('Altitude 1500 km: ')
+    print(np.where(altitude_flag == 1500))
 
     # 1st reflection
     # -> 1st RAW position at 900 km altitude on the opposite hemisphere
-    tau_t2, rs_t2, s3wlon_t2, theta_s3_t2, s_t2 = Wave.Awave().trace3_reflect(rs_t1,
-                                                                              s3wlon_t1[-1],
-                                                                              z_t1,
-                                                                              s_t1,
-                                                                              Ai,
-                                                                              ni,
-                                                                              Hp,
-                                                                              hem *
-                                                                              (-1),
-                                                                              altitude=alt)
+    tau_t2, rs_t2, s3wlon_t2, theta_s3_t2, s_t2, altitude_flag = Wave.Awave().trace3_reflect(rs_t1,
+                                                                                             s3wlon_t1[-1],
+                                                                                             z_t1,
+                                                                                             s_t1,
+                                                                                             Ai,
+                                                                                             ni,
+                                                                                             Hp,
+                                                                                             hem *
+                                                                                             (-1),)
 
     # 2nd reflection
     # -> 1st RAW position at 900 km altitude on the same hemisphere as MAW
@@ -589,8 +593,7 @@ def main():
                     0.0*np.ones(arr_size),
                     S_A0_arr,
                     NS*np.ones(arr_size, dtype=int),
-                    reflections*np.ones(arr_size, dtype=int),
-                    altitude*np.ones(arr_size, dtype=int)))
+                    reflections*np.ones(arr_size, dtype=int),))
 
     # Parallelized
     time_start = time.time()
@@ -609,8 +612,7 @@ def main():
                     0.0*np.ones(arr_size),
                     S_A0_arr*np.ones(arr_size),
                     NS*np.ones(arr_size, dtype=int),
-                    reflections*np.ones(arr_size, dtype=int),
-                    altitude*np.ones(arr_size, dtype=int)))
+                    reflections*np.ones(arr_size, dtype=int),))
 
     # Parallelized
     time_start = time.time()
