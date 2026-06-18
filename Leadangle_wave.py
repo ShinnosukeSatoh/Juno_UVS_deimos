@@ -691,6 +691,7 @@ class Awave():
                     if flag == len(theta_ref):
                         break
                     flag += 1
+                    print('flag updated:', flag)
 
             # 配列格納
             Va_arr[i] = Va          # [m/s]
