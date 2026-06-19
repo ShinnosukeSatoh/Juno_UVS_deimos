@@ -429,17 +429,19 @@ def calc(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, num_reflection):
 
 
 # %% calc function
-def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
+def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, not_used):
     """
     Return:
         tau_list ... time [sec]
         theta_s3_list ... SIII colatitude [rad]
         s3wlon_list ... SIII west longitude [rad]
     """
+    reflect_altitude = 1500.0
+
     # Initialize the result list/array
     tau_list = []
 
-    # Initital trace
+    # Initital trace (Moon -> MAW)
     # -> MAW position at 900 km altitude
     tau_t1, rs_t1, s3wlon_t1, theta_s3_t1, s_t1, altitude_flag = Wave.Awave().trace3_reflect(r_t0,
                                                                                              s3wlon_t0,
@@ -455,19 +457,15 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
     # altitude_flagを使って反射高度の特定をする
     # 反射高度を900 kmにする
     # =======================================
-    reflect_idx = np.where(altitude_flag == 1500)
-    print('Altitude 1500 km:', tau_t1[reflect_idx])
+    reflect_idx = np.where(altitude_flag == reflect_altitude)[0][0]
+    print('MAW altitude 1500 km:', reflect_idx, altitude_flag[reflect_idx])
 
-    reflect_idx = np.where(altitude_flag == 900)
-    print('Altitude 900 km:', tau_t1[reflect_idx])
+    # Reflection point (h_R) -> the surface -> h_R
+    tau_hR_1 = (tau_t1[-1]-tau_t1[reflect_idx])*2
+    print('Reflection point (h_R) -> the surface -> h_R')
+    print(tau_hR_1, '[sec]')
 
-    reflect_idx = np.where(altitude_flag == 400)
-    print('Altitude 400 km:', tau_t1[reflect_idx])
-
-    reflect_idx = np.where(altitude_flag == 5)
-    print('Altitude 5 km:', tau_t1[reflect_idx])
-
-    # 1st reflection
+    # 1st reflection (MAW -> RAW)
     # -> 1st RAW position at 900 km altitude on the opposite hemisphere
     tau_t2, rs_t2, s3wlon_t2, theta_s3_t2, s_t2, altitude_flag = Wave.Awave().trace3_reflect(rs_t1,
                                                                                              s3wlon_t1[-1],
@@ -479,49 +477,61 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
                                                                                              hem *
                                                                                              (-1),)
 
-    # 2nd reflection
+    # =======================================
+    # altitude_flagを使って反射高度の特定をする
+    # 反射高度を900 kmにする
+    # =======================================
+    reflect_idx = np.where(altitude_flag == reflect_altitude)[0][0]
+    print('MAW altitude 1500 km:', reflect_idx, altitude_flag[reflect_idx])
+
+    # Reflection point (h_R) -> the surface -> h_R
+    tau_hR_2 = (tau_t2[-1]-tau_t2[reflect_idx])*2
+    print('Reflection point (h_R) -> the surface -> h_R')
+    print(tau_hR_2, '[sec]')
+
+    # 2nd reflection (RAW -> RAW)
     # -> 1st RAW position at 900 km altitude on the same hemisphere as MAW
     tau_t3 = tau_t2[-1] - tau_t2[::-1]
     rs_t3 = rs_t1
     s3wlon_t3 = s3wlon_t2[::-1]
     theta_s3_t3 = theta_s3_t2[::-1]
 
-    # 3rd reflection
+    # 3rd reflection (RAW -> RAW)
     # -> 2nd RAW position at 900 km altitude on the opposite hemisphere
     tau_t4 = tau_t2
     rs_t4 = rs_t2
     s3wlon_t4 = s3wlon_t2
     theta_s3_t4 = theta_s3_t2
 
-    # 4th reflection
+    # 4th reflection (RAW -> RAW)
     # -> 2nd RAW position at 900 km altitude on the same hemisphere as MAW
     tau_t5 = tau_t3
     rs_t5 = rs_t3
     s3wlon_t5 = s3wlon_t3
     theta_s3_t5 = theta_s3_t3
 
-    # 5th reflection
+    # 5th reflection (RAW -> RAW)
     # -> 3rd RAW position at 900 km altitude on the opposite hemisphere
     tau_t6 = tau_t4
     rs_t6 = rs_t4
     s3wlon_t6 = s3wlon_t4
     theta_s3_t6 = theta_s3_t4
 
-    # 6th reflection
+    # 6th reflection (RAW -> RAW)
     # -> 3rd RAW position at 900 km altitude on the same hemisphere as MAW
     tau_t7 = tau_t5
     rs_t7 = rs_t5
     s3wlon_t7 = s3wlon_t5
     theta_s3_t7 = theta_s3_t5
 
-    # 7th reflection
+    # 7th reflection (RAW -> RAW)
     # -> 4th RAW position at 900 km altitude on the opposite hemisphere
     tau_t8 = tau_t6
     rs_t8 = rs_t6
     s3wlon_t8 = s3wlon_t6
     theta_s3_t8 = theta_s3_t6
 
-    # 8th reflection
+    # 8th reflection (RAW -> RAW)
     # -> 4th RAW position at 900 km altitude on the same hemisphere as MAW
     tau_t9 = tau_t7
     rs_t9 = rs_t7
@@ -566,7 +576,7 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
 
     # print('s [RJ]:', s_t1/RJ, s_t2/RJ)
 
-    return tau_list, theta_s3_list, s3wlon_list
+    return tau_list, theta_s3_list, s3wlon_list, tau_hR_1, tau_hR_2
 
 
 # %% Main function
@@ -606,6 +616,7 @@ def main():
                     reflections*np.ones(arr_size, dtype=int),))
 
     # Parallelized
+    print('Trace North started.')
     time_start = time.time()
     with Pool(processes=parallel) as pool:
         results_N = list(pool.starmap(calc_copy, args))
@@ -625,6 +636,7 @@ def main():
                     reflections*np.ones(arr_size, dtype=int),))
 
     # Parallelized
+    print('Trace South started.')
     time_start = time.time()
     with Pool(processes=parallel) as pool:
         results_S = list(pool.starmap(calc_copy, args))
@@ -639,6 +651,8 @@ def main():
     # j = 0: tau_arr (Alfveen travel time array[sec])
     # j = 1: theta_s3_arr (SIII colatitude [rad])
     # j = 2: s3wlon_arr (SIII west longitude [rad])
+    # j = 3: tau_hR_1 [sec]
+    # j = 4: tau_hR_2 [sec]
     data_N0 = np.zeros((results_N[s3wlon_180][0][0].size, 3))  # N MAW
     data_N1 = np.zeros((results_N[s3wlon_180][0][1].size, 3))  # a reflection
     data_N2 = np.zeros((results_N[s3wlon_180][0][2].size, 3))  # 2 reflections
@@ -676,26 +690,30 @@ def main():
         data_S6[:, j] = results_S[s3wlon_180][j][6]
         data_S7[:, j] = results_S[s3wlon_180][j][7]
         data_S8[:, j] = results_S[s3wlon_180][j][8]
+    tau_hR_N1 = results_N[s3wlon_180][3]
+    tau_hR_N2 = results_N[s3wlon_180][3]
+    tau_hR_S1 = results_N[s3wlon_180][3]
+    tau_hR_S2 = results_N[s3wlon_180][3]
 
     # Equatorial lead angle array [deg]
     eq_N0_arr = data_N0[:, 0]*360.0/Psyn
-    eq_N1_arr = data_N1[:, 0]*360.0/Psyn + eq_N0_arr[-1]
-    eq_N2_arr = data_N2[:, 0]*360.0/Psyn + eq_N1_arr[-1]
-    eq_N3_arr = data_N3[:, 0]*360.0/Psyn + eq_N2_arr[-1]
-    eq_N4_arr = data_N4[:, 0]*360.0/Psyn + eq_N3_arr[-1]
-    eq_N5_arr = data_N5[:, 0]*360.0/Psyn + eq_N4_arr[-1]
-    eq_N6_arr = data_N6[:, 0]*360.0/Psyn + eq_N5_arr[-1]
-    eq_N7_arr = data_N7[:, 0]*360.0/Psyn + eq_N6_arr[-1]
-    eq_N8_arr = data_N8[:, 0]*360.0/Psyn + eq_N7_arr[-1]
+    eq_N1_arr = (data_N1[:, 0]-tau_hR_N1)*360.0/Psyn + eq_N0_arr[-1]
+    eq_N2_arr = (data_N2[:, 0]-tau_hR_N2)*360.0/Psyn + eq_N1_arr[-1]
+    eq_N3_arr = (data_N3[:, 0]-tau_hR_N1)*360.0/Psyn + eq_N2_arr[-1]
+    eq_N4_arr = (data_N4[:, 0]-tau_hR_N2)*360.0/Psyn + eq_N3_arr[-1]
+    eq_N5_arr = (data_N5[:, 0]-tau_hR_N1)*360.0/Psyn + eq_N4_arr[-1]
+    eq_N6_arr = (data_N6[:, 0]-tau_hR_N2)*360.0/Psyn + eq_N5_arr[-1]
+    eq_N7_arr = (data_N7[:, 0]-tau_hR_N1)*360.0/Psyn + eq_N6_arr[-1]
+    eq_N8_arr = (data_N8[:, 0]-tau_hR_N2)*360.0/Psyn + eq_N7_arr[-1]
     eq_S0_arr = data_S0[:, 0]*360.0/Psyn
-    eq_S1_arr = data_S1[:, 0]*360.0/Psyn + eq_S0_arr[-1]
-    eq_S2_arr = data_S2[:, 0]*360.0/Psyn + eq_S1_arr[-1]
-    eq_S3_arr = data_S3[:, 0]*360.0/Psyn + eq_S2_arr[-1]
-    eq_S4_arr = data_S4[:, 0]*360.0/Psyn + eq_S3_arr[-1]
-    eq_S5_arr = data_S5[:, 0]*360.0/Psyn + eq_S4_arr[-1]
-    eq_S6_arr = data_S6[:, 0]*360.0/Psyn + eq_S5_arr[-1]
-    eq_S7_arr = data_S7[:, 0]*360.0/Psyn + eq_S6_arr[-1]
-    eq_S8_arr = data_S8[:, 0]*360.0/Psyn + eq_S7_arr[-1]
+    eq_S1_arr = (data_S1[:, 0]-tau_hR_S1)*360.0/Psyn + eq_S0_arr[-1]
+    eq_S2_arr = (data_S2[:, 0]-tau_hR_S2)*360.0/Psyn + eq_S1_arr[-1]
+    eq_S3_arr = (data_S3[:, 0]-tau_hR_S1)*360.0/Psyn + eq_S2_arr[-1]
+    eq_S4_arr = (data_S4[:, 0]-tau_hR_S2)*360.0/Psyn + eq_S3_arr[-1]
+    eq_S5_arr = (data_S5[:, 0]-tau_hR_S1)*360.0/Psyn + eq_S4_arr[-1]
+    eq_S6_arr = (data_S6[:, 0]-tau_hR_S2)*360.0/Psyn + eq_S5_arr[-1]
+    eq_S7_arr = (data_S7[:, 0]-tau_hR_S1)*360.0/Psyn + eq_S6_arr[-1]
+    eq_S8_arr = (data_S8[:, 0]-tau_hR_S2)*360.0/Psyn + eq_S7_arr[-1]
 
     fig, ax = plt.subplots()
     ax.set_xlim(0.0, 90.0)

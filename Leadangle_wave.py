@@ -499,19 +499,25 @@ class Awave():
                        Ai: float,
                        ni: float,
                        Hp: float,
-                       NS: float,
-                       limit=0,
-                       current_coef=1.0,
-                       thickness_coef=1.0):
+                       NS: float,):
         """
-        `r_A0` Radial distance of the Alfven launch site [m] \\
-        `S3wlon_A0` System III west longitude of the Alfven launch site [rad] \\
-        `z_A0` z position of the Alfven launch site [m] \\
-        `S_A0` Field line position of the Alfven launch site [m] \\
-        `Ai` Ion mass of the plasma sheet [amu] \\
-        `ni` Ion number density at the plasma sheet center [cm-3]
-        `Hp` Scale height of the plasma sheet [m] \\
-        `NS` Tracing direction North=-1 or South=1 \\
+        Argument:
+        - `r_A0` Radial distance of the Alfven launch site [m] 
+        - `S3wlon_A0` SIII west longitude of the Alfven launch site [rad]
+        - `z_A0` z position of the Alfven launch site [m] 
+        - `S_A0` Field line position of the Alfven launch site [m]
+        - `Ai` Ion mass of the plasma sheet [amu]
+        - `ni` Ion number density at the plasma sheet center [cm-3]
+        - `Hp` Scale height of the plasma sheet [m]
+        - `NS` Tracing direction North=-1 or South=1
+
+        Return:
+        - `tau_arr` [s]
+        - `rs` Radial distance from Jupiter [m]
+        - `2*np.pi-phi_arr` SIII west longitude [rad]
+        - `theta_arr` SIII colatitude [rad]
+        - `s` Field line length
+        - `altitude_arr` Altitude from the surface of Jupiter [km]
         """
         Niter = int(760000)
 
@@ -539,12 +545,12 @@ class Awave():
 
         # Initial reference table (the highest altitude)
         alt_flag = 0
-        alt_ref = [1500, 900, 400, 5]   # [km]
+        alt_ref = [1500.0, 900.0, 400.0, 5.0]   # Not used in the trace [km]
         r_ref = [r_ref_1500, r_ref_900, r_ref_400, r_ref_5]
         theta_ref = [theta_ref_1500, theta_ref_900, theta_ref_400, theta_ref_5]
 
         # 高度のピンを立てる
-        altitude_arr = np.zeros(Niter)
+        alt_pin_arr = np.zeros(Niter)
 
         # 磁力線に沿ってトレースしたい
         rs = copy.copy(r_A0)           # [m]
@@ -687,12 +693,11 @@ class Awave():
                 if dis <= 0.5*ds:
                     rs = r_h
                     theta = theta_h
-                    altitude_arr[i] = alt_ref[alt_flag]
+                    alt_pin_arr[i] = alt_ref[alt_flag]
                     # print('Reached at' +
                     #       str(alt_ref[alt_flag]) +
                     #       ' km altitude.')
                     if alt_flag == (len(theta_ref)-1):
-                        i += 1
                         break
                     alt_flag += 1
 
@@ -707,9 +712,9 @@ class Awave():
         theta_arr = theta_arr[:i]
         phi_arr = phi_arr[:i]
         tau_arr = tau_arr[:i]
-        altitude_arr = altitude_arr[:i]
+        alt_pin_arr = alt_pin_arr[:i]
 
-        return tau_arr, rs, 2*np.pi-phi_arr, theta_arr, s, altitude_arr
+        return tau_arr, rs, 2*np.pi-phi_arr, theta_arr, s, alt_pin_arr
 
     def centri_eq(self, r_rj, theta, phi, current_coef=1.0,
                   thickness_coef=1.0,):
