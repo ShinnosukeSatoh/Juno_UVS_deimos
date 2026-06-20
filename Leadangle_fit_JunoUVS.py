@@ -563,6 +563,16 @@ def calc_eqerrors(center, wlon_fp_eq_0, wlon_fp_eq_1, wlon_fp_eq_2, wlon_fp_eq_3
 
 # %% System III position of the target moon from et_fp array.
 def moonS3wlon_arr(et_fp, moon: str):
+    """
+    Return:
+    - moon_x0
+    - moon_y0
+    - moon_z0
+    - moon_r0
+    - moon_theta0 [rad]
+    - moon_phi0 [rad]
+    - moon_S3wlon0 [deg]
+    """
     if moon == 'Io':
         target = 'IO'
     elif moon == 'Europa':
