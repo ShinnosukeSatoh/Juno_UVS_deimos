@@ -383,28 +383,31 @@ def fp_traced(target_moon_s3_obs):
     Returns:
         _type_: _description_
     """
-    interp = np.loadtxt('results/reflect/'+exname+'/data_fp_interp.txt')
+    filename = 'data_'+TARGET_MOON[0]+'FP_interp_map_' + \
+        str(int(alt_ref[fp_alt_target]))+'km.txt'
+    interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
     moon_s3_obs = interp[:, 0]      # [deg]
     idx = np.argmin(abs(moon_s3_obs-target_moon_s3_obs))
 
     positions = interp[idx, :]
+    print('interp.shape:', interp.shape)
+    print('positions.shape:', positions.shape)
     return positions
 
 
 # %% Generate the footpath of MAW
 def fp_path():
-    interp = np.loadtxt('results/reflect/'+exname+'/data_fp_interp.txt')
+    filename = 'data_'+TARGET_MOON[0]+'FP_interp_map_' + \
+        str(int(alt_ref[fp_alt_target]))+'km.txt'
+    interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
     moon_s3_obs = interp[:, 0]
 
     # j=1: colatitude, j=2: w-longitude [rad]
     pos_N_MAW = interp[:, 1:3]
-    pos_S_MAW = interp[:, 1+3*(1+reflections):3*(1+reflections)+3]
+    pos_S_MAW = interp[:, 1+3*(2+reflections):3*(2+reflections)+3]
 
     pos_S_RAW1 = interp[:, 4:6]
-    pos_N_RAW1 = interp[:, 4+3*(1+reflections):3*(1+reflections)+6]
-
-    # x = np.sin(pos_N_MAW[:, 0])*np.cos(2*np.pi-pos_N_MAW[:, 1])
-    # y = np.sin(pos_N_MAW[:, 0])*np.sin(2*np.pi-pos_N_MAW[:, 1])
+    pos_N_RAW1 = interp[:, 4+3*(2+reflections):3*(2+reflections)+6]
 
     return moon_s3_obs, pos_N_MAW, pos_S_MAW, pos_N_RAW1, pos_S_RAW1
 
@@ -422,178 +425,42 @@ def instantaneous(target_moon_s3_obs):
     # Initital trace
     # -> Instantaneous position at a selected altitude
     hem = -1    # North
-    _, rs_t1, s3wlon_t1, theta_s3_t1, _ = Wave.Awave().trace3_reflect(r_moon,
-                                                                      s3wlon_t0,
-                                                                      0.0,
-                                                                      S_A0,
-                                                                      Ai_best,
-                                                                      ni_best,
-                                                                      Hp_best,
-                                                                      hem)
+    _, rs_t1, s3wlon_t1, theta_s3_t1, _, _ = Wave.Awave().trace3_reflect(r_moon,
+                                                                         s3wlon_t0,
+                                                                         0.0,
+                                                                         S_A0,
+                                                                         Ai_best,
+                                                                         ni_best,
+                                                                         Hp_best,
+                                                                         hem)
 
     insta_fp_pos_N = np.zeros(2)
-    insta_fp_pos_N[0] = theta_s3_t1[-1]     # Colatitude [rad]
-    insta_fp_pos_N[1] = s3wlon_t1[-1]       # West longitude [rad]
+    insta_fp_pos_N[0] = theta_s3_t1[fp_alt_target]    # Colatitude [rad]
+    insta_fp_pos_N[1] = s3wlon_t1[fp_alt_target]      # West longitude [rad]
 
     # -> Instantaneous position at a selected altitude
     hem = 1    # South
-    _, rs_t1, s3wlon_t1, theta_s3_t1, _ = Wave.Awave().trace3_reflect(r_moon,
-                                                                      s3wlon_t0,
-                                                                      0.0,
-                                                                      S_A0,
-                                                                      Ai_best,
-                                                                      ni_best,
-                                                                      Hp_best,
-                                                                      hem)
+    _, rs_t1, s3wlon_t1, theta_s3_t1, _, _ = Wave.Awave().trace3_reflect(r_moon,
+                                                                         s3wlon_t0,
+                                                                         0.0,
+                                                                         S_A0,
+                                                                         Ai_best,
+                                                                         ni_best,
+                                                                         Hp_best,
+                                                                         hem)
 
     insta_fp_pos_S = np.zeros(2)
-    insta_fp_pos_S[0] = theta_s3_t1[-1]     # Colatitude [rad]
-    insta_fp_pos_S[1] = s3wlon_t1[-1]       # West longitude [rad]
+    insta_fp_pos_S[0] = theta_s3_t1[fp_alt_target]    # Colatitude [rad]
+    insta_fp_pos_S[1] = s3wlon_t1[fp_alt_target]      # West longitude [rad]
 
     return insta_fp_pos_N, insta_fp_pos_S
 
 
-# %% Propagation plot
-def propagation_plot():
-    data_N0 = np.loadtxt('results/reflect/'+exname+'/data_N0_arr.txt')
-    # data_N0[:,0] ... time [sec]
-    # data_N0[:,1] ... SIII colatitude [rad]
-    # data_N0[:,2] ... SIII west longitude [rad]
-    data_N1 = np.loadtxt('results/reflect/'+exname+'/data_N1_arr.txt')
-    data_N2 = np.loadtxt('results/reflect/'+exname+'/data_N2_arr.txt')
-    data_N3 = np.loadtxt('results/reflect/'+exname+'/data_N3_arr.txt')
-    data_N4 = np.loadtxt('results/reflect/'+exname+'/data_N4_arr.txt')
-    data_N5 = np.loadtxt('results/reflect/'+exname+'/data_N5_arr.txt')
-    data_N6 = np.loadtxt('results/reflect/'+exname+'/data_N6_arr.txt')
-    data_N7 = np.loadtxt('results/reflect/'+exname+'/data_N7_arr.txt')
-    data_N8 = np.loadtxt('results/reflect/'+exname+'/data_N8_arr.txt')
-    data_S0 = np.loadtxt('results/reflect/'+exname+'/data_S0_arr.txt')
-    data_S1 = np.loadtxt('results/reflect/'+exname+'/data_S1_arr.txt')
-    data_S2 = np.loadtxt('results/reflect/'+exname+'/data_S2_arr.txt')
-    data_S3 = np.loadtxt('results/reflect/'+exname+'/data_S3_arr.txt')
-    data_S4 = np.loadtxt('results/reflect/'+exname+'/data_S4_arr.txt')
-    data_S5 = np.loadtxt('results/reflect/'+exname+'/data_S5_arr.txt')
-    data_S6 = np.loadtxt('results/reflect/'+exname+'/data_S6_arr.txt')
-    data_S7 = np.loadtxt('results/reflect/'+exname+'/data_S7_arr.txt')
-    data_S8 = np.loadtxt('results/reflect/'+exname+'/data_S8_arr.txt')
-    if altitude == 400:
-        data_N0 = np.loadtxt('results/reflect/'+exname+'/data_N0_arr_400.txt')
-        data_N1 = np.loadtxt('results/reflect/'+exname+'/data_N1_arr_400.txt')
-        data_N2 = np.loadtxt('results/reflect/'+exname+'/data_N2_arr_400.txt')
-        data_N3 = np.loadtxt('results/reflect/'+exname+'/data_N3_arr_400.txt')
-        data_N4 = np.loadtxt('results/reflect/'+exname+'/data_N4_arr_400.txt')
-        data_N5 = np.loadtxt('results/reflect/'+exname+'/data_N5_arr_400.txt')
-        data_N6 = np.loadtxt('results/reflect/'+exname+'/data_N6_arr_400.txt')
-        data_N7 = np.loadtxt('results/reflect/'+exname+'/data_N7_arr_400.txt')
-        data_N8 = np.loadtxt('results/reflect/'+exname+'/data_N8_arr_400.txt')
-        data_S0 = np.loadtxt('results/reflect/'+exname+'/data_S0_arr_400.txt')
-        data_S1 = np.loadtxt('results/reflect/'+exname+'/data_S1_arr_400.txt')
-        data_S2 = np.loadtxt('results/reflect/'+exname+'/data_S2_arr_400.txt')
-        data_S3 = np.loadtxt('results/reflect/'+exname+'/data_S3_arr_400.txt')
-        data_S4 = np.loadtxt('results/reflect/'+exname+'/data_S4_arr_400.txt')
-        data_S5 = np.loadtxt('results/reflect/'+exname+'/data_S5_arr_400.txt')
-        data_S6 = np.loadtxt('results/reflect/'+exname+'/data_S6_arr_400.txt')
-        data_S7 = np.loadtxt('results/reflect/'+exname+'/data_S7_arr_400.txt')
-        data_S8 = np.loadtxt('results/reflect/'+exname+'/data_S8_arr_400.txt')
-    print('data_N0.shape', data_N0.shape)
-
-    # Equatorial lead angle array [deg]
-    eq_N0_arr = data_N0[:, 0]*360.0/Psyn
-    eq_N1_arr = data_N1[:, 0]*360.0/Psyn + eq_N0_arr[-1]
-    eq_N2_arr = data_N2[:, 0]*360.0/Psyn + eq_N1_arr[-1]
-    eq_N3_arr = data_N3[:, 0]*360.0/Psyn + eq_N2_arr[-1]
-    eq_N4_arr = data_N4[:, 0]*360.0/Psyn + eq_N3_arr[-1]
-    eq_N5_arr = data_N5[:, 0]*360.0/Psyn + eq_N4_arr[-1]
-    eq_N6_arr = data_N6[:, 0]*360.0/Psyn + eq_N5_arr[-1]
-    eq_N7_arr = data_N7[:, 0]*360.0/Psyn + eq_N6_arr[-1]
-    eq_N8_arr = data_N8[:, 0]*360.0/Psyn + eq_N7_arr[-1]
-    eq_S0_arr = data_S0[:, 0]*360.0/Psyn
-    eq_S1_arr = data_S1[:, 0]*360.0/Psyn + eq_S0_arr[-1]
-    eq_S2_arr = data_S2[:, 0]*360.0/Psyn + eq_S1_arr[-1]
-    eq_S3_arr = data_S3[:, 0]*360.0/Psyn + eq_S2_arr[-1]
-    eq_S4_arr = data_S4[:, 0]*360.0/Psyn + eq_S3_arr[-1]
-    eq_S5_arr = data_S5[:, 0]*360.0/Psyn + eq_S4_arr[-1]
-    eq_S6_arr = data_S6[:, 0]*360.0/Psyn + eq_S5_arr[-1]
-    eq_S7_arr = data_S7[:, 0]*360.0/Psyn + eq_S6_arr[-1]
-    eq_S8_arr = data_S8[:, 0]*360.0/Psyn + eq_S7_arr[-1]
-
-    eqlead_max = 90.0   # [deg]
-    fig, ax = plt.subplots(figsize=(7, 7))
-    ax.set_xlim(0.0, eqlead_max)
-    ax.set_ylim(-1.0, 1.0)
-    ax.set_xticks(np.arange(0, eqlead_max+1, 10))
-    ax.set_yticks(np.cos(np.pi*np.linspace(0, 3, 7)/3))
-    ax.set_yticklabels(np.linspace(90, -90, 7))
-    ax.grid(color=UC.lightgray, linewidth=0.5)
-    ax.set_xlabel('Equatorial lead angle [deg]')
-    ax.set_ylabel(r'S${\rm III}$ latitude [deg]')
-    ax.plot(eq_N0_arr, np.cos(data_N0[:, 1]),
-            color=UC.red)
-    ax.plot(eq_N1_arr, np.cos(data_N1[:, 1]),
-            color=UC.red)
-    ax.plot(eq_N2_arr, np.cos(data_N2[:, 1]),
-            color=UC.red)
-    ax.plot(eq_N3_arr, np.cos(data_N3[:, 1]),
-            color=UC.red)
-    ax.plot(eq_N4_arr, np.cos(data_N4[:, 1]),
-            color=UC.red)
-    ax.plot(eq_N5_arr, np.cos(data_N5[:, 1]),
-            color=UC.red)
-    ax.plot(eq_N6_arr, np.cos(data_N6[:, 1]),
-            color=UC.red)
-    ax.plot(eq_N7_arr, np.cos(data_N7[:, 1]),
-            color=UC.red)
-    ax.plot(eq_N8_arr, np.cos(data_N8[:, 1]),
-            color=UC.red)
-    ax.plot(eq_S0_arr, np.cos(data_S0[:, 1]),
-            color=UC.blue)
-    ax.plot(eq_S1_arr, np.cos(data_S1[:, 1]),
-            color=UC.blue)
-    ax.plot(eq_S2_arr, np.cos(data_S2[:, 1]),
-            color=UC.blue)
-    ax.plot(eq_S3_arr, np.cos(data_S3[:, 1]),
-            color=UC.blue)
-    ax.plot(eq_S4_arr, np.cos(data_S4[:, 1]),
-            color=UC.blue)
-    ax.plot(eq_S5_arr, np.cos(data_S5[:, 1]),
-            color=UC.blue)
-    ax.plot(eq_S6_arr, np.cos(data_S6[:, 1]),
-            color=UC.blue)
-    ax.plot(eq_S7_arr, np.cos(data_S7[:, 1]),
-            color=UC.blue)
-    ax.plot(eq_S8_arr, np.cos(data_S8[:, 1]),
-            color=UC.blue)
-
-    title = 'PJ'+str(PJ_LIST[0]).zfill(2)
-    if TARGET_HEM != 'both':
-        title += TARGET_HEM
-    title += ' ('+r'$\lambda_{\rm III}^{\rm Io}=$'
-    title += str(round(np.mod(math.degrees(data_N0[0, 2]), 360.0), 1))
-    title += '˚W)'
-
-    ax2 = ax.twiny()
-    eqlead_max = eqlead_max
-    tau_max = eqlead_max/(360.0/Psyn)   # [sec]
-    print('tau_max [min]:', tau_max/60.0)
-    ax2.set_title(title)
-    ax2.set_xlabel('Time [min]')
-    ax2.set_xlim(0, tau_max/60.0)
-    ax2.set_xticks(np.arange(0, 180+1, 20))
-    ax2.set_xticklabels(np.arange(0, 180+1, 20))
-
-    fig.tight_layout()
-    fig.savefig('img/reflect/'+exname+'/eqlead_time_vs_s3lat.jpg')
-    plt.close()
-
-    return None
-
-
 # %% Lead angle plot
 def leadangle_plot():
-    interp = np.loadtxt('results/reflect/'+exname+'/data_fp_interp.txt')
-    if altitude == 400:
-        interp = np.loadtxt('results/reflect/'+exname +
-                            '/data_fp_interp_400.txt')
+    filename = 'data_'+TARGET_MOON[0]+'FP_interp_map_' + \
+        str(int(alt_ref[fp_alt_target]))+'km.txt'
+    interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
     moon_s3_obs = interp[:, 0]
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -614,16 +481,16 @@ def leadangle_plot():
 
     # Reflections
     colors = [UC.red, UC.blue, UC.red]
-    for i in range(reflections):
+    for i in range(1+reflections):
         pos_N_RAW = interp[:, 3*(i+1)+3]
         pos_S_RAW = interp[:, 3*(i+1+reflections+1)+3]
         ax.plot(moon_s3_obs, pos_N_RAW,
                 color=colors[i % 2+1])
-        ax.plot(moon_s3_obs, pos_S_RAW,
-                color=colors[i % 2], linestyle='--')
+        # ax.plot(moon_s3_obs, pos_S_RAW,
+        #         color=colors[i % 2], linestyle='--')
 
     fig.tight_layout()
-    fig.savefig('img/reflect/'+exname+'/moons3wlon_vs_eqlead2.jpg')
+    fig.savefig('img/reflect_2/'+exname+'/moons3wlon_vs_eqlead2.jpg')
     plt.close()
     return None
 
@@ -668,22 +535,29 @@ def polar_plot(fp_traced_arr,
                 ticklabels=np.linspace(-8, 8, 9)/10,
                 minor_num=2)
 
-    for j in range(2*(1+reflections)):
+    # MAW & TEB
+    for j in range(2*(2+reflections)):
         colat = fp_traced_arr[3*j+1]    # [rad]
         wlon = fp_traced_arr[3*j+2]     # [rad]
+        if j == 2+reflections-1 or j == 2*(2+reflections)-1:
+            marker = 'D'
+            print(90.0-np.degrees(colat), np.degrees(wlon))
+        else:
+            marker = 'o'
         if 90.0-np.degrees(colat) >= 0:
             F.ax.scatter(
                 np.sin(colat)*np.cos(2*np.pi-wlon),
                 np.sin(colat)*np.sin(2*np.pi-wlon),
+                marker=marker,
                 fc=UC.red, ec='w', s=20.0, zorder=2.0
             )
         else:
             F.ax.scatter(
                 np.sin(colat)*np.cos(2*np.pi-wlon),
                 np.sin(colat)*np.sin(2*np.pi-wlon),
+                marker=marker,
                 fc=UC.blue, ec='w', s=20.0, zorder=2.0,
             )
-        # print(90.0-np.degrees(colat), np.degrees(wlon))
 
     # Foot path
     _, pos_N_MAW, pos_S_MAW, _, _ = fp_path()
@@ -788,7 +662,7 @@ def polar_plot(fp_traced_arr,
                   edgecolor=(0, 0, 0, 0), )
 
     F.fig.tight_layout()
-    F.fig.savefig('img/reflect/'+exname+'/'+savename+'.jpg')
+    F.fig.savefig('img/reflect_2/'+exname+'/'+savename+'.jpg')
     plt.close()
 
     print('Equatorial lead angle [deg]: ==========')
@@ -828,6 +702,7 @@ def main():
 
     obs_select = 0      # Which obs time?
     fp_traced_arr = fp_traced(moon_S3wlon0_arr[obs_select])      # [deg]
+    print('fp_traced_arr.shape:', fp_traced_arr.shape)
     polar_plot(
         fp_traced_arr,
         moon_S3wlon0_arr[obs_select],
@@ -838,33 +713,6 @@ def main():
         et_fp[obs_select]
     )
 
-    # 横軸をmoon_s3_wlonにする
-    moon_s3_wlon, pos_N_MAW, pos_S_MAW, _, _ = fp_path()
-    fig, ax = plt.subplots()
-    ax.plot(moon_s3_wlon, np.degrees(pos_N_MAW[:, 0]))
-    fig.tight_layout()
-    fig.savefig('img/test_theta.jpg')
-    plt.close()
-
-    fig, ax = plt.subplots()
-    # ax.set_xlim(185, 205)
-    ax.plot(moon_s3_wlon, np.degrees(pos_N_MAW[:, 1]))
-    fig.tight_layout()
-    fig.savefig('img/test_phi.jpg')
-    plt.close()
-
-    for i in range(pos_N_MAW[:, 1].size):
-        if math.degrees(pos_N_MAW[i, 1]) > 360.0:
-            pos_N_MAW[i, 1] += -2*np.pi
-
-    fig, ax = plt.subplots()
-    # ax.set_xlim(185, 205)
-    ax.plot(moon_s3_wlon, np.degrees(pos_N_MAW[:, 1]))
-    fig.tight_layout()
-    fig.savefig('img/test_phi2.jpg')
-    plt.close()
-
-    propagation_plot()
     leadangle_plot()
 
     if TARGET_ET is not False:
@@ -902,7 +750,9 @@ if __name__ == '__main__':
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
     reflections = 8         # fixed at 8
-    altitude = 400          # [km] and the default is 900 km.
+    alt_ref = [1500.0, 1200.0, 900.0, 700.0, 400.0, 100.0, 5.0, 0.0]
+    reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
+    fp_alt_target = -4                  # ALWAYS NEGATIVE!!!
 
     # PJ03 2016-12-11T17:51:10
     target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])

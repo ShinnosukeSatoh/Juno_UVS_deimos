@@ -456,7 +456,9 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
 
 
 # %% Select one SIII wlongitude and extract the data
-def select_wlon(results_list, s3wlon_target: int, transit_time):
+def select_wlon(results_list, s3wlon_target: int,
+                reflect_alt_target: int, fp_alt_target: int,
+                transit_time: float):
     # >> results_list[s3wlon_180][reflection_number][output_variation][tau_step]
 
     # =======================================
@@ -498,8 +500,10 @@ def select_wlon(results_list, s3wlon_target: int, transit_time):
     s3wlon_S_TEB_0 = np.hstack((s3wlon_S_MAW[:reflect_alt_target+1],
                                 s3wlon_S2N[reflect_alt_target],
                                 s3wlon_S2N[fp_alt_target]))
-    print('s3wlon_N_TEB.shape:', s3wlon_N_TEB_0.shape)
-    print('s3wlon_S_TEB.shape:', s3wlon_S_TEB_0.shape)
+    if fp_alt_target+1 == 0:
+        print('s3wlon_N_0.shape:', s3wlon_N_0.shape)
+    # print('s3wlon_N_TEB.shape:', s3wlon_N_TEB_0.shape)
+    # print('s3wlon_S_TEB.shape:', s3wlon_S_TEB_0.shape)
 
     # =======================================
     # colatitude as a function of tau
@@ -639,8 +643,8 @@ def select_wlon(results_list, s3wlon_target: int, transit_time):
     eqlead_S_TEB_0 = np.hstack((tau_S_MAW[:reflect_alt_target+1],
                                 tau_S_MAW[reflect_alt_target]+transit_time,
                                 tau_S_MAW[reflect_alt_target]+transit_time))*360.0/Psyn
-    print('eqlead_N_TEB_0.shape:', eqlead_N_TEB_0.shape)
-    print('eqlead_S_TEB_0.shape:', eqlead_S_TEB_0.shape)
+    # print('eqlead_N_TEB_0.shape:', eqlead_N_TEB_0.shape)
+    # print('eqlead_S_TEB_0.shape:', eqlead_S_TEB_0.shape)
 
     theta_N_list = [theta_N_0, theta_N_1, theta_N_2,
                     theta_N_3, theta_N_4, theta_N_5,
@@ -725,6 +729,8 @@ def main():
 
     theta_N_list, theta_S_list, eqlead_N_list, eqlead_S_list, _, _ = select_wlon(results_list,
                                                                                  s3wlon_target,
+                                                                                 reflect_alt_target,
+                                                                                 fp_alt_target,
                                                                                  transit_time)
 
     # =========================================================
@@ -765,17 +771,23 @@ def main():
     # ======================================================
     # Foorptint lead angle as a function of moon's SIII wlon
     # ======================================================
-    for k in range(-reflect_alt_target):
-        k = -k      # Target altitude index (be always negative)
+    for k in range(len(alt_ref)-2):
+        # Target altitude index (be always negative)
+        k += 2
+        k = -k
+        print('k:', k)
         eq_N_fp = np.zeros((arr_size, 3*(2+reflections)))
         eq_S_fp = np.zeros((arr_size, 3*(2+reflections)))
         for i in range(arr_size):
             theta_N_list, theta_S_list, eqlead_N_list, eqlead_S_list, s3wlon_N_list, s3wlon_S_list = select_wlon(results_list,
-                                                                                                                 s3wlon_target,
+                                                                                                                 i,
+                                                                                                                 reflect_alt_target,
+                                                                                                                 k,
                                                                                                                  transit_time)
 
             # Footprintの赤道リード角を格納 [deg]
             for j in range(2+reflections):
+                # print('len(eqlead_N_list[j]):', len(eqlead_N_list[j]))
                 eq_N_fp[i, 3*j] = eqlead_N_list[j][k]
                 eq_S_fp[i, 3*j] = eqlead_S_list[j][k]
 
@@ -898,7 +910,7 @@ if __name__ == '__main__':
     parallel = 9
 
     # Grid
-    d_phi = 20.0    # [deg]
+    d_phi = 30.0    # [deg]
 
     # PJ et
     utc = JUNO_PJ_TIMES[PJ_num[0]]
