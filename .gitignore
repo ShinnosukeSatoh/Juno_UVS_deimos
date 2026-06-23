@@ -4,5 +4,9 @@
 /kernel
 /img
 /results
+*.jpg
+*.gif
 *.png
 *.pdf
+*.cdf
+*.fits
