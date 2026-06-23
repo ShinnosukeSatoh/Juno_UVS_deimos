@@ -696,19 +696,28 @@ def polar_plot(fp_traced_arr,
     plt.close()
 
     print('Equatorial lead angle [deg]: ==========')
-    for j in range(2*(1+reflections)):
+    for j in range(2*(1+reflections+1)):
         eq_lead = fp_traced_arr[3*j+3]    # [deg]
-        if j in [0, reflections+1]:
+        if j in [0, 1+reflections]:
             print('  (MAW)  ', round(eq_lead, 3))
+        elif j in [1+reflections+1, 2*(1+reflections+1)-1]:
+            print('  (TEB)  ', round(eq_lead, 3))
         else:
             print('  (RAW)  ', round(eq_lead, 3))
-    print('At 900 km [lat, wlongitude] [deg]: ==========')
-    for j in range(2*(1+reflections)):
+    print('At', str(int(alt_ref[fp_alt_target])),
+          'km [lat, wlongitude] [deg]: ==========')
+    for j in range(2*(1+reflections+1)):
         colat = fp_traced_arr[3*j+1]    # [rad]
         wlon = fp_traced_arr[3*j+2]     # [rad]
-        if j in [0, reflections+1]:
+        if j in [0, 1+reflections+1]:
             print(
                 '  (MAW)  ',
+                round(90.0-math.degrees(colat), 3),
+                round(np.mod(math.degrees(wlon), 360.0), 3)
+            )
+        elif j in [1+reflections, 2*(1+reflections+1)-1]:
+            print(
+                '  (TEB)  ',
                 round(90.0-math.degrees(colat), 3),
                 round(np.mod(math.degrees(wlon), 360.0), 3)
             )

@@ -642,14 +642,15 @@ class Awave():
                                                             phi,
                                                             r_ref[alt_flag],
                                                             theta_ref[alt_flag])
-                spice.recpgr("JUPITER",
-                             np.array([x, y, z]),
-                             a,
-                             f)
+                lon_gr, lat_gr, alt_gr = spice.recpgr("JUPITER",
+                                                      np.array([x, y, z]),
+                                                      a,
+                                                      f)
                 if dis <= 0.5*ds:
                     rs = r_h
                     theta = theta_h
                     alt_pin_arr[i] = alt_ref[alt_flag]
+                    print('Altitude [km]:', alt_ref[alt_flag], alt_gr/1000.0)
                     # print('Reached at' +
                     #       str(alt_ref[alt_flag]) +
                     #       ' km altitude.')
