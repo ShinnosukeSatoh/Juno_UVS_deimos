@@ -356,6 +356,8 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
     # =======================================
     skip = 50
     non_0 = np.array(np.where(alt_flag_N != 0)[0])
+    # print('non_0:', non_0)
+    print('alt_flag_N[non_0]:', alt_flag_N[non_0])
     tau_N_skip = tau_N[0:non_0[0]][::skip]
     s3wlon_N_skip = s3wlon_N[0:non_0[0]][::skip]
     theta_s3_N_skip = theta_s3_N[0:non_0[0]][::skip]
@@ -495,11 +497,9 @@ def select_wlon(results_list, s3wlon_target: int,
     s3wlon_S_7 = s3wlon_S2N[-reflect_alt_target:fp_alt_target+1]
     s3wlon_S_8 = s3wlon_N2S[-reflect_alt_target:fp_alt_target+1]
     s3wlon_N_TEB_0 = np.hstack((s3wlon_N_MAW[:reflect_alt_target+1],
-                                s3wlon_N2S[reflect_alt_target],
-                                s3wlon_N2S[fp_alt_target]))
+                                s3wlon_N2S[reflect_alt_target:fp_alt_target]))
     s3wlon_S_TEB_0 = np.hstack((s3wlon_S_MAW[:reflect_alt_target+1],
-                                s3wlon_S2N[reflect_alt_target],
-                                s3wlon_S2N[fp_alt_target]))
+                                s3wlon_S2N[reflect_alt_target:fp_alt_target]))
     if fp_alt_target+1 == 0:
         print('s3wlon_N_0.shape:', s3wlon_N_0.shape)
     # print('s3wlon_N_TEB.shape:', s3wlon_N_TEB_0.shape)
@@ -531,11 +531,9 @@ def select_wlon(results_list, s3wlon_target: int,
     theta_S_7 = theta_S2N[-reflect_alt_target:fp_alt_target+1]
     theta_S_8 = theta_N2S[-reflect_alt_target:fp_alt_target+1]
     theta_N_TEB_0 = np.hstack((theta_N_MAW[:reflect_alt_target+1],
-                               theta_N2S[reflect_alt_target],
-                               theta_N2S[fp_alt_target]))
+                               theta_N2S[reflect_alt_target:fp_alt_target+1]))
     theta_S_TEB_0 = np.hstack((theta_S_MAW[:reflect_alt_target+1],
-                               theta_S2N[reflect_alt_target],
-                               theta_S2N[fp_alt_target]))
+                               theta_S2N[reflect_alt_target:fp_alt_target+1]))
 
     # ==========================================
     # Equatorial lead angle as a function of tau
@@ -637,12 +635,11 @@ def select_wlon(results_list, s3wlon_target: int,
                   + tau_N2S[-1] - tau_hR_S_hR
                   + tau_S2N[-1] - tau_hR_N_hR
                   + tau_N2S[-reflect_alt_target:fp_alt_target+1])*360.0/Psyn
+    dummy_arr = np.ones(tau_N_MAW[reflect_alt_target:fp_alt_target+1].size)
     eqlead_N_TEB_0 = np.hstack((tau_N_MAW[:reflect_alt_target+1],
-                                tau_N_MAW[reflect_alt_target]+transit_time,
-                                tau_N_MAW[reflect_alt_target]+transit_time))*360.0/Psyn
+                                (tau_N_MAW[reflect_alt_target]+transit_time)*dummy_arr))*360.0/Psyn
     eqlead_S_TEB_0 = np.hstack((tau_S_MAW[:reflect_alt_target+1],
-                                tau_S_MAW[reflect_alt_target]+transit_time,
-                                tau_S_MAW[reflect_alt_target]+transit_time))*360.0/Psyn
+                                (tau_S_MAW[reflect_alt_target]+transit_time)*dummy_arr))*360.0/Psyn
     # print('eqlead_N_TEB_0.shape:', eqlead_N_TEB_0.shape)
     # print('eqlead_S_TEB_0.shape:', eqlead_S_TEB_0.shape)
 
@@ -775,7 +772,7 @@ def main():
         # Target altitude index (be always negative)
         k += 2
         k = -k
-        print('k:', k)
+        print('k:', k, '// Altitude [km]:', alt_ref[k])
         eq_N_fp = np.zeros((arr_size, 3*(2+reflections)))
         eq_S_fp = np.zeros((arr_size, 3*(2+reflections)))
         for i in range(arr_size):
@@ -902,15 +899,18 @@ if __name__ == '__main__':
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
     reflections = 8         # fixed at 8
-    alt_ref = [1500.0, 1200.0, 900.0, 700.0, 400.0, 100.0, 5.0, 0.0]
+    alt_ref = [1500.0, 1200.0, 1000.0, 900.0,
+               800.0, 700.0, 600.0, 500.0,
+               400.0, 300.0, 200.0, 100.0,
+               10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
-    fp_alt_target = -4                  # ALWAYS NEGATIVE!!!
+    fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
 
     # Number of parallel processes
     parallel = 9
 
     # Grid
-    d_phi = 30.0    # [deg]
+    d_phi = 1.0    # [deg]
 
     # PJ et
     utc = JUNO_PJ_TIMES[PJ_num[0]]

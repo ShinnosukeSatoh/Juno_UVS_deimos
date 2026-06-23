@@ -99,7 +99,7 @@ elif TARGET_MOON == 'Ganymede':
 
 
 # %% 経度0度(y=0)平面のx-z対応テーブル (900km高度)
-extradius = np.loadtxt('data/Alt_900km/rthetaphi.txt')
+extradius = np.loadtxt('data/Alt/Alt_900km/rthetaphi.txt')
 r_e = extradius[0, :]        # [RJ]
 theta_e = np.radians(extradius[1, :])    # [rad]
 phi_e = np.radians(extradius[2, :])      # [rad]

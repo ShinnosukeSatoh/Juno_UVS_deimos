@@ -425,33 +425,35 @@ def instantaneous(target_moon_s3_obs):
     # Initital trace
     # -> Instantaneous position at a selected altitude
     hem = -1    # North
-    _, rs_t1, s3wlon_t1, theta_s3_t1, _, _ = Wave.Awave().trace3_reflect(r_moon,
-                                                                         s3wlon_t0,
-                                                                         0.0,
-                                                                         S_A0,
-                                                                         Ai_best,
-                                                                         ni_best,
-                                                                         Hp_best,
-                                                                         hem)
-
+    _, rs_N, s3wlon_N, theta_s3_N, _, alt_flag_N = Wave.Awave().trace3_reflect(r_moon,
+                                                                               s3wlon_t0,
+                                                                               0.0,
+                                                                               S_A0,
+                                                                               Ai_best,
+                                                                               ni_best,
+                                                                               Hp_best,
+                                                                               hem)
+    non_0 = np.array(np.where(alt_flag_N != 0)[0])
+    print('non_0:', non_0)
+    print('alt_flag_N[non_0]:', alt_flag_N[non_0])
     insta_fp_pos_N = np.zeros(2)
-    insta_fp_pos_N[0] = theta_s3_t1[fp_alt_target]    # Colatitude [rad]
-    insta_fp_pos_N[1] = s3wlon_t1[fp_alt_target]      # West longitude [rad]
+    insta_fp_pos_N[0] = theta_s3_N[non_0][fp_alt_target]  # Colatitude [rad]
+    insta_fp_pos_N[1] = s3wlon_N[non_0][fp_alt_target]    # W.longitude [rad]
 
     # -> Instantaneous position at a selected altitude
     hem = 1    # South
-    _, rs_t1, s3wlon_t1, theta_s3_t1, _, _ = Wave.Awave().trace3_reflect(r_moon,
-                                                                         s3wlon_t0,
-                                                                         0.0,
-                                                                         S_A0,
-                                                                         Ai_best,
-                                                                         ni_best,
-                                                                         Hp_best,
-                                                                         hem)
-
+    _, rs_t1, s3wlon_t1, theta_s3_t1, _, alt_flag_S = Wave.Awave().trace3_reflect(r_moon,
+                                                                                  s3wlon_t0,
+                                                                                  0.0,
+                                                                                  S_A0,
+                                                                                  Ai_best,
+                                                                                  ni_best,
+                                                                                  Hp_best,
+                                                                                  hem)
+    non_0 = np.array(np.where(alt_flag_S != 0)[0])
     insta_fp_pos_S = np.zeros(2)
-    insta_fp_pos_S[0] = theta_s3_t1[fp_alt_target]    # Colatitude [rad]
-    insta_fp_pos_S[1] = s3wlon_t1[fp_alt_target]      # West longitude [rad]
+    insta_fp_pos_S[0] = theta_s3_t1[non_0][fp_alt_target]  # Colatitude [rad]
+    insta_fp_pos_S[1] = s3wlon_t1[non_0][fp_alt_target]    # W.longitude [rad]
 
     return insta_fp_pos_N, insta_fp_pos_S
 
@@ -750,9 +752,12 @@ if __name__ == '__main__':
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
     reflections = 8         # fixed at 8
-    alt_ref = [1500.0, 1200.0, 900.0, 700.0, 400.0, 100.0, 5.0, 0.0]
+    alt_ref = [1500.0, 1200.0, 1000.0, 900.0,
+               800.0, 700.0, 600.0, 500.0,
+               400.0, 300.0, 200.0, 100.0,
+               10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
-    fp_alt_target = -4                  # ALWAYS NEGATIVE!!!
+    fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
 
     # PJ03 2016-12-11T17:51:10
     target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])
@@ -806,5 +811,12 @@ if __name__ == '__main__':
     elif TARGET_MOON == 'Ganymede':
         Psyn = Psyn_ga
         r_moon = 15.0*RJ
+
+    # Orbital distance at the PJ time
+    _, _, _, r_moon_obs, _, _, s3wlon_moon_obs = moonS3wlon_arr(TARGET_ET,
+                                                                TARGET_MOON)
+    r_moon = r_moon_obs[0]
+    r_moon = 5.8783142698981345*RJ
+    print('Orbital distance [RJ]:', r_moon/RJ)
 
     main()
