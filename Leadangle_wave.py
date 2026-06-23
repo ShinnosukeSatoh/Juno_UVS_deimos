@@ -643,7 +643,7 @@ class Awave():
                                                             r_ref[alt_flag],
                                                             theta_ref[alt_flag])
                 spice.recpgr("JUPITER",
-                             np.array(x, y, z),
+                             np.array([x, y, z]),
                              a,
                              f)
                 if dis <= 0.5*ds:

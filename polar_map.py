@@ -503,21 +503,21 @@ def leadangle_plot():
         if i == 1+reflections:
             F.ax.plot(moon_s3_obs, pos_N_fp,
                       color=colors[i % 2],
-                      linewidth=1.2, linestyle=(0, (5, 10)))
+                      linewidth=1.4, linestyle=(0, (5, 10)))
         else:
             F.ax.plot(moon_s3_obs, pos_N_fp,
                       color=colors[i % 2],
-                      linewidth=1.2)
+                      linewidth=1.4)
     for i in range(1+reflections+1):
         pos_S_fp = interp[:, 3*(i+1+reflections+1)+3]
         if i == 1+reflections:
             F.ax.plot(moon_s3_obs, pos_S_fp,
                       color=colors[i % 2+1],
-                      linewidth=1.2, linestyle=(0, (5, 10)))
+                      linewidth=1.4, linestyle=(0, (5, 10)))
         else:
             F.ax.plot(moon_s3_obs, pos_S_fp,
                       color=colors[i % 2+1],
-                      linewidth=1.2)
+                      linewidth=1.4)
 
     F.fig.tight_layout()
     F.fig.savefig('img/reflect_2/'+exname+'/moons3wlon_vs_eqlead2.jpg')
