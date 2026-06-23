@@ -1069,12 +1069,12 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '1001/20260421_094'
+    exname = '1001/20260421_101'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [11]
+    PJ_LIST = [20]
     TARGET_HEM = 'N'      # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'
@@ -1090,7 +1090,7 @@ if __name__ == '__main__':
     Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 16
+    parallel = 14
 
     main()
 

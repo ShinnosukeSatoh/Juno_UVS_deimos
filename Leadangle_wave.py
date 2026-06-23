@@ -19,6 +19,9 @@ import copy
 
 import JupiterMag as jm
 
+# Jupiter magnetic field model initialization
+jm.Internal.Config(Model='jrm33', CartesianIn=True, CartesianOut=True)
+jm.Con2020.Config(equation_type='analytic')
 
 # 定数
 MU0 = 1.26E-6            # 真空中の透磁率
@@ -33,10 +36,6 @@ TILT0 = math.radians(6.7)         # [rad]
 Ai_H = 1.0               # 水素 [原子量]
 Ai_O = 16.0              # 酸素 [原子量]
 Ai_S = 32.0              # 硫黄 [原子量]
-
-# Jupiter magnetic field model initialization
-jm.Internal.Config(Model='jrm33', CartesianIn=True, CartesianOut=True)
-jm.Con2020.Config(equation_type='analytic')
 
 
 # %%
@@ -519,6 +518,7 @@ class Awave():
         - `s` Field line length
         - `altitude_arr` Altitude from the surface of Jupiter [km]
         """
+        spice, a, c, f = self.use_SPICE()
         Niter = int(760000)
 
         # Initial reference table (the highest altitude)
@@ -642,6 +642,10 @@ class Awave():
                                                             phi,
                                                             r_ref[alt_flag],
                                                             theta_ref[alt_flag])
+                spice.recpgr("JUPITER",
+                             np.array(x, y, z),
+                             a,
+                             f)
                 if dis <= 0.5*ds:
                     rs = r_h
                     theta = theta_h
@@ -744,3 +748,15 @@ class Awave():
         dis = math.sqrt((x_in-x_ref)**2 + (y_in-y_ref)**2 + (z_in-z_ref)**2)
 
         return r_h, theta_h, dis
+
+    def use_SPICE(self):
+        # SPICE KERNELS
+        import spiceypy as spice
+        spice.furnsh('kernel/cassMetaK.txt')
+        radii = spice.bodvrd("JUPITER", "RADII", 3)[1]
+        a = radii[0]
+        c = radii[2]
+        f = (a - c) / a
+        print('a:', a, '// c:', c, '// f:', f)
+
+        return spice, a, c, f
