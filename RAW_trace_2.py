@@ -910,7 +910,7 @@ if __name__ == '__main__':
     parallel = 9
 
     # Grid
-    d_phi = 1.0    # [deg]
+    d_phi = 0.6    # [deg]
 
     # PJ et
     utc = JUNO_PJ_TIMES[PJ_num[0]]

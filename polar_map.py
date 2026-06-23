@@ -465,35 +465,63 @@ def leadangle_plot():
     interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
     moon_s3_obs = interp[:, 0]
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.set_xlim(0.0, 360.0)
-    ax.set_ylim(0.0, 100.0)
-    ax.set_xticks(np.arange(0, 360+1, 45))
-    ax.set_yticks(np.arange(0, 100+1, 10))
-    ax.grid(color=UC.lightgray, linewidth=0.5)
-    ax.set_xlabel('Io SIII longitude [deg]')
-    ax.set_ylabel('Equatorial lead angle [deg]')
+    F = ShareXaxis()
+    F.fontsize = 23
+    F.fontname = 'Liberation Sans Narrow'
+
+    title = 'PJ'+str(PJ_LIST[0]).zfill(2)
+    if TARGET_HEM != 'both':
+        title += TARGET_HEM
+
+    F.set_figparams(nrows=1, figsize=(9, 9),
+                    ticksize=1.5, dpi='L')
+    F.initialize()
+
+    F.ax.set_title(title)
+    F.set_xaxis(label=r'SIII longitude $\lambda_{\rm III}^{\rm Io}$ [deg]',
+                min=0.0, max=360.0,
+                ticks=np.arange(0, 360+1, 45),
+                ticklabels=np.arange(0, 360+1, 45, dtype=int),
+                minor_num=3)
+    F.set_yaxis(ax_idx=0, label=r'Equatorial lead angle [deg]',
+                min=-5, max=100,
+                ticks=np.arange(0, 100+1, 10),
+                ticklabels=np.arange(0, 100+1, 10, dtype=int),
+                minor_num=2)
 
     # j=1: colatitude [rad], j=2: w-longitude [rad]
     # j=3: equatorial lead angle [rad]
     pos_N_MAW = interp[:, 3]
     pos_S_MAW = interp[:, 3*(1+reflections)+3]
-    ax.plot(moon_s3_obs, pos_N_MAW, color=UC.red)
-    ax.plot(moon_s3_obs, pos_S_MAW, color=UC.blue, linestyle='--')
+    # F.ax.plot(moon_s3_obs, pos_N_MAW, color=UC.red)
+    # F.ax.plot(moon_s3_obs, pos_S_MAW, color=UC.blue, linestyle='--')
 
     # Reflections
     colors = [UC.red, UC.blue, UC.red]
-    for i in range(1+reflections):
-        pos_N_RAW = interp[:, 3*(i+1)+3]
-        pos_S_RAW = interp[:, 3*(i+1+reflections+1)+3]
-        ax.plot(moon_s3_obs, pos_N_RAW,
-                color=colors[i % 2+1])
-        # ax.plot(moon_s3_obs, pos_S_RAW,
-        #         color=colors[i % 2], linestyle='--')
+    for i in range(1+reflections+1):
+        pos_N_fp = interp[:, 3*i+3]
+        if i == 1+reflections:
+            F.ax.plot(moon_s3_obs, pos_N_fp,
+                      color=colors[i % 2],
+                      linewidth=1.2, linestyle=(0, (5, 10)))
+        else:
+            F.ax.plot(moon_s3_obs, pos_N_fp,
+                      color=colors[i % 2],
+                      linewidth=1.2)
+    for i in range(1+reflections+1):
+        pos_S_fp = interp[:, 3*(i+1+reflections+1)+3]
+        if i == 1+reflections:
+            F.ax.plot(moon_s3_obs, pos_S_fp,
+                      color=colors[i % 2+1],
+                      linewidth=1.2, linestyle=(0, (5, 10)))
+        else:
+            F.ax.plot(moon_s3_obs, pos_S_fp,
+                      color=colors[i % 2+1],
+                      linewidth=1.2)
 
-    fig.tight_layout()
-    fig.savefig('img/reflect_2/'+exname+'/moons3wlon_vs_eqlead2.jpg')
-    plt.close()
+    F.fig.tight_layout()
+    F.fig.savefig('img/reflect_2/'+exname+'/moons3wlon_vs_eqlead2.jpg')
+    F.close()
     return None
 
 
