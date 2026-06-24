@@ -23,11 +23,6 @@ from multiprocessing import Pool
 # from numba import jit
 import numpy as np
 import math
-# import copy
-# import matplotlib.pyplot as plt
-# from matplotlib.ticker import AutoMinorLocator
-# from matplotlib.colors import LinearSegmentedColormap  # colormapをカスタマイズする
-# import matplotlib.patheffects as pe
 
 import Leadangle_wave as Wave
 import datetime
