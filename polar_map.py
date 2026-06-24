@@ -10,9 +10,9 @@ import math
 import datetime
 import Leadangle_wave as Wave
 from column_mass import calc as column_calc
-from UniversalColor import UniversalColor
-from SharedX import ShareXaxis
-from legend_shadow import legend_shadow
+from MyPlotRecipe.UniversalColor import UniversalColor
+from MyPlotRecipe.SharedX import ShareXaxis
+from MyPlotRecipe.legend_shadow import legend_shadow
 
 import spiceypy as spice
 import JupiterMag as jm
