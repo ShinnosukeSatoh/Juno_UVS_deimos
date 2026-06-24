@@ -1,0 +1,3 @@
+[submodule "MyPlotRecipe"]
+	path = MyPlotRecipe
+	url = https://github.com/ShinnosukeSatoh/MyPlotRecipe.git
