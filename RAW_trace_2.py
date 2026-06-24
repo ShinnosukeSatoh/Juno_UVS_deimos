@@ -356,8 +356,8 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
     # =======================================
     skip = 50
     non_0 = np.array(np.where(alt_flag_N != 0)[0])
-    # print('non_0:', non_0)
-    print('alt_flag_N[non_0]:', alt_flag_N[non_0])
+    print('alt_flag_N[non_0]:', alt_flag_N[non_0][0],
+          alt_flag_N[non_0][fp_alt_target])
     tau_N_skip = tau_N[0:non_0[0]][::skip]
     s3wlon_N_skip = s3wlon_N[0:non_0[0]][::skip]
     theta_s3_N_skip = theta_s3_N[0:non_0[0]][::skip]
@@ -888,11 +888,11 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_051'
+    exname = '003/20250516_059'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [7]
-    hem = 'both'
+    PJ_num = [11]
+    hem = 'S'
     Ai_num = 3
     ni_num = 50
     Ti_num = 60
@@ -907,10 +907,10 @@ if __name__ == '__main__':
     fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
 
     # Number of parallel processes
-    parallel = 9
+    parallel = 10
 
     # Grid
-    d_phi = 0.5    # [deg]
+    d_phi = 0.6    # [deg]
 
     # PJ et
     utc = JUNO_PJ_TIMES[PJ_num[0]]

@@ -1090,7 +1090,7 @@ if __name__ == '__main__':
     Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 14
+    parallel = 2
 
     main()
 

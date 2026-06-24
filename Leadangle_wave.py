@@ -19,6 +19,14 @@ import copy
 
 import JupiterMag as jm
 
+# SPICE KERNELS
+import spiceypy as spice
+spice.furnsh('kernel/cassMetaK.txt')
+radii = spice.bodvrd("JUPITER", "RADII", 3)[1]
+a = radii[0]
+c = radii[2]
+f = (a - c) / a
+
 # Jupiter magnetic field model initialization
 jm.Internal.Config(Model='jrm33', CartesianIn=True, CartesianOut=True)
 jm.Con2020.Config(equation_type='analytic')
@@ -518,7 +526,6 @@ class Awave():
         - `s` Field line length
         - `altitude_arr` Altitude from the surface of Jupiter [km]
         """
-        spice, a, c, f = self.use_SPICE()
         Niter = int(760000)
 
         # Initial reference table (the highest altitude)
@@ -617,19 +624,17 @@ class Awave():
 
             # 座標更新 (r, theta, phi)
             rs = math.sqrt(x**2 + y**2 + z**2)  # [m]
-            theta = math.acos(z/rs)
-            phi = math.atan2(y, x)
+            theta = math.acos(z/rs)             # [rad]
+            phi = math.atan2(y, x)              # [rad]
+            theta_h = theta        # For savefile [rad]
+            phi_h = phi            # For savefile [rad]
 
             # 座標更新 (沿磁力線: S0)
             s += ds*(-ns)
 
-            # 木星の高度900 kmで計算ストップ
-            # if rs < 1.0*RJ+900.0E+3:
-            #     break
-
             # 高度h [km]の座標テーブルを参照
-            if (i > 3500) and (rs < (1.0*RJ+3000.0E+3)):
-                ds = 4000.0     # 線要素長を短く(5 kmより小さくする) [m]
+            if (i > 3500) and (rs < (1.0*RJ+2500.0E+3)):
+                ds = 3000.0     # 線要素長を短く(5 kmより小さくする) [m]
 
                 # ============================================
                 # Altitude 1500 km -> 900 km -> 400 km -> 5 km
@@ -637,32 +642,26 @@ class Awave():
                 if alt_flag > len(theta_ref):
                     print('`alt_flag` is bigger than expected.')
                     print(alt_flag)
-                r_h, theta_h, dis = self.distance_from_h_km(x, y, z,
-                                                            theta,
-                                                            phi,
-                                                            r_ref[alt_flag],
-                                                            theta_ref[alt_flag])
                 lon_gr, lat_gr, alt_gr = spice.recpgr("JUPITER",
-                                                      np.array([x, y, z]),
+                                                      np.array([x/1000.0,
+                                                                y/1000.0,
+                                                                z/1000.0]),
                                                       a,
                                                       f)
-                if dis <= 0.5*ds:
-                    rs = r_h
-                    theta = theta_h
+                theta_h = 0.5*np.pi-lat_gr    # For savefile [rad]
+                phi_h = 2*np.pi-lon_gr        # For savefile [rad]
+                if abs(alt_gr-alt_ref[alt_flag])*1000.0 <= 0.5*ds:
                     alt_pin_arr[i] = alt_ref[alt_flag]
-                    print('Altitude [km]:', alt_ref[alt_flag], alt_gr/1000.0)
-                    # print('Reached at' +
-                    #       str(alt_ref[alt_flag]) +
-                    #       ' km altitude.')
+                    # print('Altitude [km]:', alt_ref[alt_flag], alt_gr)
                     if alt_flag == (len(theta_ref)-1):
                         break
                     alt_flag += 1
 
             # 配列格納
-            Va_arr[i] = Va          # [m/s]
-            theta_arr[i] = theta    # SIII colatitude [rad]
-            phi_arr[i] = phi        # SIII east longitude [rad]
-            tau_arr[i] = tau        # [sec]
+            Va_arr[i] = Va            # [m/s]
+            theta_arr[i] = theta_h    # SIII colatitude [rad]
+            phi_arr[i] = phi_h        # SIII east longitude [rad]
+            tau_arr[i] = tau          # [sec]
 
         # 値が格納されていない部分は削除
         Va_arr = Va_arr[:i]
@@ -751,13 +750,11 @@ class Awave():
         return r_h, theta_h, dis
 
     def use_SPICE(self):
-        # SPICE KERNELS
-        import spiceypy as spice
-        spice.furnsh('kernel/cassMetaK.txt')
         radii = spice.bodvrd("JUPITER", "RADII", 3)[1]
         a = radii[0]
         c = radii[2]
         f = (a - c) / a
-        print('a:', a, '// c:', c, '// f:', f)
+        # print('a:', a, '// c:', c, '// f:', f)
+        # print('Test altitude [km]:', alt_gr)
 
-        return spice, a, c, f
+        return a, c, f
