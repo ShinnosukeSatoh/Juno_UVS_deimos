@@ -783,7 +783,7 @@ def main():
         ax.plot(eqlead_S_list[i+1+j], np.cos(theta_S_list[i+1+j]),
                 linewidth=1.5, color=UC.blue, linestyle='--')
     fig.tight_layout()
-    fig.savefig('img/eqlead_vs_s3lat_.jpg')
+    fig.savefig('img/reflect_2/'+exname+'/eqlead_vs_s3lat.jpg')
     plt.close()
 
     # ======================================================
@@ -910,11 +910,11 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_054'
+    exname = '003/20250516_051'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [9]
-    hem = 'N'
+    PJ_num = [7]
+    hem = 'both'
     Ai_num = 3
     ni_num = 50
     Ti_num = 60
@@ -929,7 +929,7 @@ if __name__ == '__main__':
     fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
 
     # Number of parallel processes
-    parallel = 10
+    parallel = 12
 
     # Grid
     d_phi = 0.6    # [deg]

@@ -691,6 +691,7 @@ def polar_plot(fp_traced_arr,
                   facealpha=0.0,
                   edgecolor=(0, 0, 0, 0), )
 
+    savename += '_'+str(int(alt_ref[fp_alt_target]))+'km'
     F.fig.tight_layout()
     F.fig.savefig('img/reflect_2/'+exname+'/'+savename+'.jpg')
     plt.close()
@@ -775,13 +776,13 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_059'
+    exname = '003/20250516_054'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
     TARGET_FP = ['MAW']
-    PJ_LIST = [11]
-    TARGET_HEM = 'S'
+    PJ_LIST = [9]
+    TARGET_HEM = 'N'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
     ni_num = 50
@@ -836,7 +837,7 @@ if __name__ == '__main__':
     target_et_pj16 = np.array([spice.utc2et('2018-10-29T22:10:23')])
 
     # TARGET_ET = np.array([721041971.3])     # False or ET
-    TARGET_ET = target_et_pj11
+    TARGET_ET = target_et_pj9n
 
     # Target select
     if TARGET_MOON == 'Io':
