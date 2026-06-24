@@ -356,8 +356,8 @@ def calc_copy(Ai, ni, Hp, r_t0, s3wlon_t0, z_t0, s_t0, hem, reflect_altitude):
     # =======================================
     skip = 50
     non_0 = np.array(np.where(alt_flag_N != 0)[0])
-    print('alt_flag_N[non_0]:', alt_flag_N[non_0][0],
-          alt_flag_N[non_0][fp_alt_target])
+    # print('alt_flag_N[non_0]:', alt_flag_N[non_0][0],
+    #       alt_flag_N[non_0][fp_alt_target])
     tau_N_skip = tau_N[0:non_0[0]][::skip]
     s3wlon_N_skip = s3wlon_N[0:non_0[0]][::skip]
     theta_s3_N_skip = theta_s3_N[0:non_0[0]][::skip]
@@ -472,6 +472,11 @@ def select_wlon(results_list, s3wlon_target: int,
     tau_S2N = results_list[s3wlon_target][3][0][:]
 
     # =======================================
+    # a dummy array for TEB data
+    # =======================================
+    dummy_arr = np.ones(tau_N_MAW[reflect_alt_target:fp_alt_target+1].size)
+
+    # =======================================
     # SIII wlong as a function of tau
     # =======================================
     s3wlon_N_MAW = results_list[s3wlon_target][0][1][:]
@@ -498,8 +503,12 @@ def select_wlon(results_list, s3wlon_target: int,
     s3wlon_S_8 = s3wlon_N2S[-reflect_alt_target:fp_alt_target+1]
     s3wlon_N_TEB_0 = np.hstack((s3wlon_N_MAW[:reflect_alt_target+1],
                                 s3wlon_N2S[reflect_alt_target:fp_alt_target]))
+    s3wlon_N_TEB_1 = np.hstack((s3wlon_S2N[-reflect_alt_target],
+                                s3wlon_S2N[reflect_alt_target:fp_alt_target+1]))
     s3wlon_S_TEB_0 = np.hstack((s3wlon_S_MAW[:reflect_alt_target+1],
                                 s3wlon_S2N[reflect_alt_target:fp_alt_target]))
+    s3wlon_S_TEB_1 = np.hstack((s3wlon_N2S[-reflect_alt_target],
+                                s3wlon_N2S[reflect_alt_target:fp_alt_target+1]))
     if fp_alt_target+1 == 0:
         print('s3wlon_N_0.shape:', s3wlon_N_0.shape)
     # print('s3wlon_N_TEB.shape:', s3wlon_N_TEB_0.shape)
@@ -532,8 +541,12 @@ def select_wlon(results_list, s3wlon_target: int,
     theta_S_8 = theta_N2S[-reflect_alt_target:fp_alt_target+1]
     theta_N_TEB_0 = np.hstack((theta_N_MAW[:reflect_alt_target+1],
                                theta_N2S[reflect_alt_target:fp_alt_target+1]))
+    theta_N_TEB_1 = np.hstack((theta_S2N[-reflect_alt_target],
+                               theta_S2N[reflect_alt_target:fp_alt_target+1]))
     theta_S_TEB_0 = np.hstack((theta_S_MAW[:reflect_alt_target+1],
                                theta_S2N[reflect_alt_target:fp_alt_target+1]))
+    theta_S_TEB_1 = np.hstack((theta_N2S[-reflect_alt_target],
+                               theta_N2S[reflect_alt_target:fp_alt_target+1]))
 
     # ==========================================
     # Equatorial lead angle as a function of tau
@@ -635,38 +648,45 @@ def select_wlon(results_list, s3wlon_target: int,
                   + tau_N2S[-1] - tau_hR_S_hR
                   + tau_S2N[-1] - tau_hR_N_hR
                   + tau_N2S[-reflect_alt_target:fp_alt_target+1])*360.0/Psyn
-    dummy_arr = np.ones(tau_N_MAW[reflect_alt_target:fp_alt_target+1].size)
     eqlead_N_TEB_0 = np.hstack((tau_N_MAW[:reflect_alt_target+1],
                                 (tau_N_MAW[reflect_alt_target]+transit_time)*dummy_arr))*360.0/Psyn
+    eqlead_N_TEB_1 = (np.hstack((tau_N2S[reflect_alt_target],
+                                 (tau_N2S[reflect_alt_target]+transit_time)*dummy_arr))
+                      + tau_N_MAW[-1] - tau_hR_N_hR)*360.0/Psyn
     eqlead_S_TEB_0 = np.hstack((tau_S_MAW[:reflect_alt_target+1],
                                 (tau_S_MAW[reflect_alt_target]+transit_time)*dummy_arr))*360.0/Psyn
+    eqlead_S_TEB_1 = (np.hstack((tau_S2N[reflect_alt_target],
+                                 (tau_S2N[reflect_alt_target]+transit_time)*dummy_arr))
+                      + tau_S_MAW[-1] - tau_hR_S_hR)*360.0/Psyn
     # print('eqlead_N_TEB_0.shape:', eqlead_N_TEB_0.shape)
     # print('eqlead_S_TEB_0.shape:', eqlead_S_TEB_0.shape)
+    # print('theta_N_TEB_1.shape:', theta_N_TEB_1.shape)
+    # print('eqlead_N_TEB_1.shape:', eqlead_N_TEB_1.shape)
 
     theta_N_list = [theta_N_0, theta_N_1, theta_N_2,
                     theta_N_3, theta_N_4, theta_N_5,
                     theta_N_6, theta_N_7, theta_N_8,
-                    theta_N_TEB_0]
+                    theta_N_TEB_0, theta_N_TEB_1]
     theta_S_list = [theta_S_0, theta_S_1, theta_S_2,
                     theta_S_3, theta_S_4, theta_S_5,
                     theta_S_6, theta_S_7, theta_S_8,
-                    theta_S_TEB_0]
+                    theta_S_TEB_0, theta_S_TEB_1]
     eqlead_N_list = [eqlead_N_0, eqlead_N_1, eqlead_N_2,
                      eqlead_N_3, eqlead_N_4, eqlead_N_5,
                      eqlead_N_6, eqlead_N_7, eqlead_N_8,
-                     eqlead_N_TEB_0]
+                     eqlead_N_TEB_0, eqlead_N_TEB_1]
     eqlead_S_list = [eqlead_S_0, eqlead_S_1, eqlead_S_2,
                      eqlead_S_3, eqlead_S_4, eqlead_S_5,
                      eqlead_S_6, eqlead_S_7, eqlead_S_8,
-                     eqlead_S_TEB_0]
+                     eqlead_S_TEB_0, eqlead_S_TEB_1]
     s3wlon_N_list = [s3wlon_N_0, s3wlon_N_1, s3wlon_N_2,
                      s3wlon_N_3, s3wlon_N_4, s3wlon_N_5,
                      s3wlon_N_6, s3wlon_N_7, s3wlon_N_8,
-                     s3wlon_N_TEB_0]
+                     s3wlon_N_TEB_0, s3wlon_N_TEB_1]
     s3wlon_S_list = [s3wlon_S_0, s3wlon_S_1, s3wlon_S_2,
                      s3wlon_S_3, s3wlon_S_4, s3wlon_S_5,
                      s3wlon_S_6, s3wlon_S_7, s3wlon_S_8,
-                     s3wlon_S_TEB_0]
+                     s3wlon_S_TEB_0, s3wlon_S_TEB_1]
     return theta_N_list, theta_S_list, eqlead_N_list, eqlead_S_list, s3wlon_N_list, s3wlon_S_list
 
 
@@ -757,10 +777,11 @@ def main():
         ax.plot(eqlead_S_list[i], np.cos(theta_S_list[i]),
                 linewidth=1.5, color=UC.blue)
     # TEB (dashed lines)
-    ax.plot(eqlead_N_list[i+1], np.cos(theta_N_list[i+1]),
-            linewidth=1.5, color=UC.red, linestyle='--')
-    ax.plot(eqlead_S_list[i+1], np.cos(theta_S_list[i+1]),
-            linewidth=1.5, color=UC.blue, linestyle='--')
+    for j in range(2):
+        ax.plot(eqlead_N_list[i+1+j], np.cos(theta_N_list[i+1+j]),
+                linewidth=1.5, color=UC.red, linestyle='--')
+        ax.plot(eqlead_S_list[i+1+j], np.cos(theta_S_list[i+1+j]),
+                linewidth=1.5, color=UC.blue, linestyle='--')
     fig.tight_layout()
     fig.savefig('img/eqlead_vs_s3lat_.jpg')
     plt.close()
@@ -773,8 +794,8 @@ def main():
         k += 2
         k = -k
         print('k:', k, '// Altitude [km]:', alt_ref[k])
-        eq_N_fp = np.zeros((arr_size, 3*(2+reflections)))
-        eq_S_fp = np.zeros((arr_size, 3*(2+reflections)))
+        eq_N_fp = np.zeros((arr_size, 3*(3+reflections)))
+        eq_S_fp = np.zeros((arr_size, 3*(3+reflections)))
         for i in range(arr_size):
             theta_N_list, theta_S_list, eqlead_N_list, eqlead_S_list, s3wlon_N_list, s3wlon_S_list = select_wlon(results_list,
                                                                                                                  i,
@@ -783,37 +804,38 @@ def main():
                                                                                                                  transit_time)
 
             # Footprintの赤道リード角を格納 [deg]
-            for j in range(2+reflections):
+            for j in range(3+reflections):
                 # print('len(eqlead_N_list[j]):', len(eqlead_N_list[j]))
-                eq_N_fp[i, 3*j] = eqlead_N_list[j][k]
-                eq_S_fp[i, 3*j] = eqlead_S_list[j][k]
+                eq_N_fp[i, 3*j] = eqlead_N_list[j][-1]
+                eq_S_fp[i, 3*j] = eqlead_S_list[j][-1]
 
             # FootprintのSIII余緯度を格納 [rad]
-            for j in range(2+reflections):
-                eq_N_fp[i, 3*j+1] = theta_N_list[j][k]
-                eq_S_fp[i, 3*j+1] = theta_S_list[j][k]
+            for j in range(3+reflections):
+                eq_N_fp[i, 3*j+1] = theta_N_list[j][-1]
+                eq_S_fp[i, 3*j+1] = theta_S_list[j][-1]
 
             # FootprintのSIII西経を格納 [rad]
-            for j in range(2+reflections):
-                eq_N_fp[i, 3*j+2] = s3wlon_N_list[j][k]
-                eq_S_fp[i, 3*j+2] = s3wlon_S_list[j][k]
+            for j in range(3+reflections):
+                eq_N_fp[i, 3*j+2] = s3wlon_N_list[j][-1]
+                eq_S_fp[i, 3*j+2] = s3wlon_S_list[j][-1]
 
         # ======================================================
         # Equatorial lead angle interporation
         # ======================================================
         # j = 0: moon_s3_obs (at the time of the footprint observation) [deg]
-        # j = 1, 8: equatorial lead angle for MAW at NORTH and SOUTH, respectively
-        # j = 2, 9: equatorial lead angle for a reflection at SOUTH and NORTH, respectively
-        # j = 3, 10: equatorial lead angle for 2 reflections
-        # j = 4, 11: equatorial lead angle for 3 reflections
-        # j = 5, 12: equatorial lead angle for 4 reflections
-        # j = 6, 13: equatorial lead angle for 5 reflections
-        # j = 7, 14: equatorial lead angle for TEB at SOUTH and NORTH, respectively
+        # j = 1, 9: equatorial lead angle for MAW at NORTH and SOUTH, respectively
+        # j = 2, 10: equatorial lead angle for a reflection at SOUTH and NORTH, respectively
+        # j = 3, 11: equatorial lead angle for 2 reflections
+        # j = 4, 12: equatorial lead angle for 3 reflections
+        # j = 5, 13: equatorial lead angle for 4 reflections
+        # j = 6, 14: equatorial lead angle for 5 reflections
+        # j = 7, 15: equatorial lead angle for TEB_0 at SOUTH and NORTH, respectively
+        # j = 8, 16: equatorial lead angle for TEB_1 at SOUTH and NORTH, respectively
         new_moon_s3wlon = np.linspace(0.0, 360.0, 1500)  # every 0.24 deg
         data_fp_interp = np.zeros(
-            (new_moon_s3wlon.size, 1+3*(2+reflections)*2))
+            (new_moon_s3wlon.size, 1+3*(3+reflections)*2))
         data_fp_interp[:, 0] = new_moon_s3wlon
-        for j in range(2+reflections):
+        for j in range(3+reflections):
             # Interp前のSIII経度軸 [deg]
             eq_wlon_arr = np.degrees(s3wlon_t0_arr)+eq_N_fp[:, 3*j]
 
@@ -847,7 +869,7 @@ def main():
                                                  period=360.0)
 
             # 反対半球
-            jj = j+(2+reflections)
+            jj = j+(3+reflections)
 
             # Interp前のSIII経度軸 [deg]
             eq_wlon_arr = np.degrees(s3wlon_t0_arr)+eq_S_fp[:, 3*j]
@@ -888,11 +910,11 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_059'
+    exname = '003/20250516_054'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [11]
-    hem = 'S'
+    PJ_num = [9]
+    hem = 'N'
     Ai_num = 3
     ni_num = 50
     Ti_num = 60

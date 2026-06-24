@@ -404,10 +404,10 @@ def fp_path():
 
     # j=1: colatitude, j=2: w-longitude [rad]
     pos_N_MAW = interp[:, 1:3]
-    pos_S_MAW = interp[:, 1+3*(2+reflections):3*(2+reflections)+3]
+    pos_S_MAW = interp[:, 1+3*(3+reflections):3*(3+reflections)+3]
 
     pos_S_RAW1 = interp[:, 4:6]
-    pos_N_RAW1 = interp[:, 4+3*(2+reflections):3*(2+reflections)+6]
+    pos_N_RAW1 = interp[:, 4+3*(3+reflections):3*(3+reflections)+6]
 
     return moon_s3_obs, pos_N_MAW, pos_S_MAW, pos_N_RAW1, pos_S_RAW1
 
@@ -492,15 +492,15 @@ def leadangle_plot():
     # j=1: colatitude [rad], j=2: w-longitude [rad]
     # j=3: equatorial lead angle [rad]
     pos_N_MAW = interp[:, 3]
-    pos_S_MAW = interp[:, 3*(1+reflections)+3]
+    pos_S_MAW = interp[:, 3*(1+reflections+2)+3]
     # F.ax.plot(moon_s3_obs, pos_N_MAW, color=UC.red)
     # F.ax.plot(moon_s3_obs, pos_S_MAW, color=UC.blue, linestyle='--')
 
     # Reflections
     colors = [UC.red, UC.blue, UC.red]
-    for i in range(1+reflections+1):
+    for i in range(1+reflections+2):
         pos_N_fp = interp[:, 3*i+3]
-        if i == 1+reflections:
+        if i in [1+reflections, 1+reflections+1]:
             F.ax.plot(moon_s3_obs, pos_N_fp,
                       color=colors[i % 2],
                       linewidth=1.4, linestyle=(0, (5, 10)))
@@ -508,9 +508,9 @@ def leadangle_plot():
             F.ax.plot(moon_s3_obs, pos_N_fp,
                       color=colors[i % 2],
                       linewidth=1.4)
-    for i in range(1+reflections+1):
-        pos_S_fp = interp[:, 3*(i+1+reflections+1)+3]
-        if i == 1+reflections:
+    for i in range(1+reflections+2):
+        pos_S_fp = interp[:, 3*(i+1+reflections+2)+3]
+        if i in [1+reflections, 1+reflections+1]:
             F.ax.plot(moon_s3_obs, pos_S_fp,
                       color=colors[i % 2+1],
                       linewidth=1.4, linestyle=(0, (5, 10)))
@@ -566,10 +566,10 @@ def polar_plot(fp_traced_arr,
                 minor_num=2)
 
     # MAW & TEB
-    for j in range(2*(2+reflections)):
+    for j in range(2*(3+reflections)):
         colat = fp_traced_arr[3*j+1]    # [rad]
         wlon = fp_traced_arr[3*j+2]     # [rad]
-        if j == 2+reflections-1 or j == 2*(2+reflections)-1:
+        if j in [3+reflections-2, 3+reflections-1, 2*(3+reflections)-2, 2*(3+reflections)-1]:
             marker = 'D'
             print(90.0-np.degrees(colat), np.degrees(wlon))
         else:
@@ -579,14 +579,14 @@ def polar_plot(fp_traced_arr,
                 np.sin(colat)*np.cos(2*np.pi-wlon),
                 np.sin(colat)*np.sin(2*np.pi-wlon),
                 marker=marker,
-                fc=UC.red, ec='w', s=20.0, zorder=2.0
+                fc=UC.red, ec='w', s=10.0, zorder=2.0
             )
         else:
             F.ax.scatter(
                 np.sin(colat)*np.cos(2*np.pi-wlon),
                 np.sin(colat)*np.sin(2*np.pi-wlon),
                 marker=marker,
-                fc=UC.blue, ec='w', s=20.0, zorder=2.0,
+                fc=UC.blue, ec='w', s=10.0, zorder=2.0,
             )
 
     # Foot path
@@ -594,12 +594,12 @@ def polar_plot(fp_traced_arr,
     F.ax.scatter(
         np.sin(pos_N_MAW[:, 0])*np.cos(2*np.pi-pos_N_MAW[:, 1]),
         np.sin(pos_N_MAW[:, 0])*np.sin(2*np.pi-pos_N_MAW[:, 1]),
-        s=0.05, c=UC.red, zorder=1.0,
+        s=0.04, c=UC.red, zorder=1.0,
     )
     F.ax.scatter(
         np.sin(pos_S_MAW[:, 0])*np.cos(2*np.pi-pos_S_MAW[:, 1]),
         np.sin(pos_S_MAW[:, 0])*np.sin(2*np.pi-pos_S_MAW[:, 1]),
-        s=0.05, c=UC.blue, zorder=1.0,
+        s=0.04, c=UC.blue, zorder=1.0,
     )
 
     # Instantaneous footprint positions
@@ -607,12 +607,12 @@ def polar_plot(fp_traced_arr,
     F.ax.scatter(
         math.sin(insta_fp_pos_N[0])*math.cos(2*np.pi-insta_fp_pos_N[1]),
         math.sin(insta_fp_pos_N[0])*math.sin(2*np.pi-insta_fp_pos_N[1]),
-        marker='D', fc='k', ec='w', s=20.0,
+        marker='D', fc='k', ec='w', s=18.0,
     )
     F.ax.scatter(
         math.sin(insta_fp_pos_S[0])*math.cos(2*np.pi-insta_fp_pos_S[1]),
         math.sin(insta_fp_pos_S[0])*math.sin(2*np.pi-insta_fp_pos_S[1]),
-        marker='D', fc='k', ec='w', s=20.0,
+        marker='D', fc='k', ec='w', s=18.0,
     )
 
     # Observed footprint position
@@ -696,26 +696,26 @@ def polar_plot(fp_traced_arr,
     plt.close()
 
     print('Equatorial lead angle [deg]: ==========')
-    for j in range(2*(1+reflections+1)):
+    for j in range(2*(1+reflections+2)):
         eq_lead = fp_traced_arr[3*j+3]    # [deg]
-        if j in [0, 1+reflections]:
+        if j in [0, 1+reflections+2]:
             print('  (MAW)  ', round(eq_lead, 3))
-        elif j in [1+reflections+1, 2*(1+reflections+1)-1]:
+        elif j in [1+reflections, 1+reflections+1, 2*(1+reflections+2)-2, 2*(1+reflections+2)-1]:
             print('  (TEB)  ', round(eq_lead, 3))
         else:
             print('  (RAW)  ', round(eq_lead, 3))
     print('At', str(int(alt_ref[fp_alt_target])),
           'km [lat, wlongitude] [deg]: ==========')
-    for j in range(2*(1+reflections+1)):
+    for j in range(2*(1+reflections+2)):
         colat = fp_traced_arr[3*j+1]    # [rad]
         wlon = fp_traced_arr[3*j+2]     # [rad]
-        if j in [0, 1+reflections+1]:
+        if j in [0, 1+reflections+2]:
             print(
                 '  (MAW)  ',
                 round(90.0-math.degrees(colat), 3),
                 round(np.mod(math.degrees(wlon), 360.0), 3)
             )
-        elif j in [1+reflections, 2*(1+reflections+1)-1]:
+        elif j in [1+reflections, 1+reflections+1, 2*(1+reflections+2)-2, 2*(1+reflections+2)-1]:
             print(
                 '  (TEB)  ',
                 round(90.0-math.degrees(colat), 3),
@@ -775,13 +775,13 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_054'
+    exname = '003/20250516_059'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
     TARGET_FP = ['MAW']
-    PJ_LIST = [9]
-    TARGET_HEM = 'N'
+    PJ_LIST = [11]
+    TARGET_HEM = 'S'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
     ni_num = 50
@@ -836,7 +836,7 @@ if __name__ == '__main__':
     target_et_pj16 = np.array([spice.utc2et('2018-10-29T22:10:23')])
 
     # TARGET_ET = np.array([721041971.3])     # False or ET
-    TARGET_ET = target_et_pj9n
+    TARGET_ET = target_et_pj11
 
     # Target select
     if TARGET_MOON == 'Io':
