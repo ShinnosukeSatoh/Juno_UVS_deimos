@@ -777,13 +777,13 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_054'
+    exname = '003/20250516_047'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
     TARGET_FP = ['MAW']
-    PJ_LIST = [9]
-    TARGET_HEM = 'N'
+    PJ_LIST = [3]
+    TARGET_HEM = 'both'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
     ni_num = 50
@@ -796,7 +796,7 @@ if __name__ == '__main__':
                400.0, 300.0, 200.0, 100.0,
                10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
-    fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
+    fp_alt_target = -13                 # ALWAYS NEGATIVE!!!
 
     # PJ03 2016-12-11T17:51:10
     target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])
@@ -838,7 +838,7 @@ if __name__ == '__main__':
     target_et_pj16 = np.array([spice.utc2et('2018-10-29T22:10:23')])
 
     # TARGET_ET = np.array([721041971.3])     # False or ET
-    TARGET_ET = target_et_pj9n
+    TARGET_ET = target_et_pj3
 
     # Target select
     if TARGET_MOON == 'Io':
