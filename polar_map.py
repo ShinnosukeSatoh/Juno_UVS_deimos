@@ -14,6 +14,8 @@ from MyPlotRecipe.UniversalColor import UniversalColor
 from MyPlotRecipe.SharedX import ShareXaxis
 from MyPlotRecipe.legend_shadow import legend_shadow
 
+from RAW_trace_2 import load_best_fit
+
 import spiceypy as spice
 import JupiterMag as jm
 from scipy.io import readsav
@@ -246,6 +248,63 @@ def read1savfile(PJnum: int, target_moon: str, target_fp: str, target_hem='both'
 
 
 # %%
+def load_best_fit():
+    levels = {'1-sigma': 2.30,
+              '2-sigma': 6.17,
+              '3-sigma': 11.8}
+    # Import the best-fit parameter
+    chi2_1d = np.loadtxt('results/fit/'+exname+'/params_chi2.txt')
+    Ai_1d = np.loadtxt('results/fit/'+exname+'/params_Ai.txt')
+    ni_1d = np.loadtxt('results/fit/'+exname+'/params_ni.txt')
+    Ti_1d = np.loadtxt('results/fit/'+exname+'/params_Ti.txt')
+    H_1d = np.loadtxt('results/fit/'+exname+'/params_H.txt')
+    eqlead_est = np.loadtxt('results/fit/'+exname+'/eqlead_est.txt')
+
+    chi2_3d = chi2_1d.reshape(ni_num, Ai_num, Ti_num)
+    H_3d = H_1d.reshape(ni_num, Ai_num, Ti_num)
+    Ai_3d = Ai_1d.reshape(ni_num, Ai_num, Ti_num)
+    ni_3d = ni_1d.reshape(ni_num, Ai_num, Ti_num)
+    Ti_3d = Ti_1d.reshape(ni_num, Ai_num, Ti_num)
+
+    # 保存されているカイ2乗値は自由度で割ってしまっているのでここで元に戻す
+    chi2_3d = chi2_3d*(eqlead_est.shape[0]-3)
+
+    # chi2_3dの最小値を探す
+    min_idx = np.where(chi2_3d == np.min(chi2_3d))
+
+    # 信頼区間の端を取得する
+    d_chi2 = chi2_3d[:, :, :]-chi2_3d[min_idx]
+    idx_1sigma = np.where(d_chi2 < levels['1-sigma'])
+    Ai_3d_1 = Ai_3d[idx_1sigma]
+    ni_3d_1 = ni_3d[idx_1sigma]
+    Ti_3d_1 = Ti_3d[idx_1sigma]
+    H_3d_1 = H_3d[idx_1sigma]
+
+    # 低密高温の場合
+    if retrieval == 'hot':
+        idx_hot = np.argmax(Ti_3d_1)
+        Ai_best = Ai_3d_1[idx_hot]
+        ni_best = ni_3d_1[idx_hot]
+        Ti_best = Ti_3d_1[idx_hot]
+        Hp_best = H_3d_1[idx_hot]
+    # 高密低温の場合
+    elif retrieval == 'dense':
+        idx_dense = np.argmax(ni_3d_1)
+        Ai_best = Ai_3d_1[idx_dense]
+        ni_best = ni_3d_1[idx_dense]
+        Ti_best = Ti_3d_1[idx_dense]
+        Hp_best = H_3d_1[idx_dense]
+    # best-fit parameters
+    elif retrieval == 'best':
+        Ai_best = Ai_3d[min_idx][0]
+        ni_best = ni_3d[min_idx][0]
+        Ti_best = Ti_3d[min_idx][0]
+        Hp_best = H_3d[min_idx][0]
+
+    return Ai_best, ni_best, Ti_best, Hp_best
+
+
+# %%
 def Obsresults(PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP):
     # 初期化
     wlon_fp = np.zeros(3)
@@ -336,45 +395,6 @@ def ft_ref(hemisphere, MOON: str):
     return s3lat, s3wlon
 
 
-# %% Import the best-fit parameters (Ai, ni, Ti)
-def load_best_fit():
-    chi2_1d = np.loadtxt('results/fit/'+exname+'/params_chi2.txt')
-    Ai_1d = np.loadtxt('results/fit/'+exname+'/params_Ai.txt')
-    ni_1d = np.loadtxt('results/fit/'+exname+'/params_ni.txt')
-    Ti_1d = np.loadtxt('results/fit/'+exname+'/params_Ti.txt')
-    H_1d = np.loadtxt('results/fit/'+exname+'/params_H.txt')
-    eqlead_est = np.loadtxt('results/fit/'+exname+'/eqlead_est.txt')
-    eqlead_obs = np.loadtxt('results/fit/'+exname+'/eqlead_obs.txt')
-    sigma_obs = np.loadtxt('results/fit/'+exname+'/sigma_y.txt')
-    hem_obs = np.loadtxt('results/fit/'+exname+'/hems_obs.txt')
-    moon_S3wlon_obs = np.loadtxt('results/fit/'+exname+'/moon_S3wlon_obs.txt')
-
-    chi2_3d = chi2_1d.reshape(ni_num, Ai_num, Ti_num)
-    H_3d = H_1d.reshape(ni_num, Ai_num, Ti_num)
-    Ai_3d = Ai_1d.reshape(ni_num, Ai_num, Ti_num)
-    ni_3d = ni_1d.reshape(ni_num, Ai_num, Ti_num)
-    Ti_3d = Ti_1d.reshape(ni_num, Ai_num, Ti_num)
-    H_3d = H_1d.reshape(ni_num, Ai_num, Ti_num)
-    eqlead_est_3d = eqlead_est[1].reshape(ni_num, Ai_num, Ti_num)
-
-    # 保存されているカイ2乗値は自由度で割ってしまっているのでここで元に戻す
-    chi2_3d = chi2_3d*(eqlead_est.shape[0]-3)
-
-    # chi2_3dの最小値を探す
-    min_idx = np.where(chi2_3d == np.min(chi2_3d))
-
-    # delta_chi2
-    delta_chi2 = chi2_3d-np.min(chi2_3d)
-
-    # best-fit parameters
-    Ai_best = Ai_3d[min_idx][0]
-    ni_best = ni_3d[min_idx][0]
-    Ti_best = Ti_3d[min_idx][0]
-    Hp_best = H_3d[min_idx][0]
-
-    return Ai_best, ni_best, Ti_best, Hp_best
-
-
 # %% Import the footprint positions based on the best-fit parameters (Ai, ni, Ti)
 def fp_traced(target_moon_s3_obs):
     """
@@ -385,7 +405,7 @@ def fp_traced(target_moon_s3_obs):
         _type_: _description_
     """
     filename = 'data_'+TARGET_MOON[0]+'FP_interp_map_' + \
-        str(int(alt_ref[fp_alt_target]))+'km.txt'
+        str(int(alt_ref[fp_alt_target]))+'km_'+retrieval+'.txt'
     interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
     moon_s3_obs = interp[:, 0]      # [deg]
     idx = np.argmin(abs(moon_s3_obs-target_moon_s3_obs))
@@ -399,7 +419,7 @@ def fp_traced(target_moon_s3_obs):
 # %% Generate the footpath of MAW
 def fp_path():
     filename = 'data_'+TARGET_MOON[0]+'FP_interp_map_' + \
-        str(int(alt_ref[fp_alt_target]))+'km.txt'
+        str(int(alt_ref[fp_alt_target]))+'km_'+retrieval+'.txt'
     interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
     moon_s3_obs = interp[:, 0]
 
@@ -462,7 +482,7 @@ def instantaneous(target_moon_s3_obs):
 # %% Lead angle plot
 def leadangle_plot():
     filename = 'data_'+TARGET_MOON[0]+'FP_interp_map_' + \
-        str(int(alt_ref[fp_alt_target]))+'km.txt'
+        str(int(alt_ref[fp_alt_target]))+'km_'+retrieval+'.txt'
     interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
     moon_s3_obs = interp[:, 0]
 
@@ -521,7 +541,8 @@ def leadangle_plot():
                       linewidth=1.4)
 
     F.fig.tight_layout()
-    F.fig.savefig('img/reflect_2/'+exname+'/moons3wlon_vs_eqlead2.jpg')
+    F.fig.savefig('img/reflect_2/'+exname +
+                  '/moons3wlon_vs_eqlead_'+retrieval+'.jpg')
     F.close()
     return None
 
@@ -692,7 +713,7 @@ def polar_plot(fp_traced_arr,
                   facealpha=0.0,
                   edgecolor=(0, 0, 0, 0), )
 
-    savename += '_'+str(int(alt_ref[fp_alt_target]))+'km'
+    savename += '_'+str(int(alt_ref[fp_alt_target]))+'km_'+retrieval
     F.fig.tight_layout()
     F.fig.savefig('img/reflect_2/'+exname+'/'+savename+'.jpg')
     plt.close()
@@ -777,13 +798,13 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_047'
+    exname = '003/20250516_054'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
     TARGET_FP = ['MAW']
-    PJ_LIST = [3]
-    TARGET_HEM = 'both'
+    PJ_LIST = [9]
+    TARGET_HEM = 'N'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
     ni_num = 50
@@ -796,7 +817,8 @@ if __name__ == '__main__':
                400.0, 300.0, 200.0, 100.0,
                10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
-    fp_alt_target = -13                 # ALWAYS NEGATIVE!!!
+    fp_alt_target = -6                 # ALWAYS NEGATIVE!!!
+    retrieval = 'hot'                   # 'best', 'hot', 'dense'
 
     # PJ03 2016-12-11T17:51:10
     target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])
@@ -838,7 +860,7 @@ if __name__ == '__main__':
     target_et_pj16 = np.array([spice.utc2et('2018-10-29T22:10:23')])
 
     # TARGET_ET = np.array([721041971.3])     # False or ET
-    TARGET_ET = target_et_pj3
+    TARGET_ET = target_et_pj9n
 
     # Target select
     if TARGET_MOON == 'Io':
@@ -855,7 +877,6 @@ if __name__ == '__main__':
     _, _, _, r_moon_obs, _, _, s3wlon_moon_obs = moonS3wlon_arr(TARGET_ET,
                                                                 TARGET_MOON)
     r_moon = r_moon_obs[0]
-    r_moon = 5.8783142698981345*RJ
     print('Orbital distance [RJ]:', r_moon/RJ)
 
     main()
