@@ -953,7 +953,7 @@ if __name__ == '__main__':
                10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
-    retrieval = 'hot'      # 'best', 'hot', 'dense'
+    retrieval = 'best'      # 'best', 'hot', 'dense'
 
     # Number of parallel processes
     parallel = 10
