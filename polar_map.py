@@ -818,7 +818,7 @@ if __name__ == '__main__':
                10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
-    retrieval = 'best'                  # 'best', 'hot', 'dense'
+    retrieval = 'dense'                 # 'best', 'hot', 'dense'
 
     # PJ03 2016-12-11T17:51:10
     target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])
