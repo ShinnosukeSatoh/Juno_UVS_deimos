@@ -271,6 +271,9 @@ def read1savfile(PJnum: int, target_moon: str, target_fp: str, target_hem='both'
 
 
 def load_best_fit():
+    levels = {'1-sigma': 2.30,
+              '2-sigma': 6.17,
+              '3-sigma': 11.8}
     # Import the best-fit parameter
     chi2_1d = np.loadtxt('results/fit/'+exname+'/params_chi2.txt')
     Ai_1d = np.loadtxt('results/fit/'+exname+'/params_Ai.txt')
@@ -284,7 +287,6 @@ def load_best_fit():
     Ai_3d = Ai_1d.reshape(ni_num, Ai_num, Ti_num)
     ni_3d = ni_1d.reshape(ni_num, Ai_num, Ti_num)
     Ti_3d = Ti_1d.reshape(ni_num, Ai_num, Ti_num)
-    H_3d = H_1d.reshape(ni_num, Ai_num, Ti_num)
 
     # 保存されているカイ2乗値は自由度で割ってしまっているのでここで元に戻す
     chi2_3d = chi2_3d*(eqlead_est.shape[0]-3)
@@ -292,11 +294,34 @@ def load_best_fit():
     # chi2_3dの最小値を探す
     min_idx = np.where(chi2_3d == np.min(chi2_3d))
 
+    # 信頼区間の端を取得する
+    d_chi2 = chi2_3d[:, :, :]-chi2_3d[min_idx]
+    idx_1sigma = np.where(d_chi2 < levels['1-sigma'])
+    Ai_3d_1 = Ai_3d[idx_1sigma]
+    ni_3d_1 = ni_3d[idx_1sigma]
+    Ti_3d_1 = Ti_3d[idx_1sigma]
+    H_3d_1 = H_3d[idx_1sigma]
+
+    # 低密高温の場合
+    if retrieval == 'hot':
+        idx_hot = np.argmax(Ti_3d_1)
+        Ai_best = Ai_3d_1[idx_hot]
+        ni_best = ni_3d_1[idx_hot]
+        Ti_best = Ti_3d_1[idx_hot]
+        Hp_best = H_3d_1[idx_hot]
+    # 高密低温の場合
+    elif retrieval == 'dense':
+        idx_dense = np.argmax(ni_3d_1)
+        Ai_best = Ai_3d_1[idx_dense]
+        ni_best = ni_3d_1[idx_dense]
+        Ti_best = Ti_3d_1[idx_dense]
+        Hp_best = H_3d_1[idx_dense]
     # best-fit parameters
-    Ai_best = Ai_3d[min_idx][0]
-    ni_best = ni_3d[min_idx][0]
-    Ti_best = Ti_3d[min_idx][0]
-    Hp_best = H_3d[min_idx][0]
+    elif retrieval == 'best':
+        Ai_best = Ai_3d[min_idx][0]
+        ni_best = ni_3d[min_idx][0]
+        Ti_best = Ti_3d[min_idx][0]
+        Hp_best = H_3d[min_idx][0]
 
     return Ai_best, ni_best, Ti_best, Hp_best
 
@@ -903,7 +928,7 @@ def main():
                                                   eq_S_fp[:, 3*j],
                                                   period=360.0)
 
-        np.savetxt('results/reflect_2/'+exname+'/data_'+TARGET_MOON[0]+'FP_interp_map_'+str(int(alt_ref[k]))+'km.txt',
+        np.savetxt('results/reflect_2/'+exname+'/data_'+TARGET_MOON[0]+'FP_interp_map_'+str(int(alt_ref[k]))+'km_'+retrieval+'.txt',
                    data_fp_interp)
 
     return None
@@ -911,11 +936,11 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_047'
+    exname = '003/20250516_054'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [3]
-    hem = 'both'
+    PJ_num = [9]
+    hem = 'N'
     Ai_num = 3
     ni_num = 50
     Ti_num = 60
@@ -928,9 +953,10 @@ if __name__ == '__main__':
                10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
+    retrieval = 'hot'      # 'best', 'hot', 'dense'
 
     # Number of parallel processes
-    parallel = 12
+    parallel = 10
 
     # Grid
     d_phi = 0.6    # [deg]

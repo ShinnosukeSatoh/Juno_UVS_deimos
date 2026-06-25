@@ -657,8 +657,8 @@ class Awave():
                     alt_pin_arr[i] = alt_ref[alt_flag]
                     # print('Altitude [km]:', alt_ref[alt_flag], alt_gr)
                     if alt_flag == (len(theta_ref)-1):
-                        print('End point [RJ]:', rs/RJ,
-                              '// Altitude [km]:', alt_gr)
+                        print('End point [RJ]:', round(rs/RJ, 3),
+                              '// Altitude [km]:', round(alt_gr, 3))
                         break
                     alt_flag += 1
 
