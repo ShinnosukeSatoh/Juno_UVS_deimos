@@ -976,6 +976,8 @@ if __name__ == '__main__':
     fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
     retrieval = 'hot'      # 'best', 'hot', 'dense'
 
+    print('Retrieval mode:', retrieval)
+
     # Number of parallel processes
     parallel = 10
 
