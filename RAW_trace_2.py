@@ -27,6 +27,7 @@ from legend_shadow import legend_shadow
 
 from Leadangle_fit_JunoUVS import moonS3wlon_arr
 from Leadangle_fit_JunoUVS import TEB_transit
+from Leadangle_fit_JunoUVS import scaleheight
 import Leadangle_wave as Wave
 
 import time
@@ -270,6 +271,13 @@ def read1savfile(PJnum: int, target_moon: str, target_fp: str, target_hem='both'
     return wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, wlon_moon, et, hem
 
 
+# %%
+def calc_ftmc(Ai, ni, Hi):
+    ftmc = ni*(1E+6)*Ai*AMU2KG*Hi*math.sqrt(np.pi)     # [kg m-3]
+    return ftmc
+
+
+# %%
 def load_best_fit():
     levels = {'1-sigma': 2.30,
               '2-sigma': 6.17,
@@ -287,6 +295,7 @@ def load_best_fit():
     Ai_3d = Ai_1d.reshape(ni_num, Ai_num, Ti_num)
     ni_3d = ni_1d.reshape(ni_num, Ai_num, Ti_num)
     Ti_3d = Ti_1d.reshape(ni_num, Ai_num, Ti_num)
+    FTMC_3d = calc_ftmc(Ai_3d, ni_3d, H_3d)
 
     # 保存されているカイ2乗値は自由度で割ってしまっているのでここで元に戻す
     chi2_3d = chi2_3d*(eqlead_est.shape[0]-3)
@@ -309,7 +318,19 @@ def load_best_fit():
         ni_best = ni_3d_1[idx_hot]
         Ti_best = Ti_3d_1[idx_hot]
         Hp_best = H_3d_1[idx_hot]
+    elif retrieval == 'hot':
+        FTMC_best = FTMC_3d[min_idx][0]    # FTMCは保存する -> MAWの位置は`best`と変わらない
+        Ai_best = Ai_3d[min_idx][0]
+        Ti_best = Ti_3d[min_idx][0]*1.1    # 10%増にしてみる
+        Hp_best = scaleheight(Ai_best, Zi, Ti_best, Te)
+        ni_best = FTMC_best/((1E+6)*Ai_best*AMU2KG*Hp_best*math.sqrt(np.pi))
     # 高密低温の場合
+    elif retrieval == 'cold':
+        FTMC_best = FTMC_3d[min_idx][0]    # FTMCは保存する -> MAWの位置は`best`と変わらない
+        Ai_best = Ai_3d[min_idx][0]
+        Ti_best = Ti_3d[min_idx][0]*0.9    # 10%減にしてみる
+        Hp_best = scaleheight(Ai_best, Zi, Ti_best, Te)
+        ni_best = FTMC_best/((1E+6)*Ai_best*AMU2KG*Hp_best*math.sqrt(np.pi))
     elif retrieval == 'dense':
         idx_dense = np.argmax(ni_3d_1)
         Ai_best = Ai_3d_1[idx_dense]
@@ -953,7 +974,7 @@ if __name__ == '__main__':
                10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
-    retrieval = 'best'      # 'best', 'hot', 'dense'
+    retrieval = 'hot'      # 'best', 'hot', 'dense'
 
     # Number of parallel processes
     parallel = 10
