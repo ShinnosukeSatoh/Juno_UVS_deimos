@@ -510,9 +510,9 @@ class Awave():
                        NS: float,):
         """
         Argument:
-        - `r_A0` Radial distance of the Alfven launch site [m] 
+        - `r_A0` Radial distance of the Alfven launch site [m]
         - `S3wlon_A0` SIII west longitude of the Alfven launch site [rad]
-        - `z_A0` z position of the Alfven launch site [m] 
+        - `z_A0` z position of the Alfven launch site [m]
         - `S_A0` Field line position of the Alfven launch site [m]
         - `Ai` Ion mass of the plasma sheet [amu]
         - `ni` Ion number density at the plasma sheet center [cm-3]
