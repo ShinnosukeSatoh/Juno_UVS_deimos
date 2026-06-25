@@ -34,7 +34,8 @@ import time
 from scipy.io import readsav
 import JupiterMag as jm
 
-jm.Internal.Config(Model='jrm33', CartesianIn=True, CartesianOut=True)
+jm.Internal.Config(Model='jrm33', CartesianIn=True,
+                   CartesianOut=True, Degree=18)
 jm.Con2020.Config(equation_type='analytic')
 
 UC = UniversalColor()
@@ -910,10 +911,10 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_051'
+    exname = '003/20250516_047'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [7]
+    PJ_num = [3]
     hem = 'both'
     Ai_num = 3
     ni_num = 50

@@ -18,7 +18,8 @@ import spiceypy as spice
 import JupiterMag as jm
 from scipy.io import readsav
 
-jm.Internal.Config(Model='jrm33', CartesianIn=True, CartesianOut=True)
+jm.Internal.Config(Model='jrm33', CartesianIn=True,
+                   CartesianOut=True, Degree=18)
 jm.Con2020.Config(equation_type='analytic')
 
 UC = UniversalColor()

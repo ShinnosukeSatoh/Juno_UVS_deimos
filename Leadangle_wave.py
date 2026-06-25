@@ -28,7 +28,8 @@ c = radii[2]
 f = (a - c) / a
 
 # Jupiter magnetic field model initialization
-jm.Internal.Config(Model='jrm33', CartesianIn=True, CartesianOut=True)
+jm.Internal.Config(Model='jrm33', CartesianIn=True,
+                   CartesianOut=True, Degree=18)
 jm.Con2020.Config(equation_type='analytic')
 
 # 定数
@@ -642,6 +643,8 @@ class Awave():
                 if alt_flag > len(theta_ref):
                     print('`alt_flag` is bigger than expected.')
                     print(alt_flag)
+
+                # Jovigraphic (gr)
                 lon_gr, lat_gr, alt_gr = spice.recpgr("JUPITER",
                                                       np.array([x/1000.0,
                                                                 y/1000.0,
@@ -654,6 +657,8 @@ class Awave():
                     alt_pin_arr[i] = alt_ref[alt_flag]
                     # print('Altitude [km]:', alt_ref[alt_flag], alt_gr)
                     if alt_flag == (len(theta_ref)-1):
+                        print('End point [RJ]:', rs/RJ,
+                              '// Altitude [km]:', alt_gr)
                         break
                     alt_flag += 1
 
