@@ -278,7 +278,7 @@ def calc_ftmc(Ai, ni, Hi):
 
 
 # %%
-def load_best_fit():
+def load_best_fit(exname, ni_num, Ai_num, Ti_num, Zi, Te, retrieval):
     levels = {'1-sigma': 2.30,
               '2-sigma': 6.17,
               '3-sigma': 11.8}
@@ -313,12 +313,6 @@ def load_best_fit():
 
     # 低密高温の場合
     if retrieval == 'hot':
-        idx_hot = np.argmax(Ti_3d_1)
-        Ai_best = Ai_3d_1[idx_hot]
-        ni_best = ni_3d_1[idx_hot]
-        Ti_best = Ti_3d_1[idx_hot]
-        Hp_best = H_3d_1[idx_hot]
-    elif retrieval == 'hot':
         FTMC_best = FTMC_3d[min_idx][0]    # FTMCは保存する -> MAWの位置は`best`と変わらない
         Ai_best = Ai_3d[min_idx][0]
         Ti_best = Ti_3d[min_idx][0]*1.1    # 10%増にしてみる
@@ -745,7 +739,10 @@ def main():
         abs(s3wlon_t0_arr-np.radians(s3wlon_moon_obs[0])))
     arr_size = s3wlon_t0_arr.size
 
-    Ai_best, ni_best, Ti_best, Hp_best = load_best_fit()
+    Ai_best, ni_best, Ti_best, Hp_best = load_best_fit(exname, ni_num,
+                                                       Ai_num, Ti_num,
+                                                       Zi, Te,
+                                                       retrieval)
 
     # Alfvén wave launch position in the field line coordinate
     args = list(zip(r_moon*np.ones(arr_size),

@@ -248,63 +248,6 @@ def read1savfile(PJnum: int, target_moon: str, target_fp: str, target_hem='both'
 
 
 # %%
-def load_best_fit():
-    levels = {'1-sigma': 2.30,
-              '2-sigma': 6.17,
-              '3-sigma': 11.8}
-    # Import the best-fit parameter
-    chi2_1d = np.loadtxt('results/fit/'+exname+'/params_chi2.txt')
-    Ai_1d = np.loadtxt('results/fit/'+exname+'/params_Ai.txt')
-    ni_1d = np.loadtxt('results/fit/'+exname+'/params_ni.txt')
-    Ti_1d = np.loadtxt('results/fit/'+exname+'/params_Ti.txt')
-    H_1d = np.loadtxt('results/fit/'+exname+'/params_H.txt')
-    eqlead_est = np.loadtxt('results/fit/'+exname+'/eqlead_est.txt')
-
-    chi2_3d = chi2_1d.reshape(ni_num, Ai_num, Ti_num)
-    H_3d = H_1d.reshape(ni_num, Ai_num, Ti_num)
-    Ai_3d = Ai_1d.reshape(ni_num, Ai_num, Ti_num)
-    ni_3d = ni_1d.reshape(ni_num, Ai_num, Ti_num)
-    Ti_3d = Ti_1d.reshape(ni_num, Ai_num, Ti_num)
-
-    # 保存されているカイ2乗値は自由度で割ってしまっているのでここで元に戻す
-    chi2_3d = chi2_3d*(eqlead_est.shape[0]-3)
-
-    # chi2_3dの最小値を探す
-    min_idx = np.where(chi2_3d == np.min(chi2_3d))
-
-    # 信頼区間の端を取得する
-    d_chi2 = chi2_3d[:, :, :]-chi2_3d[min_idx]
-    idx_1sigma = np.where(d_chi2 < levels['1-sigma'])
-    Ai_3d_1 = Ai_3d[idx_1sigma]
-    ni_3d_1 = ni_3d[idx_1sigma]
-    Ti_3d_1 = Ti_3d[idx_1sigma]
-    H_3d_1 = H_3d[idx_1sigma]
-
-    # 低密高温の場合
-    if retrieval == 'hot':
-        idx_hot = np.argmax(Ti_3d_1)
-        Ai_best = Ai_3d_1[idx_hot]
-        ni_best = ni_3d_1[idx_hot]
-        Ti_best = Ti_3d_1[idx_hot]
-        Hp_best = H_3d_1[idx_hot]
-    # 高密低温の場合
-    elif retrieval == 'dense':
-        idx_dense = np.argmax(ni_3d_1)
-        Ai_best = Ai_3d_1[idx_dense]
-        ni_best = ni_3d_1[idx_dense]
-        Ti_best = Ti_3d_1[idx_dense]
-        Hp_best = H_3d_1[idx_dense]
-    # best-fit parameters
-    elif retrieval == 'best':
-        Ai_best = Ai_3d[min_idx][0]
-        ni_best = ni_3d[min_idx][0]
-        Ti_best = Ti_3d[min_idx][0]
-        Hp_best = H_3d[min_idx][0]
-
-    return Ai_best, ni_best, Ti_best, Hp_best
-
-
-# %%
 def Obsresults(PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP):
     # 初期化
     wlon_fp = np.zeros(3)
@@ -435,7 +378,10 @@ def fp_path():
 
 # %% Instantaneous footprint position
 def instantaneous(target_moon_s3_obs):
-    Ai_best, ni_best, _, Hp_best = load_best_fit()
+    Ai_best, ni_best, _, Hp_best = load_best_fit(exname, ni_num,
+                                                 Ai_num, Ti_num,
+                                                 Zi, Te,
+                                                 retrieval)
 
     s3wlon_t0 = np.radians(target_moon_s3_obs)
 
