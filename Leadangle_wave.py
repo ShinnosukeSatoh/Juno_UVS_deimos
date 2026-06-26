@@ -535,7 +535,7 @@ class Awave():
                    1000.0, 900.0, 800.0, 700.0, 600.0,
                    500.0, 400.0, 300.0, 200.0, 100.0,
                    50.0, 10.0, 5.0, 0.0]
-        r_ref = []
+        """r_ref = []
         theta_ref = []
         phi_ref = []
         for i in range(len(alt_ref)):
@@ -544,7 +544,7 @@ class Awave():
             r_ref += [extradius[0, :]*RJ]   # [RJ]
             theta_ref += [extradius[1, :]]  # [rad]
             phi_ref += [extradius[2, :]]    # [rad]
-        i = 0   # Safety
+        i = 0   # Safety"""
 
         # 高度のピンを立てる
         alt_pin_arr = np.zeros(Niter)
@@ -638,7 +638,7 @@ class Awave():
                 # ============================================
                 # Altitude 1500 km -> 900 km -> 400 km -> 5 km
                 # ============================================
-                if alt_flag > len(theta_ref):
+                if alt_flag > len(alt_ref):
                     print('`alt_flag` is bigger than expected.')
                     print(alt_flag)
 
@@ -649,12 +649,12 @@ class Awave():
                                                                 z/1000.0]),
                                                       a,
                                                       f)
-                theta_gr = 0.5*np.pi-lat_gr    # For savefile [rad]
-                phi_gr = 2*np.pi-lon_gr        # For savefile [rad]
+                # theta_gr = 0.5*np.pi-lat_gr    # For savefile [rad]
+                # phi_gr = 2*np.pi-lon_gr        # For savefile [rad]
                 if abs(alt_gr-alt_ref[alt_flag])*1000.0 <= 0.5*ds:
                     alt_pin_arr[i] = alt_ref[alt_flag]
                     # print('Altitude [km]:', alt_ref[alt_flag], alt_gr)
-                    if alt_flag == (len(theta_ref)-1):
+                    if alt_flag == (len(alt_ref)-1):
                         print('End point [RJ]:', round(rs/RJ, 3),
                               '// Altitude [km]:', round(alt_gr, 3))
                         break
