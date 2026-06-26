@@ -13,6 +13,14 @@ from Leadangle_fit_JunoUVS import moonS3wlon_arr
 import os
 from IPython.display import clear_output
 
+# SPICE KERNELS
+import spiceypy as spice
+spice.furnsh('kernel/cassMetaK.txt')
+radii = spice.bodvrd("JUPITER", "RADII", 3)[1]
+RJ_km = radii[0]
+c = radii[2]
+f = (RJ_km - c) / RJ_km
+
 UC = UniversalColor()
 UC.set_palette()
 
@@ -134,11 +142,14 @@ for PJ in PJ_LIST:
     rho_arr = np.zeros(wlon_fp.size)
     phi_arr = np.zeros(wlon_fp.size)
     z_arr = np.zeros(wlon_fp.size)
+    eq_lead_arr = np.zeros(wlon_fp.size)
 
     mu_i_default = 139.6    # default: 139.6 [nT]
+    jm.Internal.Config(Model='jrm33', CartesianIn=True,
+                       CartesianOut=True, Degree=18)
     jm.Con2020.Config(mu_i=mu_i_default*1.0, equation_type='analytic')
     for i in range(rho_arr.size):
-        latitude = lat_fp[i]
+        """latitude = lat_fp[i]
         theta = np.radians(90.0-latitude)
         phi = np.radians(360.0-wlon_fp[i])
 
@@ -148,7 +159,20 @@ for PJ in PJ_LIST:
 
         x0 = r*np.sin(theta)*np.cos(phi)
         y0 = r*np.sin(theta)*np.sin(phi)
-        z0 = r*np.cos(theta)
+        z0 = r*np.cos(theta)"""
+
+        # Jovigraphic (Altitude 900 km) -> Jovicentric
+        lon_gr = math.radians(wlon_fp[i])
+        lat_gr = math.radians(lat_fp[i])
+        pos = spice.pgrrec('Jupiter',
+                           lon_gr,
+                           lat_gr,
+                           900.0,
+                           RJ_km,
+                           f)
+        x0 = pos[0]/RJ_km
+        y0 = pos[1]/RJ_km
+        z0 = pos[2]/RJ_km
 
         # create trace objects, pass starting position(s) x0,y0,z0 in RJ
         T1 = jm.TraceField(x0, y0, z0, Verbose=True,
@@ -164,38 +188,29 @@ for PJ in PJ_LIST:
         idx_z0 = np.argmin(np.abs(z1))
 
         phi_z0 = np.arctan2(y1[idx_z0], x1[idx_z0])  # in SIII RH [rad]
-        phi_z0 = 360.0-np.degrees(phi_z0)
-        if phi_z0 >= 360.0:
-            phi_z0 += -360.0
         rho_arr[i] = rho[idx_z0]
-        phi_arr[i] = phi_z0
+        phi_arr[i] = np.mod(360.0-np.degrees(phi_z0), 360.0)
         z_arr = T1.z[0][idx_z0]
 
-        clear_output(wait=True)  # Trace informationを消し去る
+        # Equatorial lead angle
+        eq_lead_arr[i] = np.mod(moon_S3wlon[i]-phi_arr[i], 360.0)
 
-    # %% Results
-    fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
-    ax.set_xlim(0.0, 360.0)
-    ax.set_xlabel('Table value [deg]')
-    ax.set_xticks(np.arange(0, 360+1, 45))
-    ax.set_ylim(0.0, 360.0)
-    ax.set_xlabel('Back-traced [deg]')
-    ax.set_yticks(np.arange(0, 360+1, 45))
-    ax.scatter(wlon_fp_eq, phi_arr, s=1.0, c=UC.orange)
-    fig.tight_layout()
-    fig.savefig('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-                TARGET_MOON[0]+'FP.jpg', bbox_inches='tight')
+        clear_output(wait=True)  # Trace informationを消し去る
 
     savefile = np.array([rho_arr,
                          phi_arr,
                          et_fp,
                          hem_fp,
+                         eq_lead_arr,
                          ])
     print(savefile.shape)  # -> (3, N)
     # savefile[0,:] -> rho_arr [RJ]
     # savefile[1,:] -> phi_arr [deg] (west longitude)
     # savefile[2,:] -> et_fp [et]
     # savefile[3,:] -> hemisphere & type of footprints (+/-1, +/-101)
+    # savefile[4,:] -> equatorial lead angle [deg]
 
-    np.savetxt('data/Backtraced/PJ'+str(PJ).zfill(2)+'/' +
-               TARGET_MOON[0]+'FP_info_v900km_fixed.txt', savefile)
+    print('np.average(rho_arr):', np.average(rho_arr))
+
+    np.savetxt('data/Backtraced_2/PJ'+str(PJ).zfill(2)+'/' +
+               TARGET_MOON[0]+'FP_info_v900km.txt', savefile)

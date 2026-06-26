@@ -229,11 +229,12 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
     phi_arr = np.zeros(3)
     et_fp = np.zeros(3)
     hem_arr = np.zeros(3)
+    eq_lead_arr = np.zeros(3)
 
     for i in range(len(pj_list)):
-        dir = 'data/Backtraced/PJ' + \
+        dir = 'data/Backtraced_2/PJ' + \
             str(pj_list[i]).zfill(2)+'/' + \
-            target_moon[0]+'FP_info_v900km_fixed.txt'
+            target_moon[0]+'FP_info_v900km.txt'
         f = np.loadtxt(dir)
         # print(pj_list[i])
 
@@ -242,17 +243,20 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
             phi_arr = np.append(phi_arr, f[1])
             et_fp = np.append(et_fp, f[2])
             hem_arr = np.append(hem_arr, f[3])
+            eq_lead_arr = np.append(eq_lead_arr, f[4])
         else:
             rho_arr = np.append(rho_arr, f[0, :])
             phi_arr = np.append(phi_arr, f[1, :])
             et_fp = np.append(et_fp, f[2, :])
             hem_arr = np.append(hem_arr, f[3, :])
+            eq_lead_arr = np.append(eq_lead_arr, f[4, :])
 
     # 余計な部分を削除
     rho_arr = rho_arr[3:]
     phi_arr = phi_arr[3:]
     et_fp = et_fp[3:]
     hem_arr = hem_arr[3:]
+    eq_lead_arr = eq_lead_arr[3:]
 
     # 半球で場合分け
     if target_hem == 'N':
@@ -261,12 +265,14 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
         phi_arr = phi_arr[hem_idx]
         et_fp = et_fp[hem_idx]
         hem_arr = hem_arr[hem_idx]
+        eq_lead_arr = eq_lead_arr[hem_idx]
     elif target_hem == 'S':
         hem_idx = np.where((hem_arr == 1) | (hem_arr == 101))
         rho_arr = rho_arr[hem_idx]
         phi_arr = phi_arr[hem_idx]
         et_fp = et_fp[hem_idx]
         hem_arr = hem_arr[hem_idx]
+        eq_lead_arr = eq_lead_arr[hem_idx]
 
     # フットプリントの種類で場合分け
     if target_fp == 'MAW':
@@ -277,6 +283,7 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
         phi_arr = phi_arr[fp_idx]
         et_fp = et_fp[fp_idx]
         hem_arr = hem_arr[fp_idx]
+        eq_lead_arr = eq_lead_arr[fp_idx]
     elif target_fp == 'TEB':
         fp_idx = np.where(np.abs(hem_arr) == 101)
         if FLIP is True:
@@ -285,8 +292,9 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
         phi_arr = phi_arr[fp_idx]
         et_fp = et_fp[fp_idx]
         hem_arr = hem_arr[fp_idx]
+        eq_lead_arr = eq_lead_arr[fp_idx]
 
-    return rho_arr, phi_arr, et_fp, hem_arr
+    return rho_arr, phi_arr, et_fp, hem_arr, eq_lead_arr
 
 
 # %% GANYMEDE ONLY === read the current constant
@@ -698,24 +706,27 @@ def Obsresults_back(PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP):
     phi_arr = np.zeros(3)
     et_fp = np.zeros(3)
     hem_arr = np.zeros(3)
+    eq_lead_arr = np.zeros(3)
 
     for i in PJ_LIST:
         for j in TARGET_FP:
-            rho_arr1, phi_arr1, et_fp1, hem_arr1 = read2backtraced(
+            rho_arr1, phi_arr1, et_fp1, hem_arr1, eq_lead_arr1 = read2backtraced(
                 [i], target_moon=TARGET_MOON, target_fp=j, target_hem=TARGET_HEM, FLIP=FLIP)
 
             rho_arr = np.append(rho_arr, rho_arr1)
             phi_arr = np.append(phi_arr, phi_arr1)
             et_fp = np.append(et_fp, et_fp1)
             hem_arr = np.append(hem_arr, hem_arr1)
+            eq_lead_arr = np.append(eq_lead_arr, eq_lead_arr1)
 
     # 余計な部分を削除
     rho_arr = rho_arr[3:]
     phi_arr = phi_arr[3:]
     et_fp = et_fp[3:]
     hem_arr = hem_arr[3:]
+    eq_lead_arr = eq_lead_arr[3:]
 
-    return rho_arr, phi_arr, et_fp, hem_arr
+    return rho_arr, phi_arr, et_fp, hem_arr, eq_lead_arr
 
 
 # %% Calculate the error for west longitude of the moon
@@ -917,20 +928,11 @@ def main():
                                                         TARGET_MOON)
 
     if USE_BACKTRACED:
-        _, phi_arr, et_fp2, hem_arr = Obsresults_back(PJ_LIST,
-                                                      TARGET_MOON,
-                                                      TARGET_FP,
-                                                      TARGET_HEM,
-                                                      FLIP)
-
-        # Equatorial lead angle:
-        # phi_arr is the backtraced west longitude of the footprint
-        # field line, and the equatorial lead angle is defined as
-        # below.
-        eqlead_fp = moon_S3wlon - phi_arr
-        for i in range(eqlead_fp.size):
-            if eqlead_fp[i] < 0:
-                eqlead_fp[i] += 360.
+        _, phi_arr, et_fp2, hem_arr, eq_lead_fp = Obsresults_back(PJ_LIST,
+                                                                  TARGET_MOON,
+                                                                  TARGET_FP,
+                                                                  TARGET_HEM,
+                                                                  FLIP)
 
         print('hem_arr:', hem_arr)
         print('Eq map diff.: ', wlon_fp_eq-phi_arr)
@@ -1065,27 +1067,27 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '1001/20260421_103'
+    exname = '006/20260626_001'
 
     # Input about Juno observation
-    TARGET_MOON = 'Ganymede'
+    TARGET_MOON = 'Io'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [22]
+    PJ_LIST = [9]
     TARGET_HEM = 'N'      # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'
 
-    SELECT_MODE = '2'
+    SELECT_MODE = '0'
     # '0': Normal
     # '1': CURRENT_CONSTANT_OFFSET
     # '2': Ti_FROM_DISK_THICKNESS
 
     # Input about the paremeter space
-    Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'
-    ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 150, 'log'
-    Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
+    Ai_0, Ai_1, Ai_num, Ai_scale = 20.0, 24.0, 3, 'linear'
+    ni_0, ni_1, ni_num, ni_scale = 500.0, 5000.0, 50, 'log'
+    Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 1000.0, 60, 'log'
 
     # Number of parallel processes
-    parallel = 2
+    parallel = 16
 
     main()
