@@ -21,7 +21,8 @@ import JupiterMag as jm
 
 # SPICE KERNELS
 import spiceypy as spice
-spice.furnsh('kernel/cassMetaK.txt')
+spice.furnsh(
+    '/Users/shin/Documents/Research/Juno/UVS/Code/Juno_UVS_deimos/kernel/cassMetaK.txt')
 radii = spice.bodvrd("JUPITER", "RADII", 3)[1]
 a = radii[0]
 c = radii[2]

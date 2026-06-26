@@ -16,6 +16,7 @@ from MyPlotRecipe.legend_shadow import legend_shadow
 
 from RAW_trace_2 import load_best_fit
 from Leadangle_fit_JunoUVS import moonS3wlon_arr
+from Leadangle_fit_JunoUVS import spice_moonS3
 
 import spiceypy as spice
 import JupiterMag as jm
@@ -57,7 +58,7 @@ Fllen_ga = 39.17*RJ     # Field line length [m]
 
 
 # %% Calculate position of the target moon using Spiceypy
-def spice_moonS3(et: float, MOON: str):
+def spice_moonS3_A(et: float, MOON: str):
     """
     Args:
         et (float): Time
