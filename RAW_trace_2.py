@@ -318,6 +318,12 @@ def load_best_fit(exname, ni_num, Ai_num, Ti_num, Zi, Te, retrieval):
         Ti_best = Ti_3d[min_idx][0]*1.1    # 10%増にしてみる
         Hp_best = scaleheight(Ai_best, Zi, Ti_best, Te)
         ni_best = FTMC_best/((1E+6)*Ai_best*AMU2KG*Hp_best*math.sqrt(np.pi))
+    if retrieval == 'hot2':
+        FTMC_best = FTMC_3d[min_idx][0]    # FTMCは保存する -> MAWの位置は`best`と変わらない
+        Ai_best = Ai_3d[min_idx][0]
+        Ti_best = Ti_3d[min_idx][0]*1.2    # 20%増にしてみる
+        Hp_best = scaleheight(Ai_best, Zi, Ti_best, Te)
+        ni_best = FTMC_best/((1E+6)*Ai_best*AMU2KG*Hp_best*math.sqrt(np.pi))
     # 高密低温の場合
     elif retrieval == 'cold':
         FTMC_best = FTMC_3d[min_idx][0]    # FTMCは保存する -> MAWの位置は`best`と変わらない
@@ -325,12 +331,12 @@ def load_best_fit(exname, ni_num, Ai_num, Ti_num, Zi, Te, retrieval):
         Ti_best = Ti_3d[min_idx][0]*0.9    # 10%減にしてみる
         Hp_best = scaleheight(Ai_best, Zi, Ti_best, Te)
         ni_best = FTMC_best/((1E+6)*Ai_best*AMU2KG*Hp_best*math.sqrt(np.pi))
-    elif retrieval == 'dense':
-        idx_dense = np.argmax(ni_3d_1)
-        Ai_best = Ai_3d_1[idx_dense]
-        ni_best = ni_3d_1[idx_dense]
-        Ti_best = Ti_3d_1[idx_dense]
-        Hp_best = H_3d_1[idx_dense]
+    elif retrieval == 'cold2':
+        FTMC_best = FTMC_3d[min_idx][0]    # FTMCは保存する -> MAWの位置は`best`と変わらない
+        Ai_best = Ai_3d[min_idx][0]
+        Ti_best = Ti_3d[min_idx][0]*0.8    # 20%減にしてみる
+        Hp_best = scaleheight(Ai_best, Zi, Ti_best, Te)
+        ni_best = FTMC_best/((1E+6)*Ai_best*AMU2KG*Hp_best*math.sqrt(np.pi))
     # best-fit parameters
     elif retrieval == 'best':
         Ai_best = Ai_3d[min_idx][0]
@@ -971,7 +977,7 @@ if __name__ == '__main__':
                50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'best'      # 'best', 'hot', 'dense'
+    retrieval = 'cold'      # 'best', 'hot', 'cold'
 
     print('Retrieval mode:', retrieval)
 
