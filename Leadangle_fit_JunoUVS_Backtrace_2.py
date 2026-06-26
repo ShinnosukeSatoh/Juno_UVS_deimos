@@ -36,8 +36,7 @@ jm.Internal.Config(Model='jrm33', CartesianIn=True,
 jm.Con2020.Config(equation_type='analytic')
 
 
-spice.furnsh(
-    '/Users/shin/Documents/Research/Juno/UVS/Code/Juno_UVS_deimos/kernel/cassMetaK.txt')
+spice.furnsh('kernel/cassMetaK.txt')
 savpath = 'data/Satellite_FP_JRM33.sav'
 
 
