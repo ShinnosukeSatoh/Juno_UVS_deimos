@@ -15,6 +15,7 @@ from MyPlotRecipe.SharedX import ShareXaxis
 from MyPlotRecipe.legend_shadow import legend_shadow
 
 from RAW_trace_2 import load_best_fit
+from Leadangle_fit_JunoUVS import moonS3wlon_arr
 
 import spiceypy as spice
 import JupiterMag as jm
@@ -117,35 +118,6 @@ def local_time_moon(et: float, MOON: str, abcorr='none'):
     #     local_time += -24
 
     return local_time
-
-
-# %% System III position of the target moon from et_fp array.
-def moonS3wlon_arr(et_fp, moon: str):
-    if moon == 'Io':
-        target = 'IO'
-    elif moon == 'Europa':
-        target = 'EUROPA'
-    elif moon == 'Ganymede':
-        target = 'GANYMEDE'
-
-    moon_x0 = np.zeros(et_fp.shape)
-    moon_y0 = np.zeros(et_fp.shape)
-    moon_z0 = np.zeros(et_fp.shape)
-    moon_r0 = np.zeros(et_fp.shape)
-    moon_theta0 = np.zeros(et_fp.shape)
-    moon_phi0 = np.zeros(et_fp.shape)
-    moon_S3wlon0 = np.zeros(et_fp.shape)
-    for i in range(et_fp.size):
-        x0, y0, z0, r0, theta0, phi0, S3wlon0 = spice_moonS3(
-            et=et_fp[i], MOON=target)
-        moon_x0[i] = x0
-        moon_y0[i] = y0
-        moon_z0[i] = z0
-        moon_r0[i] = r0
-        moon_theta0[i] = theta0
-        moon_phi0[i] = phi0
-        moon_S3wlon0[i] = S3wlon0
-    return moon_x0, moon_y0, moon_z0, moon_r0, moon_theta0, moon_phi0, moon_S3wlon0
 
 
 # %% Read the savfile
@@ -764,7 +736,7 @@ if __name__ == '__main__':
                50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'hot'                 # 'best', 'hot', 'dense'
+    retrieval = 'cold'                 # 'best', 'hot', 'dense'
 
     # PJ03 2016-12-11T17:51:10
     target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])

@@ -977,7 +977,7 @@ if __name__ == '__main__':
                50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'cold'      # 'best', 'hot', 'cold'
+    retrieval = 'cold2'      # 'best', 'hot', 'cold'
 
     print('Retrieval mode:', retrieval)
 
