@@ -10,9 +10,6 @@ import numpy as np
 import re
 import glob
 import os
-import sys
-sys.path.append(
-    '/Users/shin/Documents/Research/Juno/UVS/Code/Juno_UVS_deimos')
 
 from Leadangle_fit_JunoUVS import moonS3wlon_arr    # noqa: E402
 from Leadangle_fit_JunoUVS import spice_moonS3      # noqa: E402
@@ -1225,7 +1222,11 @@ def apply_plot_overlay(
     if Shin:
         if use_north:
             if current_pj == 9:
-                moonS3wlon_arr(np.array([t0_n]), 'Io')
+                _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(
+                    np.array([t0_n]), 'Io')
+                fp_traced_arr = fp_traced(moon_S3wlon0[0])      # [deg]
+                polar_fp_prediction_plot(ax, fp_traced_arr)
+
                 # PJ09N Spin 533_534
                 MAW_pos = np.radians(np.array([77.377, 91.822]))
                 RAW_1_pos = np.radians(np.array([79.29, 81.539]))
@@ -2114,6 +2115,56 @@ def target_time():
 # ------------------------------------------------------------
 # Main routine
 # ------------------------------------------------------------
+def fp_traced(target_moon_s3_obs):
+    """
+    Args:
+        target_moon_s3_obs (float): moon position at the time of the footprint observation [deg]
+
+    Returns:
+        _type_: _description_
+    """
+    filename = 'data_'+TARGET_MOON[0]+'FP_interp_map_' + \
+        str(int(alt_ref[fp_alt_target]))+'km_'+retrieval+'.txt'
+    interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
+    moon_s3_obs = interp[:, 0]      # [deg]
+    idx = np.argmin(abs(moon_s3_obs-target_moon_s3_obs))
+
+    positions = interp[idx, :]
+    print('interp.shape:', interp.shape)
+    print('positions.shape:', positions.shape)
+    return positions
+
+
+def polar_fp_prediction_plot(ax, fp_traced_arr):
+    # MAW & TEB
+    for j in range(2*(3+reflections)):
+        colat = fp_traced_arr[3*j+1]    # [rad]
+        wlon = fp_traced_arr[3*j+2]     # [rad]
+        sign = -np.sign(0.5*np.pi-colat)
+        if j in [3+reflections-2, 3+reflections-1, 2*(3+reflections)-2, 2*(3+reflections)-1]:
+            marker = 'D'
+        else:
+            marker = 'o'
+        if 90.0-np.degrees(colat) >= 0:
+            ax.scatter(
+                -np.sin(colat)*np.sin(2*np.pi-wlon),
+                sign*np.sin(colat)*np.cos(2*np.pi-wlon),
+                marker=marker,
+                fc=UC.red, ec='w', s=10.0, zorder=2.0
+            )
+        else:
+            ax.scatter(
+                -np.sin(colat)*np.sin(2*np.pi-wlon),
+                sign*np.sin(colat)*np.cos(2*np.pi-wlon),
+                marker=marker,
+                fc=UC.blue, ec='w', s=10.0, zorder=2.0,
+            )
+    return None
+
+
+# ------------------------------------------------------------
+# Main routine
+# ------------------------------------------------------------
 def main():
     dt = 1.2 * 60.0        # Time window size
     data_root = "/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Data/JunoUVS_SSI_Data"
@@ -2171,9 +2222,34 @@ def main():
 # Entry point
 # ------------------------------------------------------------
 if __name__ == "__main__":
-    current_pj = 9
-    use_north = True
+    # Name of execution
+    exname = '003/20250516_054'
+
+    # Input about Juno observation
+    TARGET_MOON = 'Io'
+    PJ_LIST = [9]
+    TARGET_HEM = 'N'
+    alt_ref = [1500.0, 1400.0, 1300.0, 1200.0, 1100.0,
+               1000.0, 900.0, 800.0, 700.0, 600.0,
+               500.0, 400.0, 300.0, 200.0, 100.0,
+               50.0, 10.0, 5.0]
+    reflections = 8                     # fixed at 8
+    reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
+    fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
+    retrieval = 'cold'                 # 'best', 'hot', 'dense'
+
+    # Don't need to change below
+    current_pj = PJ_LIST[0]
+
+    use_north = False
     use_south = False
+    if TARGET_HEM == 'N':
+        use_north = True
+    elif TARGET_HEM == 'S':
+        use_south = True
+    elif TARGET_HEM == 'both':
+        use_north = True
+        use_south = True
 
     meta_kernel = "./KERNELS/Meta_kernel_all.ker"
     load_spice_kernels(meta_kernel)
