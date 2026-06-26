@@ -337,6 +337,12 @@ def load_best_fit(exname, ni_num, Ai_num, Ti_num, Zi, Te, retrieval):
         Ti_best = Ti_3d[min_idx][0]*0.8    # 20%減にしてみる
         Hp_best = scaleheight(Ai_best, Zi, Ti_best, Te)
         ni_best = FTMC_best/((1E+6)*Ai_best*AMU2KG*Hp_best*math.sqrt(np.pi))
+    elif retrieval == 'cold5':
+        FTMC_best = FTMC_3d[min_idx][0]    # FTMCは保存する -> MAWの位置は`best`と変わらない
+        Ai_best = Ai_3d[min_idx][0]
+        Ti_best = Ti_3d[min_idx][0]*0.5    # 50%減にしてみる
+        Hp_best = scaleheight(Ai_best, Zi, Ti_best, Te)
+        ni_best = FTMC_best/((1E+6)*Ai_best*AMU2KG*Hp_best*math.sqrt(np.pi))
     # best-fit parameters
     elif retrieval == 'best':
         Ai_best = Ai_3d[min_idx][0]
@@ -977,7 +983,7 @@ if __name__ == '__main__':
                50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'hot2'      # 'best', 'hot', 'cold'
+    retrieval = 'cold5'      # 'best', 'hot', 'cold'
 
     print('Retrieval mode:', retrieval)
 
