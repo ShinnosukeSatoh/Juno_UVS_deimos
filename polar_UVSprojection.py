@@ -562,7 +562,8 @@ def angular_separation_deg(lon1, lon2):
     return np.abs((lon1 - lon2 + 180.0) % 360.0 - 180.0)
 
 
-def compute_spin_ifp_from_io_lon(hemi_spin, time_et_array, satellite_fp_path="./Input/Satellite_FP_JRM33_LA.sav"):
+def compute_spin_ifp_from_io_lon(hemi_spin, time_et_array,
+                                 satellite_fp_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/Satellite_FP_JRM33_LA.sav"):
     satellite_fp = load_satellite_fp_for_hemisphere(
         hemi_spin, sav_path=satellite_fp_path)
 
@@ -598,7 +599,7 @@ def compute_midpoint_ifp_position(
     tend,
     proj_lat,
     proj_lon,
-    satellite_fp_path="./Input/Satellite_FP_JRM33_LA.sav",
+    satellite_fp_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/Satellite_FP_JRM33_LA.sav",
 ):
     tstart_et = utc_to_et(tstart)
     tend_et = utc_to_et(tend)
@@ -772,7 +773,8 @@ def _normalize_oval_array(oval_array):
     }
 
 
-def load_aurora_ovals_for_hemisphere(hemi_spin, sav_path="./Input/OvalBonfond2017.sav"):
+def load_aurora_ovals_for_hemisphere(hemi_spin,
+                                     sav_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/OvalBonfond2017.sav"):
     hemi_key = hemi_spin.upper()
 
     if hemi_key in OVAL_CACHE:
@@ -803,7 +805,8 @@ def load_aurora_ovals_for_hemisphere(hemi_spin, sav_path="./Input/OvalBonfond201
 # ------------------------------------------------------------
 # Satellite footprint helpers
 # ------------------------------------------------------------
-def load_satellite_fp_for_hemisphere(hemi_spin, sav_path="./Input/Satellite_FP_JRM33_LA.sav"):
+def load_satellite_fp_for_hemisphere(hemi_spin,
+                                     sav_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/Satellite_FP_JRM33_LA.sav"):
     hemi_key = hemi_spin.upper()
 
     if hemi_key in SATELLITE_FP_CACHE:
@@ -853,8 +856,8 @@ def prepare_projection_overlay(
     proj_lon,
     dlon=90.0,
     dlat=10.0,
-    sav_path="./Input/OvalBonfond2017.sav",
-    satellite_fp_path="./Input/Satellite_FP_JRM33_LA.sav",
+    sav_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/OvalBonfond2017.sav",
+    satellite_fp_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/Satellite_FP_JRM33_LA.sav",
 ):
     cache_key = (
         hemi_spin.upper(),
@@ -1222,7 +1225,7 @@ def apply_plot_overlay(
     if Shin:
         if use_north:
             if current_pj == 9:
-                moonS3wlon_arr(t0_n, 'Io')
+                moonS3wlon_arr(np.array([t0_n]), 'Io')
                 # PJ09N Spin 533_534
                 MAW_pos = np.radians(np.array([77.377, 91.822]))
                 RAW_1_pos = np.radians(np.array([79.29, 81.539]))
@@ -1683,7 +1686,7 @@ def map_uvs_data(
     spin_ifp = compute_spin_ifp_from_io_lon(
         hemi_spin=hemi_spin,
         time_et_array=nadir_times_et,
-        satellite_fp_path="./Input/Satellite_FP_JRM33_LA.sav",
+        satellite_fp_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/Satellite_FP_JRM33_LA.sav",
     )
 
     x_ifp_spin_all, y_ifp_spin_all = ortho_latlon_to_xy(
@@ -1707,7 +1710,7 @@ def map_uvs_data(
         tend=tend,
         proj_lat=proj_lat,
         proj_lon=proj_lon,
-        satellite_fp_path="./Input/Satellite_FP_JRM33_LA.sav",
+        satellite_fp_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/Satellite_FP_JRM33_LA.sav",
     )
 
     avg_x_ifp_spin = midpoint_ifp["avg_x_ifp_spin"]
@@ -1721,8 +1724,8 @@ def map_uvs_data(
         proj_lon=proj_lon,
         dlon=30.0,
         dlat=10.0,
-        sav_path="./Input/OvalBonfond2017.sav",
-        satellite_fp_path="./Input/Satellite_FP_JRM33_LA.sav",
+        sav_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/OvalBonfond2017.sav",
+        satellite_fp_path="/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/Input/Satellite_FP_JRM33_LA.sav",
     )
 
     print()
@@ -2172,7 +2175,7 @@ if __name__ == "__main__":
     use_north = True
     use_south = False
 
-    meta_kernel = "/Users/shin/Documents/Research/Juno/UVS/Code/PolarProjection/KERNELS/Meta_kernel_all.ker"
+    meta_kernel = "./KERNELS/Meta_kernel_all.ker"
     load_spice_kernels(meta_kernel)
 
     t0_n_list, t1_n_list, t0_s_list, t1_s_list = target_time()
