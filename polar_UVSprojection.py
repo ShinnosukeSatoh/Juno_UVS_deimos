@@ -2236,7 +2236,7 @@ if __name__ == "__main__":
     reflections = 8                     # fixed at 8
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'cold'                 # 'best', 'hot', 'dense'
+    retrieval = 'best'                 # 'best', 'hot', 'dense'
 
     # Don't need to change below
     current_pj = PJ_LIST[0]
