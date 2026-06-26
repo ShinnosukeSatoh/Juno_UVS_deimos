@@ -1,6 +1,8 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+from scipy.optimize import brentq
+
 from SharedX import ShareXaxis
 from UniversalColor import UniversalColor
 
@@ -18,8 +20,8 @@ import spiceypy as spice
 spice.furnsh('kernel/cassMetaK.txt')
 radii = spice.bodvrd("JUPITER", "RADII", 3)[1]
 RJ_km = radii[0]
-c = radii[2]
-f = (RJ_km - c) / RJ_km
+RJ_pole = radii[2]
+f = (RJ_km - RJ_pole) / RJ_km
 
 UC = UniversalColor()
 UC.set_palette()
@@ -149,30 +151,30 @@ for PJ in PJ_LIST:
                        CartesianOut=True, Degree=18)
     jm.Con2020.Config(mu_i=mu_i_default*1.0, equation_type='analytic')
     for i in range(rho_arr.size):
-        """latitude = lat_fp[i]
-        theta = np.radians(90.0-latitude)
+        lat_c = math.radians(lat_fp[i])
+
+        def calc_r_gr(r):
+            """
+            - `r` [km]
+            - `lat_c` [rad]
+            - `target_alt` [km]
+            """
+            x = r*math.cos(lat_c)
+            z = r*math.sin(lat_c)
+
+            _, _, alt = spice.recpgr('Jupiter',
+                                     np.array([x, 0.0, z]),
+                                     RJ_km,
+                                     f)
+            return alt - 900.0      # [km]
+
+        r_c = brentq(calc_r_gr, RJ_pole, RJ_km+5000.0)  # [km]
+
+        theta = np.radians(90.0-lat_fp[i])
         phi = np.radians(360.0-wlon_fp[i])
-
-        # radius of surface
-        rs = calc_r_surf(np.radians(latitude))
-        r = rs/RJ+(900.0E+3/RJ)   # [RJ]
-
-        x0 = r*np.sin(theta)*np.cos(phi)
-        y0 = r*np.sin(theta)*np.sin(phi)
-        z0 = r*np.cos(theta)"""
-
-        # Jovigraphic (Altitude 900 km) -> Jovicentric
-        lon_gr = math.radians(wlon_fp[i])
-        lat_gr = math.radians(lat_fp[i])
-        pos = spice.pgrrec('Jupiter',
-                           lon_gr,
-                           lat_gr,
-                           900.0,
-                           RJ_km,
-                           f)
-        x0 = pos[0]/RJ_km
-        y0 = pos[1]/RJ_km
-        z0 = pos[2]/RJ_km
+        x0 = r_c*np.sin(theta)*np.cos(phi)/RJ_km
+        y0 = r_c*np.sin(theta)*np.sin(phi)/RJ_km
+        z0 = r_c*np.cos(theta)/RJ_km
 
         # create trace objects, pass starting position(s) x0,y0,z0 in RJ
         T1 = jm.TraceField(x0, y0, z0, Verbose=True,

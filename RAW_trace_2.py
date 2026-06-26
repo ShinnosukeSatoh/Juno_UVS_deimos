@@ -968,18 +968,18 @@ if __name__ == '__main__':
     Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
     Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
     reflections = 8         # fixed at 8
-    alt_ref = [1500.0, 1200.0, 1000.0, 900.0,
-               800.0, 700.0, 600.0, 500.0,
-               400.0, 300.0, 200.0, 100.0,
-               10.0, 5.0]
+    alt_ref = [1500.0, 1400.0, 1300.0, 1200.0, 1100.0,
+               1000.0, 900.0, 800.0, 700.0, 600.0,
+               500.0, 400.0, 300.0, 200.0, 100.0,
+               50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
-    fp_alt_target = -6                  # ALWAYS NEGATIVE!!!
-    retrieval = 'hot'      # 'best', 'hot', 'dense'
+    fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
+    retrieval = 'best'      # 'best', 'hot', 'dense'
 
     print('Retrieval mode:', retrieval)
 
     # Number of parallel processes
-    parallel = 10
+    parallel = 12
 
     # Grid
     d_phi = 0.6    # [deg]
