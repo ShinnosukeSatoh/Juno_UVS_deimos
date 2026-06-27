@@ -966,11 +966,11 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_054'
+    exname = '003/20250516_047'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [9]
-    hem = 'N'
+    PJ_num = [3]
+    hem = 'both'
     Ai_num = 3
     ni_num = 50
     Ti_num = 60
@@ -983,12 +983,12 @@ if __name__ == '__main__':
                50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'cold5'      # 'best', 'hot', 'cold'
+    retrieval = 'cold2'      # 'best', 'hot', 'cold'
 
     print('Retrieval mode:', retrieval)
 
     # Number of parallel processes
-    parallel = 12
+    parallel = 10
 
     # Grid
     d_phi = 0.6    # [deg]

@@ -10,7 +10,9 @@ import numpy as np
 import re
 import glob
 import os
+import Leadangle_wave as Wave
 
+from RAW_trace_2 import load_best_fit               # noqa: E402
 from Leadangle_fit_JunoUVS import moonS3wlon_arr    # noqa: E402
 from Leadangle_fit_JunoUVS import spice_moonS3      # noqa: E402
 
@@ -58,6 +60,19 @@ JUNO_PJ_TIMES = {
     31: "2020-12-30 21:45:44.567",
     32: "2021-02-21 17:40:34.245",
 }
+
+
+# ------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------
+MU0 = 1.26E-6            # 真空中の透磁率
+AMU2KG = 1.66E-27        # 原子質量をkgに変換するファクタ [kg amu^-1]
+RJ = 71492E+3            # JUPITER RADIUS [m]
+MJ = 1.90E+27            # JUPITER MASS [kg]
+C = 2.99792E+8           # LIGHT SPEED [m/s]
+G = 6.67E-11             # 万有引力定数  [m^3 kg^-1 s^-2]
+e = 1.60218E-19          # 素電荷 [J]
+me = 9.10E-31            # 電子質量 [kg]
 
 
 # ------------------------------------------------------------
@@ -1211,13 +1226,14 @@ def apply_plot_overlay(
         linewidth=1.2,
     )
 
-    ax.plot(
-        overlay["x_ifp"],
-        overlay["y_ifp"],
-        color="red",
-        linewidth=0.8,
-        alpha=0.5,
-    )
+    if Shin is False:
+        ax.plot(
+            overlay["x_ifp"],
+            overlay["y_ifp"],
+            color="red",
+            linewidth=0.8,
+            alpha=0.5,
+        )
 
     if Shin:
         if use_north:
@@ -1225,213 +1241,12 @@ def apply_plot_overlay(
                 _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(
                     np.array([t0_n]), 'Io')
                 fp_traced_arr = fp_traced(moon_S3wlon0[0])      # [deg]
-                polar_fp_prediction_plot(ax, fp_traced_arr)
-
-                # PJ09N Spin 533_534
-                MAW_pos = np.radians(np.array([77.377, 91.822]))
-                RAW_1_pos = np.radians(np.array([79.29, 81.539]))
-                RAW_2_pos = np.radians(np.array([82.492, 39.267]))
-                RAW_3_pos = np.radians(np.array([82.495, 19.924]))
-                RAW_4_pos = np.radians(np.array([79.779, 342.412]))
-                RAW_5_pos = np.radians(np.array([78.464, 334.307]))
-                RAW_6_pos = np.radians(np.array([75.585, 320.116]))
-                RAW_7_pos = np.radians(np.array([74.56, 315.181]))
-                RAW_8_pos = np.radians(np.array([72.823, 305.347]))
-                TEB_1_pos = np.radians(np.array([75.258, 99.272]))
-                TEB_2_pos = np.radians(np.array([80.707, 70.366]))
-
-                # hot
-                MAW_pos = np.radians(np.array([77.37, 91.854]))
-                RAW_1_pos = np.radians(np.array([79.313, 81.393]))
-                RAW_2_pos = np.radians(np.array([82.495, 39.136]))
-                RAW_3_pos = np.radians(np.array([82.486, 19.484]))
-                RAW_4_pos = np.radians(np.array([79.758, 342.271]))
-                RAW_5_pos = np.radians(np.array([78.425, 334.093]))
-                RAW_6_pos = np.radians(np.array([75.562, 320.008]))
-                RAW_7_pos = np.radians(np.array([74.528, 315.023]))
-                RAW_8_pos = np.radians(np.array([72.806, 305.229]))
-                TEB_1_pos = np.radians(np.array([75.279, 99.209]))
-                TEB_2_pos = np.radians(np.array([80.709, 70.344]))
-
-                # cold
-                MAW_pos = np.radians(np.array([77.383, 91.797]))
-                RAW_1_pos = np.radians(np.array([79.26, 81.734]))
-                RAW_2_pos = np.radians(np.array([82.488, 39.504]))
-                RAW_3_pos = np.radians(np.array([82.507, 20.538]))
-                RAW_4_pos = np.radians(np.array([79.812, 342.646]))
-                RAW_5_pos = np.radians(np.array([78.521, 334.617]))
-                RAW_6_pos = np.radians(np.array([75.622, 320.291]))
-                RAW_7_pos = np.radians(np.array([74.608, 315.417]))
-                RAW_8_pos = np.radians(np.array([72.851, 305.538]))
-                TEB_1_pos = np.radians(np.array([75.231, 99.348]))
-                TEB_2_pos = np.radians(np.array([80.7, 70.431]))
+                polar_fp_prediction_plot(ax, fp_traced_arr,
+                                         moon_S3wlon0[0],
+                                         -1)
 
         if use_south:
-            # PJ09S Spin 805_806
-            MAW_pos = np.radians(np.array([-60.767, 90.12]))
-            RAW_1_pos = np.radians(np.array([-59.296, 83.55]))
-            RAW_2_pos = np.radians(np.array([-58.412, 78.391]))
-            RAW_3_pos = np.radians(np.array([]))
-            RAW_4_pos = np.radians(np.array([]))
-            RAW_5_pos = np.radians(np.array([]))
-            RAW_6_pos = np.radians(np.array([]))
-            RAW_7_pos = np.radians(np.array([]))
-            RAW_8_pos = np.radians(np.array([]))
-
-        sign = -np.sign(MAW_pos[0])
-        MAW_x = np.sin(0.5*np.pi-MAW_pos[0])*np.cos(2*np.pi-MAW_pos[1])
-        MAW_y = np.sin(0.5*np.pi-MAW_pos[0])*np.sin(2*np.pi-MAW_pos[1])
-        ax.plot(
-            -MAW_y,
-            MAW_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.red,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        RAW_x = np.sin(0.5*np.pi-RAW_1_pos[0])*np.cos(2*np.pi-RAW_1_pos[1])
-        RAW_y = np.sin(0.5*np.pi-RAW_1_pos[0])*np.sin(2*np.pi-RAW_1_pos[1])
-        ax.plot(
-            -RAW_y,
-            RAW_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.lightgreen,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        RAW_x = np.sin(0.5*np.pi-RAW_2_pos[0])*np.cos(2*np.pi-RAW_2_pos[1])
-        RAW_y = np.sin(0.5*np.pi-RAW_2_pos[0])*np.sin(2*np.pi-RAW_2_pos[1])
-        ax.plot(
-            -RAW_y,
-            RAW_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.lightgreen,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        RAW_x = np.sin(0.5*np.pi-RAW_3_pos[0])*np.cos(2*np.pi-RAW_3_pos[1])
-        RAW_y = np.sin(0.5*np.pi-RAW_3_pos[0])*np.sin(2*np.pi-RAW_3_pos[1])
-        ax.plot(
-            -RAW_y,
-            RAW_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.lightgreen,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        RAW_x = np.sin(0.5*np.pi-RAW_4_pos[0])*np.cos(2*np.pi-RAW_4_pos[1])
-        RAW_y = np.sin(0.5*np.pi-RAW_4_pos[0])*np.sin(2*np.pi-RAW_4_pos[1])
-        ax.plot(
-            -RAW_y,
-            RAW_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.lightgreen,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        RAW_x = np.sin(0.5*np.pi-RAW_5_pos[0])*np.cos(2*np.pi-RAW_5_pos[1])
-        RAW_y = np.sin(0.5*np.pi-RAW_5_pos[0])*np.sin(2*np.pi-RAW_5_pos[1])
-        ax.plot(
-            -RAW_y,
-            RAW_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.lightgreen,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        RAW_x = np.sin(0.5*np.pi-RAW_6_pos[0])*np.cos(2*np.pi-RAW_6_pos[1])
-        RAW_y = np.sin(0.5*np.pi-RAW_6_pos[0])*np.sin(2*np.pi-RAW_6_pos[1])
-        ax.plot(
-            -RAW_y,
-            RAW_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.lightgreen,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        RAW_x = np.sin(0.5*np.pi-RAW_7_pos[0])*np.cos(2*np.pi-RAW_7_pos[1])
-        RAW_y = np.sin(0.5*np.pi-RAW_7_pos[0])*np.sin(2*np.pi-RAW_7_pos[1])
-        ax.plot(
-            -RAW_y,
-            RAW_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.lightgreen,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        RAW_x = np.sin(0.5*np.pi-RAW_8_pos[0])*np.cos(2*np.pi-RAW_8_pos[1])
-        RAW_y = np.sin(0.5*np.pi-RAW_8_pos[0])*np.sin(2*np.pi-RAW_8_pos[1])
-        ax.plot(
-            -RAW_y,
-            RAW_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.lightgreen,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        TEB_x = np.sin(0.5*np.pi-TEB_1_pos[0])*np.cos(2*np.pi-TEB_1_pos[1])
-        TEB_y = np.sin(0.5*np.pi-TEB_1_pos[0])*np.sin(2*np.pi-TEB_1_pos[1])
-        ax.plot(
-            -TEB_y,
-            TEB_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.pink,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
-
-        TEB_x = np.sin(0.5*np.pi-TEB_2_pos[0])*np.cos(2*np.pi-TEB_2_pos[1])
-        TEB_y = np.sin(0.5*np.pi-TEB_2_pos[0])*np.sin(2*np.pi-TEB_2_pos[1])
-        ax.plot(
-            -TEB_y,
-            TEB_x*sign,
-            linestyle="None",
-            marker="D",
-            color=UC.pink,
-            markeredgecolor="k",
-            markersize=3.5,
-            markeredgewidth=1.0,
-            zorder=8,
-        )
+            0
 
     if Shin is not True:
         if x_selected_pixels is not None and y_selected_pixels is not None:
@@ -2135,30 +1950,102 @@ def fp_traced(target_moon_s3_obs):
     return positions
 
 
-def polar_fp_prediction_plot(ax, fp_traced_arr):
-    # MAW & TEB
-    for j in range(2*(3+reflections)):
+# ------------------------------------------------------------
+# Generate the footpath of MAW
+# ------------------------------------------------------------
+def fp_path():
+    filename = 'data_'+TARGET_MOON[0]+'FP_interp_map_' + \
+        str(int(alt_ref[fp_alt_target]))+'km_'+retrieval+'.txt'
+    interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
+    moon_s3_obs = interp[:, 0]
+
+    # j=1: colatitude, j=2: w-longitude [rad]
+    pos_N_MAW = interp[:, 1:3]
+    pos_S_MAW = interp[:, 1+3*(3+reflections):3*(3+reflections)+3]
+
+    pos_S_RAW1 = interp[:, 4:6]
+    pos_N_RAW1 = interp[:, 4+3*(3+reflections):3*(3+reflections)+6]
+
+    return moon_s3_obs, pos_N_MAW, pos_S_MAW, pos_N_RAW1, pos_S_RAW1
+
+
+# ------------------------------------------------------------
+# Instantaneous footprint position
+# ------------------------------------------------------------
+def instantaneous(target_moon_s3_obs, hem):
+    Ai_best, ni_best, _, Hp_best = load_best_fit(exname, ni_num,
+                                                 Ai_num, Ti_num,
+                                                 Zi, Te,
+                                                 retrieval)
+
+    s3wlon_t0 = np.radians(target_moon_s3_obs)
+
+    S_A0 = Wave.Awave().tracefield(r_moon,
+                                   s3wlon_t0,
+                                   0.0)
+
+    # Initital trace
+    # -> Instantaneous position at a selected altitude
+    _, _, s3wlon, theta_s3, _, alt_flag = Wave.Awave().trace3_reflect(r_moon,
+                                                                      s3wlon_t0,
+                                                                      0.0,
+                                                                      S_A0,
+                                                                      Ai_best,
+                                                                      ni_best,
+                                                                      Hp_best,
+                                                                      hem)
+    non_0 = np.array(np.where(alt_flag != 0)[0])
+    insta_fp_pos = np.zeros(2)
+    insta_fp_pos[0] = theta_s3[non_0][fp_alt_target]  # Colatitude [rad]
+    insta_fp_pos[1] = s3wlon[non_0][fp_alt_target]    # W.longitude [rad]
+
+    return insta_fp_pos
+
+
+def polar_fp_prediction_plot(ax, fp_traced_arr, target_moon_s3_obs, hem):
+    if hem == -1:
+        j_add = 0
+    elif hem == 1:
+        j_add = 1
+
+    # MAW & RAW & TEB
+    for j in range(3+reflections):
+        j = 2*j + j_add
         colat = fp_traced_arr[3*j+1]    # [rad]
         wlon = fp_traced_arr[3*j+2]     # [rad]
         sign = -np.sign(0.5*np.pi-colat)
+        x_fp = np.sin(colat)*np.cos(2*np.pi-wlon)
+        y_fp = np.sin(colat)*np.sin(2*np.pi-wlon)
         if j in [3+reflections-2, 3+reflections-1, 2*(3+reflections)-2, 2*(3+reflections)-1]:
             marker = 'D'
         else:
             marker = 'o'
-        if 90.0-np.degrees(colat) >= 0:
-            ax.scatter(
-                -np.sin(colat)*np.sin(2*np.pi-wlon),
-                sign*np.sin(colat)*np.cos(2*np.pi-wlon),
-                marker=marker,
-                fc=UC.red, ec='w', s=10.0, zorder=2.0
-            )
-        else:
-            ax.scatter(
-                -np.sin(colat)*np.sin(2*np.pi-wlon),
-                sign*np.sin(colat)*np.cos(2*np.pi-wlon),
-                marker=marker,
-                fc=UC.blue, ec='w', s=10.0, zorder=2.0,
-            )
+        ax.scatter(
+            -y_fp,
+            sign*x_fp,
+            marker=marker,
+            fc=UC.red, ec='w', s=15.0, zorder=2.0
+        )
+
+    # Foot path
+    if hem == -1:
+        _, pos_MAW, _, _, _ = fp_path()
+    elif hem == 1:
+        _, _, pos_MAW, _, _ = fp_path()
+    sort = np.argsort(pos_MAW[:, 1])
+    x_fpath = np.sin(pos_MAW[sort, 0])*np.cos(2*np.pi-pos_MAW[sort, 1])
+    y_fpath = np.sin(pos_MAW[sort, 0])*np.sin(2*np.pi-pos_MAW[sort, 1])
+    ax.plot(-y_fpath, sign*x_fpath, color=UC.red, zorder=1.0)
+
+    # Instantaneous footprint positions
+    insta_fp_pos = instantaneous(target_moon_s3_obs, hem)
+    x_insta_fp = np.sin(insta_fp_pos[0])*np.cos(2*np.pi-insta_fp_pos[1])
+    y_insta_fp = np.sin(insta_fp_pos[0])*np.sin(2*np.pi-insta_fp_pos[1])
+    ax.scatter(
+        -y_insta_fp,
+        sign*x_insta_fp,
+        marker='D', fc='k', ec='w', s=15.0,
+    )
     return None
 
 
@@ -2229,6 +2116,13 @@ if __name__ == "__main__":
     TARGET_MOON = 'Io'
     PJ_LIST = [9]
     TARGET_HEM = 'N'
+    FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
+    Ai_num = 3
+    ni_num = 50
+    Ti_num = 60
+    Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
+    Te = 6.0                # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
+    reflections = 8         # fixed at 8
     alt_ref = [1500.0, 1400.0, 1300.0, 1200.0, 1100.0,
                1000.0, 900.0, 800.0, 700.0, 600.0,
                500.0, 400.0, 300.0, 200.0, 100.0,
@@ -2236,7 +2130,7 @@ if __name__ == "__main__":
     reflections = 8                     # fixed at 8
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'best'                 # 'best', 'hot', 'dense'
+    retrieval = 'cold5'                 # 'best', 'hot', 'dense'
 
     # Don't need to change below
     current_pj = PJ_LIST[0]
@@ -2258,4 +2152,15 @@ if __name__ == "__main__":
     time_index = 0
     t0_n, t1_n = t0_n_list[time_index], t1_n_list[time_index]
     t0_s, t1_s = t0_s_list[time_index], t1_s_list[time_index]
+
+    # Orbital distance at the PJ time
+    if TARGET_HEM == 'N':
+        TARGET_ET = np.array([(t0_n+t1_n)*0.5])
+    elif TARGET_HEM == 'S':
+        TARGET_ET = np.array([(t0_s+t1_s)*0.5])
+    _, _, _, r_moon_obs, _, _, s3wlon_moon_obs = moonS3wlon_arr(TARGET_ET,
+                                                                TARGET_MOON)
+    r_moon = r_moon_obs[0]
+    print('Orbital distance [RJ]:', r_moon/RJ)
+
     main()

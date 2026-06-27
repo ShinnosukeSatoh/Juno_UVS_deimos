@@ -350,7 +350,7 @@ def fp_path():
 
 
 # %% Instantaneous footprint position
-def instantaneous(target_moon_s3_obs):
+def instantaneous(target_moon_s3_obs, hem):
     Ai_best, ni_best, _, Hp_best = load_best_fit(exname, ni_num,
                                                  Ai_num, Ti_num,
                                                  Zi, Te,
@@ -364,38 +364,20 @@ def instantaneous(target_moon_s3_obs):
 
     # Initital trace
     # -> Instantaneous position at a selected altitude
-    hem = -1    # North
-    _, rs_N, s3wlon_N, theta_s3_N, _, alt_flag_N = Wave.Awave().trace3_reflect(r_moon,
-                                                                               s3wlon_t0,
-                                                                               0.0,
-                                                                               S_A0,
-                                                                               Ai_best,
-                                                                               ni_best,
-                                                                               Hp_best,
-                                                                               hem)
-    non_0 = np.array(np.where(alt_flag_N != 0)[0])
-    print('non_0:', non_0)
-    print('alt_flag_N[non_0]:', alt_flag_N[non_0])
-    insta_fp_pos_N = np.zeros(2)
-    insta_fp_pos_N[0] = theta_s3_N[non_0][fp_alt_target]  # Colatitude [rad]
-    insta_fp_pos_N[1] = s3wlon_N[non_0][fp_alt_target]    # W.longitude [rad]
+    _, _, s3wlon, theta_s3, _, alt_flag = Wave.Awave().trace3_reflect(r_moon,
+                                                                      s3wlon_t0,
+                                                                      0.0,
+                                                                      S_A0,
+                                                                      Ai_best,
+                                                                      ni_best,
+                                                                      Hp_best,
+                                                                      hem)
+    non_0 = np.array(np.where(alt_flag != 0)[0])
+    insta_fp_pos = np.zeros(2)
+    insta_fp_pos[0] = theta_s3[non_0][fp_alt_target]  # Colatitude [rad]
+    insta_fp_pos[1] = s3wlon[non_0][fp_alt_target]    # W.longitude [rad]
 
-    # -> Instantaneous position at a selected altitude
-    hem = 1    # South
-    _, rs_t1, s3wlon_t1, theta_s3_t1, _, alt_flag_S = Wave.Awave().trace3_reflect(r_moon,
-                                                                                  s3wlon_t0,
-                                                                                  0.0,
-                                                                                  S_A0,
-                                                                                  Ai_best,
-                                                                                  ni_best,
-                                                                                  Hp_best,
-                                                                                  hem)
-    non_0 = np.array(np.where(alt_flag_S != 0)[0])
-    insta_fp_pos_S = np.zeros(2)
-    insta_fp_pos_S[0] = theta_s3_t1[non_0][fp_alt_target]  # Colatitude [rad]
-    insta_fp_pos_S[1] = s3wlon_t1[non_0][fp_alt_target]    # W.longitude [rad]
-
-    return insta_fp_pos_N, insta_fp_pos_S
+    return insta_fp_pos
 
 
 # %% Lead angle plot
@@ -544,7 +526,8 @@ def polar_plot(fp_traced_arr,
     )
 
     # Instantaneous footprint positions
-    insta_fp_pos_N, insta_fp_pos_S = instantaneous(target_moon_s3_obs)
+    insta_fp_pos_N = instantaneous(target_moon_s3_obs, -1)
+    insta_fp_pos_S = instantaneous(target_moon_s3_obs, 1)
     F.ax.scatter(
         math.sin(insta_fp_pos_N[0])*math.cos(2*np.pi-insta_fp_pos_N[1]),
         math.sin(insta_fp_pos_N[0])*math.sin(2*np.pi-insta_fp_pos_N[1]),
@@ -737,7 +720,7 @@ if __name__ == '__main__':
                50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'hot2'                 # 'best', 'hot', 'dense'
+    retrieval = 'cold5'                 # 'best', 'hot', 'dense'
 
     # PJ03 2016-12-11T17:51:10
     target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])
