@@ -14,7 +14,7 @@ from Leadangle_fit_JunoUVS import moonS3wlon_arr
 from Leadangle_fit_JunoUVS import read_disk_thick_coef
 from column_mass import calc as column_calc
 from UniversalColor import UniversalColor
-from SharedX import ShareXaxis
+from MyPlotRecipe.SharedX import ShareXaxis
 from legend_shadow import legend_shadow
 
 import JupiterMag as jm
