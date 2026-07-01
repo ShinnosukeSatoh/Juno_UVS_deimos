@@ -1199,7 +1199,7 @@ def apply_plot_overlay(
             overlay["xlat"][:, ilon],
             overlay["ylat"][:, ilon],
             color="white",
-            linewidth=0.8,
+            linewidth=0.7,
             alpha=0.9,
         )
 
@@ -1208,22 +1208,22 @@ def apply_plot_overlay(
             overlay["xlon"][ilat, :],
             overlay["ylon"][ilat, :],
             color="white",
-            linewidth=0.8,
+            linewidth=0.7,
             alpha=0.9,
         )
 
     ax.plot(
         overlay["x_inner_oval"],
         overlay["y_inner_oval"],
-        color="orange",
-        linewidth=1.2,
+        color=UC.orange,
+        linewidth=1.0,
     )
 
     ax.plot(
         overlay["x_outer_oval"],
         overlay["y_outer_oval"],
-        color="orange",
-        linewidth=1.2,
+        color=UC.orange,
+        linewidth=1.0,
     )
 
     if Shin is False:
@@ -1297,10 +1297,6 @@ def apply_plot_overlay(
             markeredgewidth=1.2,
             zorder=8,
         )
-
-    if Shin:
-        print('x_ifp_last:', x_ifp_last)
-        print('y_ifp_last:', y_ifp_last)
 
 
 def style_axes(ax, hemi_spin, xlim, ylim):
@@ -1382,12 +1378,12 @@ def plot_brightness_and_exposure(
     apply_plot_overlay(
         axes[0],
         overlay,
-        x_ifp_spin=x_ifp_spin,
-        y_ifp_spin=y_ifp_spin,
-        x_ifp_first=x_ifp_first,
-        y_ifp_first=y_ifp_first,
-        x_ifp_last=x_ifp_last,
-        y_ifp_last=y_ifp_last,
+        x_ifp_spin=None,
+        y_ifp_spin=None,
+        x_ifp_first=None,
+        y_ifp_first=None,
+        x_ifp_last=None,
+        y_ifp_last=None,
         x_selected_pixels=x_selected_pixels,
         y_selected_pixels=y_selected_pixels,
     )
@@ -1417,12 +1413,12 @@ def plot_brightness_and_exposure(
     apply_plot_overlay(
         axes[1],
         overlay,
-        x_ifp_spin=x_ifp_spin,
-        y_ifp_spin=y_ifp_spin,
-        x_ifp_first=x_ifp_first,
-        y_ifp_first=y_ifp_first,
-        x_ifp_last=x_ifp_last,
-        y_ifp_last=y_ifp_last,
+        x_ifp_spin=None,
+        y_ifp_spin=None,
+        x_ifp_first=None,
+        y_ifp_first=None,
+        x_ifp_last=None,
+        y_ifp_last=None,
         x_selected_pixels=None,
         y_selected_pixels=None,
     )

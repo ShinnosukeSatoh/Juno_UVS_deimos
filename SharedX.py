@@ -982,14 +982,14 @@ class ShareXaxis():
         if loc == 'in':
             x_value = 0.985
             fontsize_coef = 1/3.0
-        self.ax.text(x_value, 0.,
-                     "  "+id,
-                     transform=ax.transAxes,
-                     rotation=90,
-                     fontsize=self.fontsize*fontsize_coef,
-                     color=color,
-                     ha="center",
-                     zorder=0.001)
+        ax.text(x_value, 0.,
+                "  "+id,
+                transform=ax.transAxes,
+                rotation=90,
+                fontsize=self.fontsize*fontsize_coef,
+                color=color,
+                ha="center",
+                zorder=0.001)
         return None
 
     # Locally used

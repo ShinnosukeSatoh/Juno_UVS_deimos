@@ -514,15 +514,17 @@ def polar_plot(fp_traced_arr,
 
     # Foot path
     _, pos_N_MAW, pos_S_MAW, _, _ = fp_path()
-    F.ax.scatter(
-        np.sin(pos_N_MAW[:, 0])*np.cos(2*np.pi-pos_N_MAW[:, 1]),
-        np.sin(pos_N_MAW[:, 0])*np.sin(2*np.pi-pos_N_MAW[:, 1]),
-        s=0.04, c=UC.red, zorder=1.0,
+    sort = np.argsort(pos_N_MAW[:, 1])
+    F.ax.plot(
+        np.sin(pos_N_MAW[sort, 0])*np.cos(2*np.pi-pos_N_MAW[sort, 1]),
+        np.sin(pos_N_MAW[sort, 0])*np.sin(2*np.pi-pos_N_MAW[sort, 1]),
+        color=UC.red, linewidth=1.0, zorder=1.0,
     )
-    F.ax.scatter(
-        np.sin(pos_S_MAW[:, 0])*np.cos(2*np.pi-pos_S_MAW[:, 1]),
-        np.sin(pos_S_MAW[:, 0])*np.sin(2*np.pi-pos_S_MAW[:, 1]),
-        s=0.04, c=UC.blue, zorder=1.0,
+    sort = np.argsort(pos_S_MAW[:, 1])
+    F.ax.plot(
+        np.sin(pos_S_MAW[sort, 0])*np.cos(2*np.pi-pos_S_MAW[sort, 1]),
+        np.sin(pos_S_MAW[sort, 0])*np.sin(2*np.pi-pos_S_MAW[sort, 1]),
+        color=UC.blue, linewidth=1.0, zorder=1.0,
     )
 
     # Instantaneous footprint positions
@@ -720,7 +722,7 @@ if __name__ == '__main__':
                50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'cold5'                 # 'best', 'hot', 'dense'
+    retrieval = 'hot'                 # 'best', 'hot', 'dense'
 
     # PJ03 2016-12-11T17:51:10
     target_et_pj3 = np.array([spice.utc2et('2016-12-11T17:51:10')])
