@@ -224,7 +224,6 @@ def main():
         d_rj_default = 3.6      # default: 3.6 [RJ]
         jm.Internal.Config(Model='jrm33', CartesianIn=True,
                            CartesianOut=True, Degree=18)
-        jm.Con2020.Config(mu_i=con20_mu_i_tot[j], equation_type='analytic')
         for i in range(rho_eq.size):
             lat_c = math.radians(lat_fp[i])
 
