@@ -1240,10 +1240,27 @@ def apply_plot_overlay(
             if current_pj == 9:
                 _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(
                     np.array([t0_n]), 'Io')
-                fp_traced_arr = fp_traced(moon_S3wlon0[0])      # [deg]
+                fp_traced_arr = fp_traced(moon_S3wlon0[0],
+                                          retrieval)      # [deg]
                 polar_fp_prediction_plot(ax, fp_traced_arr,
                                          moon_S3wlon0[0],
                                          -1)
+
+                # Error bar
+                fp_traced_arr = fp_traced(moon_S3wlon0[0],
+                                          'ftmc_max')      # [deg]
+                polar_fp_prediction_plot(ax, fp_traced_arr,
+                                         moon_S3wlon0[0],
+                                         -1,
+                                         draw_path=False)
+
+                # Error bar
+                fp_traced_arr = fp_traced(moon_S3wlon0[0],
+                                          'ftmc_min')      # [deg]
+                polar_fp_prediction_plot(ax, fp_traced_arr,
+                                         moon_S3wlon0[0],
+                                         -1,
+                                         draw_path=False)
 
         if use_south:
             0
@@ -1926,7 +1943,7 @@ def target_time():
 # ------------------------------------------------------------
 # Main routine
 # ------------------------------------------------------------
-def fp_traced(target_moon_s3_obs):
+def fp_traced(target_moon_s3_obs, retrieval):
     """
     Args:
         target_moon_s3_obs (float): moon position at the time of the footprint observation [deg]
@@ -1998,7 +2015,7 @@ def instantaneous(target_moon_s3_obs, hem):
     return insta_fp_pos
 
 
-def polar_fp_prediction_plot(ax, fp_traced_arr, target_moon_s3_obs, hem):
+def polar_fp_prediction_plot(ax, fp_traced_arr, target_moon_s3_obs, hem, draw_path=True):
     if hem == -1:
         j_add = 0
     elif hem == 1:
@@ -2024,14 +2041,15 @@ def polar_fp_prediction_plot(ax, fp_traced_arr, target_moon_s3_obs, hem):
         )
 
     # Foot path
-    if hem == -1:
-        _, pos_MAW, _, _, _ = fp_path()
-    elif hem == 1:
-        _, _, pos_MAW, _, _ = fp_path()
-    sort = np.argsort(pos_MAW[:, 1])
-    x_fpath = np.sin(pos_MAW[sort, 0])*np.cos(2*np.pi-pos_MAW[sort, 1])
-    y_fpath = np.sin(pos_MAW[sort, 0])*np.sin(2*np.pi-pos_MAW[sort, 1])
-    ax.plot(-y_fpath, sign*x_fpath, color=UC.red, zorder=1.0)
+    if draw_path:
+        if hem == -1:
+            _, pos_MAW, _, _, _ = fp_path()
+        elif hem == 1:
+            _, _, pos_MAW, _, _ = fp_path()
+        sort = np.argsort(pos_MAW[:, 1])
+        x_fpath = np.sin(pos_MAW[sort, 0])*np.cos(2*np.pi-pos_MAW[sort, 1])
+        y_fpath = np.sin(pos_MAW[sort, 0])*np.sin(2*np.pi-pos_MAW[sort, 1])
+        ax.plot(-y_fpath, sign*x_fpath, color=UC.red, zorder=1.0)
 
     # Instantaneous footprint positions
     insta_fp_pos = instantaneous(target_moon_s3_obs, hem)

@@ -310,6 +310,7 @@ def load_best_fit(exname, ni_num, Ai_num, Ti_num, Zi, Te, retrieval):
     ni_3d_1 = ni_3d[idx_1sigma]
     Ti_3d_1 = Ti_3d[idx_1sigma]
     H_3d_1 = H_3d[idx_1sigma]
+    FTMC_3d_1 = FTMC_3d[idx_1sigma]
 
     # 低密高温の場合
     if retrieval == 'hot':
@@ -349,6 +350,20 @@ def load_best_fit(exname, ni_num, Ai_num, Ti_num, Zi, Te, retrieval):
         ni_best = ni_3d[min_idx][0]
         Ti_best = Ti_3d[min_idx][0]
         Hp_best = H_3d[min_idx][0]
+    # Max FTMC
+    elif retrieval == 'ftmc_max':
+        ftmc_idx = np.argmax(FTMC_3d_1)
+        Ai_best = Ai_3d_1[ftmc_idx]
+        ni_best = ni_3d_1[ftmc_idx]
+        Ti_best = Ti_3d_1[ftmc_idx]
+        Hp_best = H_3d_1[ftmc_idx]
+    # Min FTMC
+    elif retrieval == 'ftmc_min':
+        ftmc_idx = np.argmin(FTMC_3d_1)
+        Ai_best = Ai_3d_1[ftmc_idx]
+        ni_best = ni_3d_1[ftmc_idx]
+        Ti_best = Ti_3d_1[ftmc_idx]
+        Hp_best = H_3d_1[ftmc_idx]
 
     return Ai_best, ni_best, Ti_best, Hp_best
 
@@ -966,10 +981,10 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
-    exname = '003/20250516_058'
+    exname = '003/20250516_054'
     TARGET_MOON = 'Io'
     target_fp = ['MAW', 'TEB']
-    PJ_num = [11]
+    PJ_num = [9]
     hem = 'N'
     Ai_num = 3
     ni_num = 50
@@ -983,7 +998,7 @@ if __name__ == '__main__':
                50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'cold'      # 'best', 'hot', 'cold'
+    retrieval = 'ftmc_min'      # 'best', 'hot', 'cold'
 
     print('Retrieval mode:', retrieval)
 
