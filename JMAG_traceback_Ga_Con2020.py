@@ -180,8 +180,9 @@ def calc_azi_current_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi=139.6, mu_i_
     rho_eq = rho_eq_arr[idx_rho_best]   # Distance [RJ]
     phi_eq = phi_eq_arr[idx_rho_best]   # East longitude [rad]
 
-    print('------ Loop time [sec]:', round(time.time()-start_loop, 4))
-    print('----------------- [RJ]:', round(rho_eq, 3))
+    print('-------- Loop time [sec]:', round(time.time()-start_loop, 4))
+    print('- Residual distance [RJ]:', round(rho_eq-r_moon_obs/RJ, 3))
+    print('---------- Best fit [nT]:', round(mui_azi_best, 3))
     return np.array([mui_azi_best, rho_eq, phi_eq])
 
 
@@ -306,6 +307,6 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     FIT_TARGET = 'AZI_CURRENT'      # 'AZI_CURRENT' or 'THICKNESS'
-    parallel = 10
+    parallel = 16
 
     main()
