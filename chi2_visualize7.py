@@ -32,11 +32,11 @@ F.set_default()
 
 
 # %%
-exname = '1001/20260421_097'
+exname = '006/20260626_035'
 TARGET_MOON = 'Ganymede'
 target_fp = ['MAW', 'TEB']
-PJ_num = [14]
-hem = 'S'
+PJ_num = [13]
+hem = 'both'
 Ai_num = 3
 ni_num = 150
 Ti_num = 1
@@ -116,6 +116,7 @@ sigma_x = eqwlong_err(Psyn, dt=22.5)*np.ones(sigma_obs.shape)
 _, _, moon_z0, r_moon_arr, _, _, _ = moonS3wlon_arr(et_fp, TARGET_MOON)
 r_moon = np.average(r_moon_arr)
 z_moon = np.average(moon_z0)
+print('Moon distance [RJ]:', r_moon/RJ)
 
 
 # %%Data from Connerney+2020: PJ index
@@ -179,6 +180,10 @@ for i in range(3):
     ax[i].set_ylim(1, 10000)
 
     ax[i].plot(x_value, y_value)
+    print('y_value')
+    print(y_value[np.argmin(y_value)-1],
+          y_value[np.argmin(y_value)],
+          y_value[np.argmin(y_value)+1])
 
     ax[i].axhline(y=1.00, color=UC.gray)
     ax[i].axhline(y=4.00, color=UC.gray)
@@ -198,8 +203,8 @@ print(x_value[np.where(y_value <= 9.00)])
 r_A0_arr = r_moon*np.ones(60)
 S3wlon_A0_arr = np.linspace(-50, 370, r_A0_arr.size)
 
-S3wlon_A0_arr = moon_S3wlon_obs-eqlead_obs
-r_A0_arr = r_moon*np.ones(S3wlon_A0_arr.size)
+# S3wlon_A0_arr = moon_S3wlon_obs-eqlead_obs
+# r_A0_arr = r_moon*np.ones(S3wlon_A0_arr.size)
 
 Ai_best = Ai_3d[min_idx][0]
 ni_best = ni_3d[min_idx][0]
@@ -212,15 +217,14 @@ eqlead_best_TEB_S = np.zeros(r_A0_arr.size)
 TEB_dt_arr = np.zeros(r_A0_arr.size)
 
 current_coef, i_rho = read_current_coef()
-D_coef, _ = read_disk_thick_coef()
-D_disk = 3.6*RJ                         # [m]
-Hp = (2/np.sqrt(np.pi))*D_disk*D_coef   # [m]
+D_disk = 3.6*RJ        # Default value [m]
+D_coef = Hp_best/((2/np.sqrt(np.pi))*D_disk)
 Wave.Awave().update_Con2020(current_coef=current_coef,
                             thickness_coef=D_coef,
                             i_rho=i_rho)
 print('Azimuthal current [nT]:', mu_i_default*current_coef)
 print('Radial current [MA]:', i_rho)
-print('Hp [RJ]:', Hp/RJ)
+print('Hp [RJ]:', Hp_best/RJ)
 for i in range(r_A0_arr.size):
     r_A0 = r_A0_arr[i]
     S3wlon_A0 = S3wlon_A0_arr[i]
@@ -232,11 +236,11 @@ for i in range(r_A0_arr.size):
     tau, _, _, _ = Wave.Awave().trace3(
         r_A0,
         np.radians(S3wlon_A0),
-        0,
+        z_moon,
         S_A0_r,
         Ai_best,
         ni_best,
-        Hp,
+        Hp_best,
         -1,
     )
 
@@ -248,11 +252,11 @@ for i in range(r_A0_arr.size):
     tau, _, _, _ = Wave.Awave().trace3(
         r_A0,
         np.radians(S3wlon_A0),
-        0,
+        z_moon,
         S_A0_r,
         Ai_best,
         ni_best,
-        Hp,
+        Hp_best,
         1,
     )
 
@@ -260,7 +264,9 @@ for i in range(r_A0_arr.size):
     eqlead_best_TEB_N[i] = (tau+TEB_dt_arr[i])*360/Psyn     # [deg]
 
 
-# %%
+# %% ==============================================
+# 横軸: Moon SIII wlon / 縦軸: Equatorial lead angle
+# =================================================
 F = ShareXaxis()
 F.fontsize = 23
 F.fontname = 'Liberation Sans Narrow'

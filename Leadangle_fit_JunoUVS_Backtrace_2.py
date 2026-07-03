@@ -19,6 +19,7 @@ Version
 """
 # %% Import
 import spiceypy as spice
+import multiprocessing
 from multiprocessing import Pool
 # from numba import jit
 import numpy as np
@@ -230,11 +231,16 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
     et_fp = np.zeros(3)
     hem_arr = np.zeros(3)
     eq_lead_arr = np.zeros(3)
+    thickness_coef_arr = np.zeros(3)
 
     for i in range(len(pj_list)):
         dir = 'data/Backtraced_2/PJ' + \
             str(pj_list[i]).zfill(2)+'/' + \
             target_moon[0]+'FP_info_v900km.txt'
+        if SELECT_MODE == '3':
+            dir = 'data/Backtraced_Con2020/PJ' + \
+                str(pj_list[i]).zfill(2)+'/' + \
+                target_moon[0]+'FP_info_v900km.txt'
         f = np.loadtxt(dir)
         # print(pj_list[i])
 
@@ -244,12 +250,21 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
             et_fp = np.append(et_fp, f[2])
             hem_arr = np.append(hem_arr, f[3])
             eq_lead_arr = np.append(eq_lead_arr, f[4])
+            if SELECT_MODE == '3':
+                thickness_coef_arr = np.append(thickness_coef_arr, f[5])
+            else:
+                thickness_coef_arr = np.append(thickness_coef_arr, 0)
         else:
             rho_arr = np.append(rho_arr, f[0, :])
             phi_arr = np.append(phi_arr, f[1, :])
             et_fp = np.append(et_fp, f[2, :])
             hem_arr = np.append(hem_arr, f[3, :])
             eq_lead_arr = np.append(eq_lead_arr, f[4, :])
+            if SELECT_MODE == '3':
+                thickness_coef_arr = np.append(thickness_coef_arr, f[5, :])
+            else:
+                thickness_coef_arr = np.append(
+                    thickness_coef_arr, np.zeros(f[0, :].size))
 
     # 余計な部分を削除
     rho_arr = rho_arr[3:]
@@ -257,6 +272,7 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
     et_fp = et_fp[3:]
     hem_arr = hem_arr[3:]
     eq_lead_arr = eq_lead_arr[3:]
+    thickness_coef_arr = thickness_coef_arr[3:]
 
     # 半球で場合分け
     if target_hem == 'N':
@@ -266,6 +282,7 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
         et_fp = et_fp[hem_idx]
         hem_arr = hem_arr[hem_idx]
         eq_lead_arr = eq_lead_arr[hem_idx]
+        thickness_coef_arr = thickness_coef_arr[hem_idx]
     elif target_hem == 'S':
         hem_idx = np.where((hem_arr == 1) | (hem_arr == 101))
         rho_arr = rho_arr[hem_idx]
@@ -273,6 +290,7 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
         et_fp = et_fp[hem_idx]
         hem_arr = hem_arr[hem_idx]
         eq_lead_arr = eq_lead_arr[hem_idx]
+        thickness_coef_arr = thickness_coef_arr[hem_idx]
 
     # フットプリントの種類で場合分け
     if target_fp == 'MAW':
@@ -284,6 +302,7 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
         et_fp = et_fp[fp_idx]
         hem_arr = hem_arr[fp_idx]
         eq_lead_arr = eq_lead_arr[fp_idx]
+        thickness_coef_arr = thickness_coef_arr[fp_idx]
     elif target_fp == 'TEB':
         fp_idx = np.where(np.abs(hem_arr) == 101)
         if FLIP is True:
@@ -293,8 +312,9 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
         et_fp = et_fp[fp_idx]
         hem_arr = hem_arr[fp_idx]
         eq_lead_arr = eq_lead_arr[fp_idx]
+        thickness_coef_arr = thickness_coef_arr[fp_idx]
 
-    return rho_arr, phi_arr, et_fp, hem_arr, eq_lead_arr
+    return rho_arr, phi_arr, et_fp, hem_arr, eq_lead_arr, thickness_coef_arr
 
 
 # %% GANYMEDE ONLY === read the current constant
@@ -707,10 +727,11 @@ def Obsresults_back(PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP):
     et_fp = np.zeros(3)
     hem_arr = np.zeros(3)
     eq_lead_arr = np.zeros(3)
+    thickness_coef = np.zeros(3)
 
     for i in PJ_LIST:
         for j in TARGET_FP:
-            rho_arr1, phi_arr1, et_fp1, hem_arr1, eq_lead_arr1 = read2backtraced(
+            rho_arr1, phi_arr1, et_fp1, hem_arr1, eq_lead_arr1, thickness_coef_1 = read2backtraced(
                 [i], target_moon=TARGET_MOON, target_fp=j, target_hem=TARGET_HEM, FLIP=FLIP)
 
             rho_arr = np.append(rho_arr, rho_arr1)
@@ -718,6 +739,7 @@ def Obsresults_back(PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP):
             et_fp = np.append(et_fp, et_fp1)
             hem_arr = np.append(hem_arr, hem_arr1)
             eq_lead_arr = np.append(eq_lead_arr, eq_lead_arr1)
+            thickness_coef = np.append(thickness_coef, thickness_coef_1)
 
     # 余計な部分を削除
     rho_arr = rho_arr[3:]
@@ -725,8 +747,9 @@ def Obsresults_back(PJ_LIST, TARGET_MOON, TARGET_FP, TARGET_HEM, FLIP):
     et_fp = et_fp[3:]
     hem_arr = hem_arr[3:]
     eq_lead_arr = eq_lead_arr[3:]
+    thickness_coef = thickness_coef[3:]
 
-    return rho_arr, phi_arr, et_fp, hem_arr, eq_lead_arr
+    return rho_arr, phi_arr, et_fp, hem_arr, eq_lead_arr, thickness_coef
 
 
 # %% Calculate the error for west longitude of the moon
@@ -846,37 +869,37 @@ def create_argmesh(a0=1, a1=2, a_num=3, a_scale='linear',
 
 
 # %% Retrieval mode select
-def mode_select(H_1d):
+def mode_select(H_1d, thickness_coef):
+    # 磁場モデルの設定
+    mu_i_default = 139.6    # default: 139.6 [nT]
+    d_rj_default = 3.6      # default: 3.6 [RJ]
+
+    # Data from Connerney+2020: PJ index
+    con20_pj_idx = np.array([1, 3, 4, 5, 6,
+                            7, 8, 9, 10, 11,
+                            12, 13, 14, 15, 16,
+                            17, 18, 19, 20, 21,
+                            22, 23, 24], dtype=int)
+
+    # Data from Connerney+2020: Current constant [nT]
+    con20_mu_i_tot = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
+                               142.3, 140.1, 143.8, 137.0, 141.4,
+                               124.2, 148.9, 145.3, 144.8, 149.9,
+                               132.1, 133.5, 152.9, 138.5, 138.8,
+                               156.1, 141.4, 146.3])
+
+    # Data from Connerney+2020: Radial current constant [MA]
+    con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
+                               20.2, 12.2, 21.1, 20.9, 10.7,
+                               26.26, 16.4, 12.0, 19.6, 12.0,
+                               13.6, 20.0, 12.8, 16.0, 17.3,
+                               9.9, 16.1, 10.3])
+
     if SELECT_MODE == '1':
         current_coef, _ = read_current_coef()
         Wave.Awave().update_Con2020(current_coef=current_coef)
 
     elif SELECT_MODE == '2':
-        # 磁場モデルの設定
-        mu_i_default = 139.6    # default: 139.6 [nT]
-        d_rj_default = 3.6      # default: 3.6 [RJ]
-
-        # Data from Connerney+2020: PJ index
-        con20_pj_idx = np.array([1, 3, 4, 5, 6,
-                                7, 8, 9, 10, 11,
-                                12, 13, 14, 15, 16,
-                                17, 18, 19, 20, 21,
-                                22, 23, 24], dtype=int)
-
-        # Data from Connerney+2020: Current constant [nT]
-        con20_mu_i_tot = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
-                                   142.3, 140.1, 143.8, 137.0, 141.4,
-                                   124.2, 148.9, 145.3, 144.8, 149.9,
-                                   132.1, 133.5, 152.9, 138.5, 138.8,
-                                   156.1, 141.4, 146.3])
-
-        # %% Data from Connerney+2020: Radial current constant [MA]
-        con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
-                                   20.2, 12.2, 21.1, 20.9, 10.7,
-                                   26.26, 16.4, 12.0, 19.6, 12.0,
-                                   13.6, 20.0, 12.8, 16.0, 17.3,
-                                   9.9, 16.1, 10.3])
-
         for i in range(con20_pj_idx.size):
             if con20_pj_idx[i] == int(PJ_LIST[0]):
                 current_coef = con20_mu_i_tot[i]/mu_i_default
@@ -893,6 +916,27 @@ def mode_select(H_1d):
                                     i_rho=i_rho)
         H_1d = Hp*np.ones(H_1d.shape)
 
+    elif SELECT_MODE == '3':
+        for i in range(con20_pj_idx.size):
+            if con20_pj_idx[i] == int(PJ_LIST[0]):
+                current_coef = con20_mu_i_tot[i]/mu_i_default
+                i_rho = con20_mu_i_rho[i]
+                print('Current constant [nT]:', con20_mu_i_tot[i])
+                print('i_rho [MA]:', con20_mu_i_rho[i])
+        view = viewingangle(PJ_LIST[0], TARGET_MOON, 'MAW', TARGET_HEM)
+        view_TEB = viewingangle(PJ_LIST[0], TARGET_MOON, 'TEB', TARGET_HEM)
+        if TARGET_FP == ['MAW', 'TEB']:
+            view = np.hstack((view, view_TEB))      # [deg]
+
+        thickness_coef_ave = np.average(thickness_coef[np.where(view <= 30.0)])
+        D_disk = 3.6*RJ                        # [m]
+        Hp = (2/np.sqrt(np.pi))*D_disk*thickness_coef_ave  # [m]
+        Wave.Awave().update_Con2020(current_coef=current_coef,
+                                    thickness_coef=thickness_coef_ave,
+                                    i_rho=i_rho)
+        H_1d = Hp*np.ones(H_1d.shape)
+        print('Scale height [RJ]:', Hp/RJ)
+        print('Disk thickness [RJ]:', D_disk*thickness_coef_ave/RJ)
     return H_1d
 
 
@@ -928,11 +972,11 @@ def main():
                                                         TARGET_MOON)
 
     if USE_BACKTRACED:
-        _, phi_arr, et_fp2, hem_arr, eq_lead_fp = Obsresults_back(PJ_LIST,
-                                                                  TARGET_MOON,
-                                                                  TARGET_FP,
-                                                                  TARGET_HEM,
-                                                                  FLIP)
+        _, phi_arr, et_fp2, hem_arr, eq_lead_fp, thickness_coef = Obsresults_back(PJ_LIST,
+                                                                                  TARGET_MOON,
+                                                                                  TARGET_FP,
+                                                                                  TARGET_HEM,
+                                                                                  FLIP)
 
         print('hem_arr:', hem_arr)
         print('Eq map diff.: ', wlon_fp_eq-phi_arr)
@@ -969,7 +1013,7 @@ def main():
     start_all = time.time()
 
     # Retrieval mode
-    H_1d = mode_select(H_1d)
+    H_1d = mode_select(H_1d, thickness_coef=thickness_coef)
 
     for i in range(i_size):
         # print('r_A0 [RJ]:', r_A0[i]/RJ)
@@ -1066,28 +1110,36 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
+    multiprocessing.set_start_method('fork', force=True)
+
     # Name of execution
-    exname = '006/20260626_001'
+    exname = '006/20260626_037'
 
     # Input about Juno observation
-    TARGET_MOON = 'Io'
+    TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [9]
-    TARGET_HEM = 'N'      # 'both', 'N', or 'S'
+    PJ_LIST = [16]
+    TARGET_HEM = 'S'      # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'
 
-    SELECT_MODE = '0'
+    SELECT_MODE = '3'
     # '0': Normal
     # '1': CURRENT_CONSTANT_OFFSET
     # '2': Ti_FROM_DISK_THICKNESS
+    # '3': Only for Ganymede with Con2020 azimuthal current
 
-    # Input about the paremeter space
-    Ai_0, Ai_1, Ai_num, Ai_scale = 20.0, 24.0, 3, 'linear'
-    ni_0, ni_1, ni_num, ni_scale = 500.0, 5000.0, 50, 'log'
-    Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 1000.0, 60, 'log'
+    # Input about the paremeter space (Io)
+    # Ai_0, Ai_1, Ai_num, Ai_scale = 20.0, 24.0, 3, 'linear'
+    # ni_0, ni_1, ni_num, ni_scale = 500.0, 5000.0, 50, 'log'
+    # Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 1000.0, 60, 'log'
+
+    # Input about the paremeter space (Ga / SELECT_MODE = '3')
+    Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'
+    ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 150, 'log'
+    Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 16
+    parallel = 9
 
     main()

@@ -3,6 +3,7 @@ import math
 import matplotlib.pyplot as plt
 from scipy.optimize import brentq
 import time
+import multiprocessing
 from multiprocessing import Pool
 
 from SharedX import ShareXaxis
@@ -173,6 +174,8 @@ def main():
         z0_fp = np.zeros(wlon_fp.size)
 
         mu_i_default = 139.6    # default: 139.6 [nT]
+        i_rho_default = 16.7    # default: 16.7 [MA]
+        d_rj_default = 3.6      # default: 3.6 [RJ]
         jm.Internal.Config(Model='jrm33', CartesianIn=True,
                            CartesianOut=True, Degree=18)
         jm.Con2020.Config(mu_i=con20_mu_i_tot[j], equation_type='analytic')
@@ -267,4 +270,6 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
+    multiprocessing.set_start_method('fork', force=True)
+
     main()
