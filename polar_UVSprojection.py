@@ -303,8 +303,8 @@ def generate_time_windows(
         # t0_s = pjtime_et + 15.0 * 60.0       # default: 15 minutes before pj
         # t1_s = pjtime_et + 4.0 * 3600.0      # default: 4 hours after pj
 
-        if south_start_override_et is not None:
-            t0_s = max(t0_s, south_start_override_et)
+        # if south_start_override_et is not None:
+        #     t0_s = max(t0_s, south_start_override_et)
 
         time_et_s = build_time_grid(t0_s, t1_s, dt)
         windows.append(("SOUTH", time_et_s))
@@ -1199,8 +1199,8 @@ def apply_plot_overlay(
             overlay["xlat"][:, ilon],
             overlay["ylat"][:, ilon],
             color="white",
-            linewidth=0.7,
-            alpha=0.9,
+            linewidth=0.6,
+            alpha=0.8,
         )
 
     for ilat in range(overlay["nlat_grid"]):
@@ -1208,22 +1208,24 @@ def apply_plot_overlay(
             overlay["xlon"][ilat, :],
             overlay["ylon"][ilat, :],
             color="white",
-            linewidth=0.7,
-            alpha=0.9,
+            linewidth=0.6,
+            alpha=0.8,
         )
 
     ax.plot(
         overlay["x_inner_oval"],
         overlay["y_inner_oval"],
         color=UC.orange,
-        linewidth=1.0,
+        linestyle='--',
+        linewidth=0.8,
     )
 
     ax.plot(
         overlay["x_outer_oval"],
         overlay["y_outer_oval"],
         color=UC.orange,
-        linewidth=1.0,
+        linestyle='--',
+        linewidth=0.8,
     )
 
     if Shin is False:
@@ -1237,33 +1239,46 @@ def apply_plot_overlay(
 
     if Shin:
         if use_north:
-            if current_pj == 9:
-                _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(
-                    np.array([t0_n]), 'Io')
-                fp_traced_arr = fp_traced(moon_S3wlon0[0],
-                                          retrieval)      # [deg]
-                polar_fp_prediction_plot(ax, fp_traced_arr,
-                                         moon_S3wlon0[0],
-                                         -1)
+            hem = -1
+            t = t0_n
+        elif use_south:
+            hem = 1
+            t = t0_s
 
-                # Error bar
-                fp_traced_arr = fp_traced(moon_S3wlon0[0],
-                                          'ftmc_max')      # [deg]
-                polar_fp_prediction_plot(ax, fp_traced_arr,
-                                         moon_S3wlon0[0],
-                                         -1,
-                                         draw_path=False)
+        if current_pj == 9:
+            _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(np.array([t]),
+                                                            'Io')
+            fp_traced_arr = fp_traced(moon_S3wlon0[0],
+                                      retrieval)      # [deg]
+            polar_fp_prediction_plot(ax, fp_traced_arr,
+                                     moon_S3wlon0[0],
+                                     hem,
+                                     draw_path=False)
 
-                # Error bar
-                fp_traced_arr = fp_traced(moon_S3wlon0[0],
-                                          'ftmc_min')      # [deg]
-                polar_fp_prediction_plot(ax, fp_traced_arr,
-                                         moon_S3wlon0[0],
-                                         -1,
-                                         draw_path=False)
+            # Error bar
+            fp_traced_max = fp_traced(moon_S3wlon0[0]+60.0*(360.0/Psyn),
+                                      'ftmc_min')      # [deg]
+            """polar_fp_prediction_plot(ax, fp_traced_max,
+                                        moon_S3wlon0[0],
+                                        -1,
+                                        draw_path=False,
+                                        color=UC.lightpurple,
+                                        ioposition=False)"""
 
-        if use_south:
-            0
+            # Error bar
+            fp_traced_min = fp_traced(moon_S3wlon0[0]-60.0*(360.0/Psyn),
+                                      'ftmc_max')      # [deg]
+            """polar_fp_prediction_plot(ax, fp_traced_min,
+                                        moon_S3wlon0[0],
+                                        -1,
+                                        draw_path=False,
+                                        color=UC.yellow,
+                                        ioposition=False)"""
+
+            draw_fp_path(ax, hem,
+                         center=fp_traced_arr,
+                         error_1=fp_traced_min,
+                         error_2=fp_traced_max)
 
     if Shin is not True:
         if x_selected_pixels is not None and y_selected_pixels is not None:
@@ -1922,16 +1937,20 @@ def target_time():
             t1_s = [utc_to_et("2016-12-11 17:51:40"),
                     utc_to_et("2016-12-11 18:18:57")]
     elif current_pj == 7:
-        if use_south:
+        if use_north:
             t0_n = [utc_to_et("2017-07-11 02:53:14")]
             t1_n = [utc_to_et("2017-07-11 02:54:14")]
     elif current_pj == 9:
         if use_north:
-            t0_n = [utc_to_et("2017-10-24 16:48:24")]
-            t1_n = [utc_to_et("2017-10-24 16:49:24")]
+            t0_n = [utc_to_et("2017-10-24 16:47:24"),
+                    utc_to_et("2017-10-24 16:48:24")]
+            t1_n = [utc_to_et("2017-10-24 16:48:24"),
+                    utc_to_et("2017-10-24 16:49:24")]
         if use_south:
-            t0_s = [utc_to_et("2017-10-24 19:05:29")]
-            t1_s = [utc_to_et("2017-10-24 19:06:29")]
+            t0_s = [utc_to_et("2017-10-24 19:05:29"),
+                    utc_to_et("2017-10-24 19:23:40")]
+            t1_s = [utc_to_et("2017-10-24 19:06:29"),
+                    utc_to_et("2017-10-24 19:25:10")]
     elif current_pj == 11:
         if use_north:
             t0_n = [utc_to_et("2018-02-07 13:15:40")]
@@ -2015,7 +2034,8 @@ def instantaneous(target_moon_s3_obs, hem):
     return insta_fp_pos
 
 
-def polar_fp_prediction_plot(ax, fp_traced_arr, target_moon_s3_obs, hem, draw_path=True):
+def polar_fp_prediction_plot(ax, fp_traced_arr, target_moon_s3_obs, hem,
+                             draw_path=True, ioposition=True, color=UC.red):
     if hem == -1:
         j_add = 0
     elif hem == 1:
@@ -2030,36 +2050,86 @@ def polar_fp_prediction_plot(ax, fp_traced_arr, target_moon_s3_obs, hem, draw_pa
         x_fp = np.sin(colat)*np.cos(2*np.pi-wlon)
         y_fp = np.sin(colat)*np.sin(2*np.pi-wlon)
         if j in [3+reflections-2, 3+reflections-1, 2*(3+reflections)-2, 2*(3+reflections)-1]:
-            marker = 'D'
+            marker = 'o'    # TEBs
         else:
-            marker = 'o'
+            marker = 'o'    # Others
         ax.scatter(
             -y_fp,
             sign*x_fp,
             marker=marker,
-            fc=UC.red, ec='w', s=15.0, zorder=2.0
+            fc=color, ec='w', s=15.0, zorder=2.0
         )
 
-    # Foot path
-    if draw_path:
-        if hem == -1:
-            _, pos_MAW, _, _, _ = fp_path()
-        elif hem == 1:
-            _, _, pos_MAW, _, _ = fp_path()
-        sort = np.argsort(pos_MAW[:, 1])
-        x_fpath = np.sin(pos_MAW[sort, 0])*np.cos(2*np.pi-pos_MAW[sort, 1])
-        y_fpath = np.sin(pos_MAW[sort, 0])*np.sin(2*np.pi-pos_MAW[sort, 1])
-        ax.plot(-y_fpath, sign*x_fpath, color=UC.red, zorder=1.0)
-
     # Instantaneous footprint positions
-    insta_fp_pos = instantaneous(target_moon_s3_obs, hem)
-    x_insta_fp = np.sin(insta_fp_pos[0])*np.cos(2*np.pi-insta_fp_pos[1])
-    y_insta_fp = np.sin(insta_fp_pos[0])*np.sin(2*np.pi-insta_fp_pos[1])
-    ax.scatter(
-        -y_insta_fp,
-        sign*x_insta_fp,
-        marker='D', fc='k', ec='w', s=15.0,
-    )
+    if ioposition:
+        insta_fp_pos = instantaneous(target_moon_s3_obs, hem)
+        x_insta_fp = np.sin(insta_fp_pos[0])*np.cos(2*np.pi-insta_fp_pos[1])
+        y_insta_fp = np.sin(insta_fp_pos[0])*np.sin(2*np.pi-insta_fp_pos[1])
+        ax.scatter(
+            -y_insta_fp,
+            sign*x_insta_fp,
+            marker='D', fc='k', ec='w', s=15.0,
+            zorder=2.0,
+        )
+    return None
+
+
+def draw_fp_path(ax, hem, center=None, error_1=None, error_2=None):
+    if hem == -1:
+        j_add = 0
+        moon_s3_obs, pos_MAW, _, _, _ = fp_path()
+        sign = -1
+    elif hem == 1:
+        j_add = 1
+        moon_s3_obs, _, pos_MAW, _, _ = fp_path()
+        sign = 1
+
+    sort = np.argsort(pos_MAW[:, 1])
+    x_fp_path = np.sin(pos_MAW[sort, 0])*np.cos(2*np.pi-pos_MAW[sort, 1])
+    y_fp_path = np.sin(pos_MAW[sort, 0])*np.sin(2*np.pi-pos_MAW[sort, 1])
+    ax.plot(-y_fp_path, sign*x_fp_path, color=UC.red,
+            linestyle='--', linewidth=0.8, zorder=1.1)
+
+    # MAW & RAW & TEB
+    if center is not None:
+        dwlon_01 = 0.0
+        dwlon_02 = 0.0
+        for j in range(3+reflections):
+            j = 2*j + j_add
+            eqwlon_0 = center[0]       # [deg]
+            colat_0 = center[3*j+1]    # [rad]
+            wlon_0 = center[3*j+2]     # [rad]
+
+            eqwlon_1 = error_1[3*j]       # [deg]
+            colat_1 = error_1[3*j+1]    # [rad]
+            wlon_1 = error_1[3*j+2]     # [rad]
+            idx_1 = np.argmin(abs(wlon_1-pos_MAW[sort, 1]))
+
+            eqwlon_2 = error_2[3*j]       # [deg]
+            colat_2 = error_2[3*j+1]    # [rad]
+            wlon_2 = error_2[3*j+2]     # [rad]
+            idx_2 = np.argmin(abs(wlon_2-pos_MAW[sort, 1]))
+
+            if idx_1 < idx_2:
+                # print('idx_1 < idx_2')
+                # idx_1 = np.argmin(abs(wlon_1-dwlon_01-pos_MAW[sort, 1]))
+                # idx_2 = np.argmin(abs(wlon_2+dwlon_02-pos_MAW[sort, 1]))
+                x_fp = x_fp_path[idx_1:idx_2+1]
+                y_fp = y_fp_path[idx_1:idx_2+1]
+            else:
+                # print('idx_1 > idx_2')
+                # idx_1 = np.argmin(abs(wlon_1+dwlon_01-pos_MAW[sort, 1]))
+                # idx_2 = np.argmin(abs(wlon_2-dwlon_02-pos_MAW[sort, 1]))
+                x_fp = x_fp_path[idx_2:idx_1+1]
+                y_fp = y_fp_path[idx_2:idx_1+1]
+
+            sign = -np.sign(0.5*np.pi-colat_0)
+            ax.plot(-y_fp, sign*x_fp,
+                    color=UC.red, linewidth=3.3, zorder=1.9)
+
+            dwlon_01 = abs(wlon_0-wlon_1)
+            dwlon_02 = abs(wlon_0-wlon_2)
+
     return None
 
 
@@ -2129,7 +2199,7 @@ if __name__ == "__main__":
     # Input about Juno observation
     TARGET_MOON = 'Io'
     PJ_LIST = [9]
-    TARGET_HEM = 'N'
+    TARGET_HEM = 'S'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
     ni_num = 50
@@ -2144,7 +2214,7 @@ if __name__ == "__main__":
     reflections = 8                     # fixed at 8
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
     fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
-    retrieval = 'cold5'                 # 'best', 'hot', 'dense'
+    retrieval = 'best'                 # 'best', 'hot', 'dense'
 
     # Don't need to change below
     current_pj = PJ_LIST[0]
@@ -2163,18 +2233,24 @@ if __name__ == "__main__":
     load_spice_kernels(meta_kernel)
 
     t0_n_list, t1_n_list, t0_s_list, t1_s_list = target_time()
-    time_index = 0
-    t0_n, t1_n = t0_n_list[time_index], t1_n_list[time_index]
-    t0_s, t1_s = t0_s_list[time_index], t1_s_list[time_index]
+    time_index = 1
 
     # Orbital distance at the PJ time
     if TARGET_HEM == 'N':
+        t0_n, t1_n = t0_n_list[time_index], t1_n_list[time_index]
         TARGET_ET = np.array([(t0_n+t1_n)*0.5])
     elif TARGET_HEM == 'S':
+        t0_s, t1_s = t0_s_list[time_index], t1_s_list[time_index]
         TARGET_ET = np.array([(t0_s+t1_s)*0.5])
     _, _, _, r_moon_obs, _, _, s3wlon_moon_obs = moonS3wlon_arr(TARGET_ET,
                                                                 TARGET_MOON)
     r_moon = r_moon_obs[0]
     print('Orbital distance [RJ]:', r_moon/RJ)
+
+    Psyn_io = (12.89)*3600      # Moon's synodic period [sec]
+    Psyn_eu = (11.22)*3600      # Moon's synodic period [sec]
+    Psyn_ga = (10.53)*3600      # Moon's synodic period [sec]
+    if TARGET_MOON == 'Io':
+        Psyn = Psyn_io
 
     main()
