@@ -91,8 +91,8 @@ def calc_r_surf(lat):
     return rs
 
 
-# %%
-def calc_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi, mu_i_rho=16.7):
+# %% Derive the best fit magnetodisk thickness
+def calc_thickness_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi, mu_i_rho=16.7):
     start_loop = time.time()
     print('Loop started.')
 
@@ -137,6 +137,52 @@ def calc_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi, mu_i_rho=16.7):
     print('------ Loop time [sec]:', round(time.time()-start_loop, 4))
     print('----------------- [RJ]:', round(rho_eq, 3))
     return np.array([coef_best, rho_eq, phi_eq])
+
+
+# %% Derive the best fit magnetodisk thickness
+def calc_azi_current_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi=139.6, mu_i_rho=16.7):
+    start_loop = time.time()
+    print('Loop started.')
+
+    mui_azi_arr = np.arange(50.0, 200.0+1.0, 2.0)   # [nT]
+
+    # 中央値
+    rho_eq_arr = np.zeros(mui_azi_arr.size)
+    phi_eq_arr = np.zeros(mui_azi_arr.size)
+
+    for i in range(mui_azi_arr.size):
+        # 磁場モデルの設定
+        d_rj_default = 3.6      # default: 3.6 [RJ]
+        jm.Con2020.Config(mu_i=mui_azi_arr[i],
+                          i_rho=mu_i_rho,
+                          d__cs_half_thickness_rj=d_rj_default,
+                          equation_type='analytic')
+
+        # create trace objects, pass starting position(s) x0,y0,z0
+        T1 = jm.TraceField(x0, y0, z0,
+                           IntModel='jrm33', ExtModel='Con2020',
+                           MaxStep=0.0003,
+                           MaxLen=800000, ErrMax=0.000001)
+        x1 = T1.x[0][~np.isnan(T1.x[0])]    # [RJ]
+        y1 = T1.y[0][~np.isnan(T1.y[0])]    # [RJ]
+        z1 = T1.z[0][~np.isnan(T1.z[0])]    # [RJ]
+        rho = np.sqrt(x1**2 + y1**2 + z1**2)
+
+        # Satellite orbital plane
+        idx_z0 = np.argmin(np.abs(z1-moon_z0/RJ))
+
+        phi_eq_arr[i] = np.arctan2(y1[idx_z0], x1[idx_z0])  # East long. [rad]
+        rho_eq_arr[i] = rho[idx_z0]                         # Distance [RJ]
+        # z_eq = T1.z[0][idx_z0]
+
+    idx_rho_best = np.argmin(np.abs(rho_eq_arr-r_moon_obs/RJ))
+    mui_azi_best = mui_azi_arr[idx_rho_best]
+    rho_eq = rho_eq_arr[idx_rho_best]   # Distance [RJ]
+    phi_eq = phi_eq_arr[idx_rho_best]   # East longitude [rad]
+
+    print('------ Loop time [sec]:', round(time.time()-start_loop, 4))
+    print('----------------- [RJ]:', round(rho_eq, 3))
+    return np.array([mui_azi_best, rho_eq, phi_eq])
 
 
 # %% Select moon synodic orbital period
@@ -206,53 +252,41 @@ def main():
             y0_fp[i] = r_c*np.sin(theta)*np.sin(phi)/RJ_km   # [RJ]
             z0_fp[i] = r_c*np.cos(theta)/RJ_km               # [RJ]
 
-        args = list(zip(x0_fp,
-                        y0_fp,
-                        z0_fp,
-                        r_moon_arr,
-                        moon_z0,
-                        con20_mu_i_tot[j]*np.ones(x0_fp.size),
-                        con20_mu_i_rho[j]*np.ones(x0_fp.size),))
-        with Pool(processes=6) as pool:
-            results_list = list(pool.starmap(calc_loop, args))
+        if FIT_TARGET == 'THICKNESS':
+            args = list(zip(x0_fp,
+                            y0_fp,
+                            z0_fp,
+                            r_moon_arr,
+                            moon_z0,
+                            con20_mu_i_tot[j]*np.ones(x0_fp.size),
+                            con20_mu_i_rho[j]*np.ones(x0_fp.size),))
+            with Pool(processes=8) as pool:
+                results_list = list(pool.starmap(calc_thickness_loop, args))
+
+        elif FIT_TARGET == 'AZI_CURRENT':
+            args = list(zip(x0_fp,
+                            y0_fp,
+                            z0_fp,
+                            r_moon_arr,
+                            moon_z0,
+                            np.ones(x0_fp.size),
+                            np.ones(x0_fp.size),))
+            with Pool(processes=parallel) as pool:
+                results_list = list(pool.starmap(calc_azi_current_loop, args))
 
         results_arr = np.array(results_list)
         # print(results_arr.shape)      # >>> (XXX, 3)
-        thick_coef_best_arr = results_arr[:, 0]      # 3.6*C [RJ]
+        bestfit_arr = results_arr[:, 0]      # 3.6*C [RJ]
         rho_eq_best_arr = results_arr[:, 1]          # [RJ]
         phi_eq_best_arr = np.mod(
             360.0-np.degrees(results_arr[:, 2]), 360.0)    # [deg]
-
-        """for i in range(rho_eq.size):
-            # create trace objects, pass starting position(s) x0,y0,z0 in RJ
-            T1 = jm.TraceField(x0_fp[i], y0_fp[i], z0_fp[i], Verbose=True,
-                            IntModel='jrm33', ExtModel='Con2020',
-                            MaxLen=2500, ErrMax=0.00000001)
-
-            x1 = T1.x[0][~np.isnan(T1.x[0])]
-            y1 = T1.y[0][~np.isnan(T1.y[0])]
-            z1 = T1.z[0][~np.isnan(T1.z[0])]
-            rho = np.sqrt(x1**2 + y1**2 + z1**2)
-
-            # Satellite orbital plane
-            idx_z0 = np.argmin(np.abs(z1))
-
-            phi_z0 = np.arctan2(y1[idx_z0], x1[idx_z0])  # in SIII RH [rad]
-            rho_eq[i] = rho[idx_z0]
-            phi_eq[i] = np.mod(360.0-np.degrees(phi_z0), 360.0)
-            z_eq = T1.z[0][idx_z0]
-
-            # Equatorial lead angle
-            eq_lead_arr[i] = np.mod(moon_S3wlon[i]-phi_eq[i], 360.0)
-
-            clear_output(wait=True)  # Trace informationを消し去る"""
 
         savefile = np.array([rho_eq_best_arr,
                             phi_eq_best_arr,
                             et_fp,
                             hem_fp,
                             eq_lead_arr,
-                            thick_coef_best_arr,
+                            bestfit_arr,
                              ])
         print(savefile.shape)  # -> (6, N)
         # savefile[0,:] -> rho_eq [RJ]
@@ -260,9 +294,9 @@ def main():
         # savefile[2,:] -> et_fp [et]
         # savefile[3,:] -> hemisphere & type of footprints (+/-1, +/-101)
         # savefile[4,:] -> equatorial lead angle [deg]
-        # savefile[5,:] -> best-fit thickness coefficient
+        # savefile[5,:] -> best-fit thickness coefficient or best-fit azimuthal current
 
-        np.savetxt('data/Backtraced_Con2020/PJ'+str(PJ).zfill(2)+'/' +
+        np.savetxt('data/Backtraced_'+FIT_TARGET+'/PJ'+str(PJ).zfill(2)+'/' +
                    TARGET_MOON[0]+'FP_info_v900km.txt', savefile)
 
         j += 1
@@ -271,5 +305,8 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
+
+    FIT_TARGET = 'AZI_CURRENT'      # 'AZI_CURRENT' or 'THICKNESS'
+    parallel = 10
 
     main()

@@ -19,6 +19,7 @@ Version
 """
 # %% Import
 import spiceypy as spice
+import multiprocessing
 from multiprocessing import Pool
 # from numba import jit
 import numpy as np
@@ -1064,6 +1065,8 @@ def main():
 
 # %% EXECUTE
 if __name__ == '__main__':
+    multiprocessing.set_start_method('spawn', force=True)
+
     # Name of execution
     exname = '1001/20260421_103'
 
@@ -1086,6 +1089,6 @@ if __name__ == '__main__':
     Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 2
+    parallel = 10
 
     main()
