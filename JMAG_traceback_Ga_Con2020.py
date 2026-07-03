@@ -200,14 +200,6 @@ def main():
             [PJ], TARGET_MOON, TARGET_FP, TARGET_HEM='both', FLIP=False
         )
 
-        _, _, _, wlon_fp_eq = calc_eqlead(wlon_fp,
-                                          err_wlon_fp,
-                                          lat_fp,
-                                          err_lat_fp,
-                                          hem_fp,
-                                          moon_S3wlon,
-                                          TARGET_MOON)
-
         # 観測時の衛星軌道動径距離
         _, _, moon_z0, r_moon_arr, _, _, _ = moonS3wlon_arr(et_fp, TARGET_MOON)
 
@@ -248,6 +240,16 @@ def main():
 
             theta = np.radians(90.0-lat_fp[i])
             phi = np.radians(360.0-wlon_fp[i])
+            if error_num == 1:
+                if lat_fp[i] >= 0.0:
+                    theta = np.radians(90.0-(lat_fp[i]+err_lat_fp[i]))
+                elif lat_fp[i] < 0.0:
+                    theta = np.radians(90.0-(lat_fp[i]-err_lat_fp[i]))
+            elif error_num == 2:
+                if lat_fp[i] >= 0.0:
+                    theta = np.radians(90.0-(lat_fp[i]-err_lat_fp[i]))
+                elif lat_fp[i] < 0.0:
+                    theta = np.radians(90.0-(lat_fp[i]+err_lat_fp[i]))
             x0_fp[i] = r_c*np.sin(theta)*np.cos(phi)/RJ_km   # [RJ]
             y0_fp[i] = r_c*np.sin(theta)*np.sin(phi)/RJ_km   # [RJ]
             z0_fp[i] = r_c*np.cos(theta)/RJ_km               # [RJ]
@@ -297,7 +299,7 @@ def main():
         # savefile[5,:] -> best-fit thickness coefficient or best-fit azimuthal current
 
         np.savetxt('data/Backtraced_'+FIT_TARGET+'/PJ'+str(PJ).zfill(2)+'/' +
-                   TARGET_MOON[0]+'FP_info_v900km.txt', savefile)
+                   TARGET_MOON[0]+'FP_info_v900km_'+str(error_num)+'.txt', savefile)
 
         j += 1
 
@@ -307,6 +309,7 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     FIT_TARGET = 'AZI_CURRENT'      # 'AZI_CURRENT' or 'THICKNESS'
-    parallel = 16
+    error_num = 2   # 0, 1, or 2
+    parallel = 20
 
     main()
