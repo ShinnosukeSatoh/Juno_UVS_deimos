@@ -244,7 +244,7 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
         elif SELECT_MODE == '4':
             dir = 'data/Backtraced_AZI_CURRENT/PJ' + \
                 str(pj_list[i]).zfill(2)+'/' + \
-                target_moon[0]+'FP_info_v900km.txt'
+                target_moon[0]+'FP_info_v900km_0.txt'
         f = np.loadtxt(dir)
         # print(pj_list[i])
 
@@ -784,7 +784,7 @@ def TEB_transit(r_moon, s3wlon, target_moon, length=False):
         v_e = eV2speed(TEB_en)
         Fllen_alt = Fllen_eu
     elif target_moon == 'Ganymede':
-        TEB_en = 3600.0  # TEB ENERGY [eV]
+        TEB_en = 1000.0  # TEB ENERGY [eV]
         v_e = eV2speed(TEB_en)
         Fllen_alt = Fllen_ga
 
@@ -1017,7 +1017,8 @@ def main():
     start_all = time.time()
 
     # Retrieval mode
-    H_1d = mode_select(H_1d, thickness_coef=thickness_coef)
+    if SELECT_MODE in ['2', '3']:
+        H_1d = mode_select(H_1d, thickness_coef=thickness_coef)
 
     for i in range(i_size):
         # print('r_A0 [RJ]:', r_A0[i]/RJ)
@@ -1117,33 +1118,39 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     # Name of execution
-    exname = '006/20260626_037'
+    exname = '006/20260626_101'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [16]
+    PJ_LIST = [3]
     TARGET_HEM = 'S'      # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'
 
-    SELECT_MODE = '3'
+    SELECT_MODE = '4'
     # '0': Normal
     # '1': CURRENT_CONSTANT_OFFSET
     # '2': Ti_FROM_DISK_THICKNESS
     # '3': Only for Ganymede with Con2020 azimuthal current
+    # '4': Improved backtrace. Density & temperature are retrieved.
 
     # Input about the paremeter space (Io)
     # Ai_0, Ai_1, Ai_num, Ai_scale = 20.0, 24.0, 3, 'linear'
     # ni_0, ni_1, ni_num, ni_scale = 500.0, 5000.0, 50, 'log'
     # Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 1000.0, 60, 'log'
 
-    # Input about the paremeter space (Ga / SELECT_MODE = '3')
+    # Input about the paremeter space (Ganymede)
     Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'
-    ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 150, 'log'
-    Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
+    ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 50, 'log'
+    Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 3000.0, 60, 'log'
+
+    # Input about the paremeter space (Ga / SELECT_MODE = '3')
+    # Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'
+    # ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 150, 'log'
+    # Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 9
+    parallel = 20
 
     main()
