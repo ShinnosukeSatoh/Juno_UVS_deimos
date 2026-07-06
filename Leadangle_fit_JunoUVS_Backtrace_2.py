@@ -254,7 +254,7 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
             et_fp = np.append(et_fp, f[2])
             hem_arr = np.append(hem_arr, f[3])
             eq_lead_arr = np.append(eq_lead_arr, f[4])
-            if SELECT_MODE == '3':
+            if SELECT_MODE in ['3', '4']:
                 thickness_coef_arr = np.append(thickness_coef_arr, f[5])
             else:
                 thickness_coef_arr = np.append(thickness_coef_arr, 0)
@@ -264,7 +264,7 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
             et_fp = np.append(et_fp, f[2, :])
             hem_arr = np.append(hem_arr, f[3, :])
             eq_lead_arr = np.append(eq_lead_arr, f[4, :])
-            if SELECT_MODE == '3':
+            if SELECT_MODE in ['3', '4']:
                 thickness_coef_arr = np.append(thickness_coef_arr, f[5, :])
             else:
                 thickness_coef_arr = np.append(
@@ -793,7 +793,7 @@ def TEB_transit(r_moon, s3wlon, target_moon, length=False):
     y0 = (r_moon/RJ)*np.sin(phi)        # [RJ]
     z0 = 0                              # [RJ]
 
-    # Position is always in RJ
+    """# Position is always in RJ
     T2 = jm.TraceField(x0, y0, z0, Verbose=True,
                        IntModel='jrm33',
                        ExtModel='Con2020',
@@ -808,8 +808,11 @@ def TEB_transit(r_moon, s3wlon, target_moon, length=False):
         Fllen = Fllen_alt
     elif Fllen < 2*RJ:
         print('Field line is too short. Use alternate length.')
-        Fllen = Fllen_alt
+        Fllen = Fllen_alt"""
+
+    Fllen = Fllen_alt
     transit_time = Fllen/v_e      # [sec]
+
     if length:
         print('Field line length [RJ]:', Fllen/RJ)
 
@@ -873,7 +876,7 @@ def create_argmesh(a0=1, a1=2, a_num=3, a_scale='linear',
 
 
 # %% Retrieval mode select
-def mode_select(H_1d, thickness_coef):
+def mode_select(H_1d, thickness_coef_or_azicurrent):
     # 磁場モデルの設定
     mu_i_default = 139.6    # default: 139.6 [nT]
     d_rj_default = 3.6      # default: 3.6 [RJ]
@@ -932,7 +935,8 @@ def mode_select(H_1d, thickness_coef):
         if TARGET_FP == ['MAW', 'TEB']:
             view = np.hstack((view, view_TEB))      # [deg]
 
-        thickness_coef_ave = np.average(thickness_coef[np.where(view <= 30.0)])
+        thickness_coef_ave = np.average(
+            thickness_coef_or_azicurrent[np.where(view <= 30.0)])
         D_disk = 3.6*RJ                        # [m]
         Hp = (2/np.sqrt(np.pi))*D_disk*thickness_coef_ave  # [m]
         Wave.Awave().update_Con2020(current_coef=current_coef,
@@ -941,6 +945,18 @@ def mode_select(H_1d, thickness_coef):
         H_1d = Hp*np.ones(H_1d.shape)
         print('Scale height [RJ]:', Hp/RJ)
         print('Disk thickness [RJ]:', D_disk*thickness_coef_ave/RJ)
+
+    elif SELECT_MODE == '4':
+        view = viewingangle(PJ_LIST[0], TARGET_MOON, 'MAW', TARGET_HEM)
+        view_TEB = viewingangle(PJ_LIST[0], TARGET_MOON, 'TEB', TARGET_HEM)
+        if TARGET_FP == ['MAW', 'TEB']:
+            view = np.hstack((view, view_TEB))      # [deg]
+        thickness_coef_or_azicurrent_ave = np.average(
+            thickness_coef_or_azicurrent[np.where(view <= 30.0)])
+        current_coef = thickness_coef_or_azicurrent_ave/mu_i_default
+        print('current_coef:', current_coef)
+        Wave.Awave().update_Con2020(current_coef=current_coef)
+        print('Scale height [RJ]:', H_1d[0]/RJ)
     return H_1d
 
 
@@ -976,11 +992,11 @@ def main():
                                                         TARGET_MOON)
 
     if USE_BACKTRACED:
-        _, phi_arr, et_fp2, hem_arr, eq_lead_fp, thickness_coef = Obsresults_back(PJ_LIST,
-                                                                                  TARGET_MOON,
-                                                                                  TARGET_FP,
-                                                                                  TARGET_HEM,
-                                                                                  FLIP)
+        _, phi_arr, et_fp2, hem_arr, eq_lead_fp, thickness_coef_or_azicurrent = Obsresults_back(PJ_LIST,
+                                                                                                TARGET_MOON,
+                                                                                                TARGET_FP,
+                                                                                                TARGET_HEM,
+                                                                                                FLIP)
 
         print('hem_arr:', hem_arr)
         print('Eq map diff.: ', wlon_fp_eq-phi_arr)
@@ -1017,8 +1033,8 @@ def main():
     start_all = time.time()
 
     # Retrieval mode
-    if SELECT_MODE in ['2', '3']:
-        H_1d = mode_select(H_1d, thickness_coef=thickness_coef)
+    if SELECT_MODE in ['2', '3', '4']:
+        H_1d = mode_select(H_1d, thickness_coef_or_azicurrent)
 
     for i in range(i_size):
         # print('r_A0 [RJ]:', r_A0[i]/RJ)
