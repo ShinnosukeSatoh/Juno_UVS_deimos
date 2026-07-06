@@ -38,7 +38,7 @@ F.set_default()
 # %% Input about Juno observation
 TARGET_MOON = 'Ganymede'
 TARGET_FP = ['MAW', 'TEB']
-PJ_LIST = [1, 3]+np.arange(4, 24+1, 1).tolist()
+PJ_LIST = [1, 3]+np.arange(4, 68+1, 1).tolist()
 
 
 # %% Constants
@@ -52,6 +52,61 @@ G = 6.67E-11             # 万有引力定数  [m^3 kg^-1 s^-2]
 Psyn_io = (12.89)*3600      # Moon's synodic period [sec]
 Psyn_eu = (11.22)*3600      # Moon's synodic period [sec]
 Psyn_ga = (10.53)*3600      # Moon's synodic period [sec]
+if TARGET_MOON == 'Io':
+    Psyn = Psyn_io
+    PJ_LIST.pop(54-2)
+    PJ_LIST.pop(55-3)
+    PJ_LIST.pop(56-4)
+    PJ_LIST.pop(57-5)
+    PJ_LIST.pop(61-6)
+    PJ_LIST.pop(63-7)
+    PJ_LIST.pop(64-8)
+    PJ_LIST.pop(65-9)
+    PJ_LIST.pop(67-10)
+    r_moon = 5.9*RJ
+elif TARGET_MOON == 'Europa':
+    Psyn = Psyn_eu
+    PJ_LIST.pop(24-2)
+    PJ_LIST.pop(43-3)
+    PJ_LIST.pop(47-4)
+    PJ_LIST.pop(49-5)
+    PJ_LIST.pop(50-6)
+    PJ_LIST.pop(51-7)
+    PJ_LIST.pop(53-8)
+    PJ_LIST.pop(55-9)
+    PJ_LIST.pop(56-10)
+    PJ_LIST.pop(60-11)
+    PJ_LIST.pop(61-12)
+    PJ_LIST.pop(63-13)
+    PJ_LIST.pop(64-14)
+    PJ_LIST.pop(65-15)
+    PJ_LIST.pop(66-16)
+    PJ_LIST.pop(67-17)
+    PJ_LIST.pop(68-18)
+    r_moon = 9.4*RJ
+elif TARGET_MOON == 'Ganymede':
+    Psyn = Psyn_ga
+    PJ_LIST.pop(24-2)
+    PJ_LIST.pop(31-3)
+    PJ_LIST.pop(39-4)
+    PJ_LIST.pop(43-5)
+    PJ_LIST.pop(44-6)
+    PJ_LIST.pop(45-7)
+    PJ_LIST.pop(51-8)
+    PJ_LIST.pop(52-9)
+    PJ_LIST.pop(53-10)
+    PJ_LIST.pop(54-11)
+    PJ_LIST.pop(55-12)
+    PJ_LIST.pop(56-13)
+    PJ_LIST.pop(61-14)
+    PJ_LIST.pop(62-15)
+    PJ_LIST.pop(63-16)
+    PJ_LIST.pop(64-17)
+    PJ_LIST.pop(65-18)
+    PJ_LIST.pop(66-19)
+    PJ_LIST.pop(67-20)
+    PJ_LIST.pop(68-21)
+    r_moon = 15.0*RJ
 
 
 # %% Data from Connerney+2020: PJ index
@@ -194,7 +249,14 @@ if TARGET_MOON == 'Ganymede':
 
 # %%
 def main():
-    for PJ in PJ_LIST:
+    if FIT_TARGET == 'AZI_CURRENT':
+        PJ_list = PJ_LIST
+    if FIT_TARGET == 'THICKNESS':
+        PJ_list = [1, 3]+np.arange(4, 24, 1).tolist()
+    for PJ in PJ_list:
+        if PJ < 24:
+            print('Go to the next PJ.')
+            continue
         j = 0
         wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, moon_S3wlon, et_fp, hem_fp, pj_fp = Obsresults(
             [PJ], TARGET_MOON, TARGET_FP, TARGET_HEM='both', FLIP=False
@@ -309,7 +371,7 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     FIT_TARGET = 'AZI_CURRENT'      # 'AZI_CURRENT' or 'THICKNESS'
-    error_num = 2   # 0, 1, or 2
+    error_num = 1   # 0, 1, or 2
     parallel = 20
 
     main()

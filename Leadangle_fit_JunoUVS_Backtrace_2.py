@@ -241,6 +241,10 @@ def read2backtraced(pj_list, target_moon: str, target_fp: str, target_hem='both'
             dir = 'data/Backtraced_Con2020/PJ' + \
                 str(pj_list[i]).zfill(2)+'/' + \
                 target_moon[0]+'FP_info_v900km.txt'
+        elif SELECT_MODE == '4':
+            dir = 'data/Backtraced_AZI_CURRENT/PJ' + \
+                str(pj_list[i]).zfill(2)+'/' + \
+                target_moon[0]+'FP_info_v900km.txt'
         f = np.loadtxt(dir)
         # print(pj_list[i])
 
