@@ -1245,7 +1245,7 @@ def apply_plot_overlay(
             hem = 1
             t = t0_s
 
-        if current_pj == 9:
+        if current_pj in [3, 7, 9]:
             _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(np.array([t]),
                                                             'Io')
             fp_traced_arr = fp_traced(moon_S3wlon0[0],
@@ -1937,9 +1937,9 @@ def target_time():
             t1_s = [utc_to_et("2016-12-11 17:51:40"),
                     utc_to_et("2016-12-11 18:18:57")]
     elif current_pj == 7:
-        if use_north:
-            t0_n = [utc_to_et("2017-07-11 02:53:14")]
-            t1_n = [utc_to_et("2017-07-11 02:54:14")]
+        if use_south:
+            t0_s = [utc_to_et("2017-07-11 02:53:14")]
+            t1_s = [utc_to_et("2017-07-11 02:54:14")]
     elif current_pj == 9:
         if use_north:
             t0_n = [utc_to_et("2017-10-24 16:47:24"),
@@ -2194,11 +2194,11 @@ def main():
 # ------------------------------------------------------------
 if __name__ == "__main__":
     # Name of execution
-    exname = '003/20250516_054'
+    exname = '003/20250516_051'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
-    PJ_LIST = [9]
+    PJ_LIST = [7]
     TARGET_HEM = 'S'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
@@ -2233,7 +2233,7 @@ if __name__ == "__main__":
     load_spice_kernels(meta_kernel)
 
     t0_n_list, t1_n_list, t0_s_list, t1_s_list = target_time()
-    time_index = 1
+    time_index = 0
 
     # Orbital distance at the PJ time
     if TARGET_HEM == 'N':
