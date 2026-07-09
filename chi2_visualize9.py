@@ -670,14 +670,20 @@ chi2_1d = np.loadtxt('results/fit/'+exname+'/params_chi2.txt')
 chi2_3d = chi2_1d.reshape(ni_num, Ai_num, Ti_num)
 chi2_2d = chi2_3d[:, 1, :]
 min_idx = np.where(chi2_2d == np.min(chi2_2d))
+
+ni_1d = np.loadtxt('results/fit/'+exname+'/params_ni.txt')
+ni_3d = ni_1d.reshape(ni_num, Ai_num, Ti_num)
+ni_2d = ni_3d[:, 1, :]
+
+H_1d = np.loadtxt('results/fit/'+exname+'/params_H.txt')
+H_3d = H_1d.reshape(ni_num, Ai_num, Ti_num)
+H_2d = H_3d[:, 1, :]
+print(H_best[pj_select], H_2d[min_idx])
 eqlead_est_best = np.zeros(et_fp.size)
 for i in range(et_fp.size):
     eqlead_est_3d = eqlead_est[i, :].reshape(ni_num, Ai_num, Ti_num)
     eqlead_est_2d = eqlead_est_3d[:, 1, :]
     eqlead_est_best[i] = eqlead_est_2d[min_idx]
-
-print('eqlead_est.shape, eqlead_obs.shape, moon_S3wlon_obs.shape')
-print(eqlead_est.shape, eqlead_obs.shape, moon_S3wlon_obs.shape)
 
 # Moon position when the Alfven waves launched (Time: t0-tau_A)
 # Orbital distance at the PJ time
@@ -702,11 +708,11 @@ for i in range(r_A0_arr.size):
     S3wlon_A0 = S3wlon_A0_arr[i]
     S_A0 = Wave.Awave().tracefield(r_A0,
                                    np.radians(S3wlon_A0),
-                                   1
+                                   0.0
                                    )
     tau, _, _, _ = Wave.Awave().trace3(r_A0,
                                        np.radians(S3wlon_A0),
-                                       0,
+                                       0.0,
                                        S_A0,
                                        Ai_best[pj_select],
                                        ni_best[pj_select],
@@ -720,7 +726,7 @@ for i in range(r_A0_arr.size):
 
     tau, _, _, _ = Wave.Awave().trace3(r_A0,
                                        np.radians(S3wlon_A0),
-                                       0,
+                                       0.0,
                                        S_A0,
                                        Ai_best[pj_select],
                                        ni_best[pj_select],
