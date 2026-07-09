@@ -296,6 +296,7 @@ for i in range(len(PJ_LIST)):
     data = np.loadtxt(
         data_dir+'PJ'+str(PJ_LIST[i]).zfill(2)+'/'+TARGET_MOON[0]+'FP_info_v900km_2.txt')
     azi_currnet_2 = data[5, :]
+    hem_ref = data[3, :]
 
     # Viewing angle
     view = viewingangle(PJ_LIST[i], TARGET_MOON, 'MAW', HEM_LIST[i])
@@ -700,8 +701,9 @@ TEB_dt_arr = np.zeros(r_A0_arr.size)
 
 mu_i_default = 139.6    # default: 139.6 [nT]
 d_rj_default = 3.6      # default: 3.6 [RJ]
+print(azi_currnet_0_ave[pj_select]/mu_i_default)
 Wave.Awave().update_Con2020(
-    current_coef=azi_currnet_0_ave[pj_select]/mu_i_default
+    current_coef=1.0707611810140776
 )
 for i in range(r_A0_arr.size):
     r_A0 = r_A0_arr[i]
