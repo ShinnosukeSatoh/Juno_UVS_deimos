@@ -48,7 +48,7 @@ F.set_default()
 exdir = '006/20260626'
 TARGET_MOON = 'Ganymede'
 target_fp = ['MAW', 'TEB']
-PJ_num = [12]
+PJ_num = [14]
 hem = 'S'
 Ai_num = 3
 ni_num = 50
@@ -60,15 +60,18 @@ Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
 # %% Footprint obs. list (Ganymede)
 PJ_LIST = [3, 4, 5, 6, 7,
            8, 11, 12, 13, 14,
-           16, 17, 19, 20,
+           16, 17, 19, 20, 21,
+           22, 25, 27,
            ]
 HEM_LIST = ['S', 'both', 'S', 'both', 'S',
             'both', 'N', 'S', 'both', 'S',
-            'S', 'S', 'S', 'N',
+            'S', 'S', 'S', 'N', 'S',
+            'N', 'S', 'both',
             ]
 EXNAME_LIST = ['101', '102', '103', '104', '105',
-               '106', '107', '117', '109', '110',
-               '111', '112', '113', '114',
+               '106', '107', '117', '109', '118',
+               '111', '112', '113', '114', '119',
+               '120', '122', '123',
                ]
 
 
@@ -299,7 +302,7 @@ for i in range(len(PJ_LIST)):
     view_TEB = viewingangle(PJ_LIST[i], TARGET_MOON, 'TEB', HEM_LIST[i])
     # if target_fp == ['MAW', 'TEB']:
     #     view = np.hstack((view, view_TEB))      # [deg]
-    if EXNAME_LIST[i] != '117':
+    if EXNAME_LIST[i] not in ['117', '118', '119', '120']:
         view = np.hstack((view, view_TEB))      # [deg]
     azi_currnet_0_ave[i] = np.average(
         azi_currnet_0[np.where(view <= 30.0)])
@@ -655,16 +658,26 @@ F.close()
 # 横軸: SIII wlon / 縦軸: Equatorial lead angle
 # ============================================
 pj_select = np.where(np.array(PJ_LIST) == PJ_num[0])
-ni_best[pj_select]
-Ti_best[pj_select]
-H_best[pj_select]
-azi_currnet_0_ave[pj_select]
 exname = exdir+'_'+EXNAME_LIST[pj_select[0][0]]
+eqlead_est = np.loadtxt('results/fit/'+exname+'/eqlead_est.txt')
 eqlead_obs = np.loadtxt('results/fit/'+exname+'/eqlead_obs.txt')
 sigma_total = np.loadtxt('results/fit/'+exname+'/sigma_y.txt')
 hem_obs = np.loadtxt('results/fit/'+exname+'/hems_obs.txt')
 moon_S3wlon_obs = np.loadtxt('results/fit/'+exname+'/moon_S3wlon_obs.txt')
 et_fp = np.loadtxt('results/fit/'+exname+'/et_obs.txt')
+
+chi2_1d = np.loadtxt('results/fit/'+exname+'/params_chi2.txt')
+chi2_3d = chi2_1d.reshape(ni_num, Ai_num, Ti_num)
+chi2_2d = chi2_3d[:, 1, :]
+min_idx = np.where(chi2_2d == np.min(chi2_2d))
+eqlead_est_best = np.zeros(et_fp.size)
+for i in range(et_fp.size):
+    eqlead_est_3d = eqlead_est[i, :].reshape(ni_num, Ai_num, Ti_num)
+    eqlead_est_2d = eqlead_est_3d[:, 1, :]
+    eqlead_est_best[i] = eqlead_est_2d[min_idx]
+
+print('eqlead_est.shape, eqlead_obs.shape, moon_S3wlon_obs.shape')
+print(eqlead_est.shape, eqlead_obs.shape, moon_S3wlon_obs.shape)
 
 # Moon position when the Alfven waves launched (Time: t0-tau_A)
 # Orbital distance at the PJ time
@@ -754,6 +767,10 @@ for i in range(hem_obs.size):
                   linewidth=0., markersize=0,
                   elinewidth=0.8, color=color,
                   zorder=0.9)
+    F.ax.scatter(moon_S3wlon_obs[i], eqlead_est_best[i],
+                 color='k', s=1.1,
+                 marker='s',
+                 zorder=1.9)
 
 # Dummy
 labels = ['N MAW', 'S MAW', 'N TEB', 'S TEB']
