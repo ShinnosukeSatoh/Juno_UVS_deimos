@@ -1134,12 +1134,12 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     # Name of execution
-    exname = '006/20260626_118'
+    exname = '006/20260626_130'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
-    TARGET_FP = ['MAW']
-    PJ_LIST = [14]
+    TARGET_FP = ['MAW', 'TEB']
+    PJ_LIST = [38]
     TARGET_HEM = 'S'      # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'

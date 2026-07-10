@@ -17,6 +17,7 @@ from Leadangle_fit_JunoUVS_Backtrace_2 import eqwlong_err
 from Leadangle_fit_JunoUVS_Backtrace_2 import viewingangle
 from Leadangle_fit_JunoUVS_Backtrace_2 import moonS3wlon_arr
 from Leadangle_fit_JunoUVS_Backtrace_2 import TEB_transit
+from Leadangle_fit_JunoUVS_Backtrace_2 import local_time_moon
 import Leadangle_wave as Wave
 
 from scipy.odr import ODR, Model, RealData
@@ -48,7 +49,7 @@ F.set_default()
 exdir = '006/20260626'
 TARGET_MOON = 'Ganymede'
 target_fp = ['MAW', 'TEB']
-PJ_num = [32]
+PJ_num = [37]
 hem = 'S'
 Ai_num = 3
 ni_num = 50
@@ -62,16 +63,19 @@ PJ_LIST = [3, 4, 5, 6, 7,
            8, 11, 12, 13, 14,
            16, 17, 19, 20, 21,
            22, 25, 27, 30, 32,
+           34, 34, 35, 37,
            ]
 HEM_LIST = ['S', 'both', 'S', 'both', 'S',
             'both', 'N', 'S', 'both', 'S',
             'S', 'S', 'S', 'N', 'S',
             'N', 'S', 'both', 'S', 'S',
+            'S', 'N', 'both', 'S',
             ]
 EXNAME_LIST = ['101', '102', '103', '104', '105',
                '106', '107', '117', '109', '118',
                '111', '112', '113', '114', '119',
                '120', '122', '123', '124', '125',
+               '127', '126', '128', '129',
                ]
 
 
@@ -138,7 +142,7 @@ def weighted_percentile(data, weights, perc):
 # %% weighted_boxplot2
 def weighted_boxplot2(ax, x0, quartile1, medians, quartile3,
                       min, max,
-                      width=0.03, ec='k', fc='w', lw=1.0):
+                      width=0.03, ec='k', fc='w', lw=1.0, caps=True):
     # Lower box
     height = medians-quartile1
     patch = patches.Rectangle(xy=(x0-width/2, quartile1),
@@ -167,17 +171,18 @@ def weighted_boxplot2(ax, x0, quartile1, medians, quartile3,
             color=ec, linewidth=lw,
             zorder=1)
 
-    # Min
-    ax.plot([x0-width/2, x0+width/2],
-            [min, min],
-            color=ec, linewidth=lw,
-            zorder=1)
+    if caps:
+        # Min
+        ax.plot([x0-width/2, x0+width/2],
+                [min, min],
+                color=ec, linewidth=lw,
+                zorder=1)
 
-    # Max
-    ax.plot([x0-width/2, x0+width/2],
-            [max, max],
-            color=ec, linewidth=lw,
-            zorder=1)
+        # Max
+        ax.plot([x0-width/2, x0+width/2],
+                [max, max],
+                color=ec, linewidth=lw,
+                zorder=1)
 
     return None
 
@@ -185,7 +190,7 @@ def weighted_boxplot2(ax, x0, quartile1, medians, quartile3,
 # %% weighted_boxplot2
 def weighted_boxplot_h2(ax, y0, quartile1, medians, quartile3,
                         min, max,
-                        width=0.03, ec='k', fc='w', lw=1.0):
+                        width=0.03, ec='k', fc='w', lw=1.0, caps=True):
     # Lower box
     height = medians-quartile1
     patch = patches.Rectangle(xy=(quartile1, y0-width/2),
@@ -215,19 +220,20 @@ def weighted_boxplot_h2(ax, y0, quartile1, medians, quartile3,
             color=ec, linewidth=lw,
             zorder=1)
 
-    # Min
-    ax.plot([min,
-             min],
-            [y0-width/2, y0+width/2],
-            color=ec, linewidth=lw,
-            zorder=1)
+    if caps:
+        # Min
+        ax.plot([min,
+                min],
+                [y0-width/2, y0+width/2],
+                color=ec, linewidth=lw,
+                zorder=1)
 
-    # Max
-    ax.plot([max,
-             max],
-            [y0-width/2, y0+width/2],
-            color=ec, linewidth=lw,
-            zorder=1)
+        # Max
+        ax.plot([max,
+                max],
+                [y0-width/2, y0+width/2],
+                color=ec, linewidth=lw,
+                zorder=1)
 
     return None
 
@@ -242,7 +248,7 @@ Ai_best = np.zeros(len(PJ_LIST))
 azi_currnet_0_ave = np.zeros(len(PJ_LIST))
 azi_currnet_1_ave = np.zeros(len(PJ_LIST))
 azi_currnet_2_ave = np.zeros(len(PJ_LIST))
-selected_time = []
+datetime_fp_0 = []
 et_fp_0 = []
 ftmc_min_q1_median_q3_max_arr = np.zeros((len(PJ_LIST), 5))
 data_dir = 'data/Backtraced_AZI_CURRENT/'
@@ -325,7 +331,7 @@ for i in range(len(PJ_LIST)):
         azi_currnet_1[np.where(view <= 30.0)])
     azi_currnet_2_ave[i] = np.average(
         azi_currnet_2[np.where(view <= 30.0)])
-    selected_time += [spice.et2datetime(
+    datetime_fp_0 += [spice.et2datetime(
         np.median(et_fp[np.where(view <= 30.0)]))]
     et_fp_0 += [np.median(et_fp[np.where(view <= 30.0)])]
 
@@ -369,9 +375,17 @@ for i in range(len(PJ_LIST)):
                         vmin=0, vmax=500, colorbar_label=r'$\Delta\chi^2$',
                         adjust=True)
     pp.set_ticks([0, 100, 200, 300, 400, 500])
-    # F.manage(ax_idx=0, id=fig_id, color=UC.lightgray)
     img_savedir = 'img/ftmc/'+TARGET_MOON[:2]+'/'+exdir + '/'
-    F.fig.savefig(img_savedir+'chi2_map/PJ'+str(PJ_LIST[i]).zfill(2)+'.jpg',
+    fig_title = TARGET_MOON
+    pj_title = 'PJ'+str(PJ_LIST[i]).zfill(2)
+    if HEM_LIST[i] == 'N':
+        pj_title += 'N'
+    elif HEM_LIST[i] == 'S':
+        pj_title += 'S'
+    fig_title += ' ('+pj_title+')'
+    F.ax.set_title(fig_title,
+                   fontsize=F.fontsize, weight='bold')
+    F.fig.savefig(img_savedir+'chi2_map/'+pj_title+'.jpg',
                   bbox_inches='tight')
 
     # FTMC histogram
@@ -414,9 +428,14 @@ for i in range(len(PJ_LIST)):
                         np.min(FTMC_2d_select)*1E+11,
                         np.max(FTMC_2d_select)*1E+11,
                         width=1.2)
-    F.fig.savefig(img_savedir+'ftmc_histogram/PJ'+str(PJ_LIST[i]).zfill(2)+'.jpg',
+    fig_title = TARGET_MOON + r' FTMC'
+    fig_title += ' ('+pj_title+')'
+    F.ax.set_title(fig_title,
+                   fontsize=F.fontsize, weight='bold')
+    F.fig.savefig(img_savedir+'ftmc_histogram/'+pj_title+'.jpg',
                   bbox_inches='tight')
     F.close()
+    plt.close()
 
     ftmc_min_q1_median_q3_max_arr[i, 0] = np.min(FTMC_2d_select)
     ftmc_min_q1_median_q3_max_arr[i, 1] = quartile1
@@ -550,9 +569,9 @@ F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=1, figsize=(8.2, 4.0), dpi='L')
+F.set_figparams(nrows=2, figsize=(8.2, 6.5), dpi='L')
+F.hspace = 0.15
 F.initialize()
-# F.panelname = [' a. Io ', ' b. Europa ', ' c. Ganymede ']
 
 sxmin = '2016-01-01'
 sxmax = '2025-01-01'
@@ -574,12 +593,17 @@ F.set_xaxis(label='Date',
             min=xmin, max=xmax,
             ticks=xticks,
             ticklabels=xticklabels,
-            minor_num=12)
-F.ax.minorticks_off()
-F.ax.xaxis.set_minor_locator(mdates.MonthLocator())
-ticklabels = F.ax.get_xticklabels()
+            minor_num=12,
+            format='%Y-%m-%d')
+ticklabels = F.ax[1].get_xticklabels()
 ticklabels[0].set_ha('center')
 F.set_yaxis(ax_idx=0,
+            label=r'$\mu_0 I_{\varphi} / 2$ [nT]',
+            min=50, max=200,
+            ticks=np.linspace(50, 200, 7),
+            ticklabels=np.linspace(50, 200, 7, dtype=int),
+            minor_num=4)
+F.set_yaxis(ax_idx=1,
             label=r'$M$ [10$^{-9}$ kg m$^{-2}$]',
             min=0.0, max=0.25,
             ticks=np.linspace(0, 25, 6)/100,
@@ -587,21 +611,45 @@ F.set_yaxis(ax_idx=0,
             minor_num=5)
 
 for i in range(len(PJ_LIST)):
-    d0 = selected_time[i]
+    d0 = datetime_fp_0[i]
+
+    # FTMC
     min = ftmc_min_q1_median_q3_max_arr[i, 0]*1E+9
     q1 = ftmc_min_q1_median_q3_max_arr[i, 1]*1E+9
     median = ftmc_min_q1_median_q3_max_arr[i, 2]*1E+9
     q3 = ftmc_min_q1_median_q3_max_arr[i, 3]*1E+9
     max = ftmc_min_q1_median_q3_max_arr[i, 4]*1E+9
     width = datetime.timedelta(seconds=60*60*24*20)
-    weighted_boxplot2(F.ax, d0, q1, median, q3,
+    weighted_boxplot2(F.ax[1], d0, q1, median, q3,
                       min,
                       max,
                       width=width,
                       ec=UC.blue, lw=1.1)
+    # Current constant
+    y0 = azi_currnet_0_ave[i]
+    dy0 = np.mean([abs(azi_currnet_0_ave[i]-azi_currnet_1_ave[i]),
+                   abs(azi_currnet_0_ave[i]-azi_currnet_2_ave[i])])
+    F.ax[0].errorbar(x=d0, y=y0,
+                     yerr=dy0,
+                     elinewidth=1.1, linewidth=0., markersize=0.,
+                     capsize=2.0, capthick=1.1,
+                     color=UC.blue)
+F.ax[0].plot(datetime_fp_0, azi_currnet_0_ave,
+             marker='s', color=UC.blue, markersize=3,
+             linewidth=1.0,
+             markeredgecolor='k', markerfacecolor='w', zorder=2)
+
+# Azimuthal current constant from Connerney+ 2020
+selected_PJ_time = []
+for i in range(con20_pj_idx.size):
+    selected_PJ_time += [JUNO_PJ_TIMES[con20_pj_idx[i]-1]]
+F.ax[0].plot(selected_PJ_time, con20_mu_i_tot,
+             marker='^', color=UC.red, markersize=4,
+             linewidth=1.0,
+             markeredgecolor='k', markerfacecolor='w', zorder=2)
 
 # PJ numbers on the top horizontal axis
-PJax = F.ax.twiny()
+PJax = F.ax[0].twiny()
 PJax.set_xlim(xmin, xmax)
 PJax.set_xticks(JUNO_PJ_TIMES[::5])
 PJax.set_xticklabels(JUNO_PJ_LABELS[::5])
@@ -609,31 +657,33 @@ PJax.xaxis.set_minor_locator(FixedLocator(mdates.date2num(JUNO_PJ_TIMES)))
 PJax.tick_params('y', grid_zorder=-10)
 
 # Shades in each 5 perijove
-F.ax.axvspan(JUNO_PJ_TIMES[0], JUNO_PJ_TIMES[5],
-             fc=UC.gray, ec=None, alpha=0.10)
-F.ax.axvspan(JUNO_PJ_TIMES[10], JUNO_PJ_TIMES[15],
-             fc=UC.gray, ec=None, alpha=0.10)
-F.ax.axvspan(JUNO_PJ_TIMES[20], JUNO_PJ_TIMES[25],
-             fc=UC.gray, ec=None, alpha=0.10)
-F.ax.axvspan(JUNO_PJ_TIMES[30], JUNO_PJ_TIMES[35],
-             fc=UC.gray, ec=None, alpha=0.10)
-F.ax.axvspan(JUNO_PJ_TIMES[40], JUNO_PJ_TIMES[45],
-             fc=UC.gray, ec=None, alpha=0.10)
-F.ax.axvspan(JUNO_PJ_TIMES[50], JUNO_PJ_TIMES[55],
-             fc=UC.gray, ec=None, alpha=0.10)
-F.ax.axvspan(JUNO_PJ_TIMES[60], JUNO_PJ_TIMES[65],
-             fc=UC.gray, ec=None, alpha=0.10)
+for i in range(2):
+    F.ax[i].axvspan(JUNO_PJ_TIMES[0], JUNO_PJ_TIMES[5],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[10], JUNO_PJ_TIMES[15],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[20], JUNO_PJ_TIMES[25],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[30], JUNO_PJ_TIMES[35],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[40], JUNO_PJ_TIMES[45],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[50], JUNO_PJ_TIMES[55],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[60], JUNO_PJ_TIMES[65],
+                    fc=UC.gray, ec=None, alpha=0.10)
 
 F.fig.savefig(img_savedir + '/ftmc_timeseries.jpg',
               bbox_inches='tight')
 F.close()
+plt.close()
 
 
 # %% ================================
 # 横軸: FTMC / 縦軸: Current constant
 # ===================================
 F = ShareXaxis()
-F.fontsize = 22
+F.fontsize = 23
 F.fontname = 'Liberation Sans Narrow'
 F.set_figparams(nrows=1, figsize=(5.4, 4.5), dpi='L')
 F.initialize()
@@ -650,22 +700,82 @@ F.set_yaxis(ax_idx=0,
             minor_num=5)
 
 for i in range(len(PJ_LIST)):
-    x0 = azi_currnet_0_ave[i]
+    y0 = azi_currnet_0_ave[i]
+    dy0 = np.mean([abs(azi_currnet_0_ave[i]-azi_currnet_1_ave[i]),
+                   abs(azi_currnet_0_ave[i]-azi_currnet_2_ave[i])])
     min = ftmc_min_q1_median_q3_max_arr[i, 0]*1E+9
     q1 = ftmc_min_q1_median_q3_max_arr[i, 1]*1E+9
     median = ftmc_min_q1_median_q3_max_arr[i, 2]*1E+9
     q3 = ftmc_min_q1_median_q3_max_arr[i, 3]*1E+9
     max = ftmc_min_q1_median_q3_max_arr[i, 4]*1E+9
     width = 2.0
-    weighted_boxplot_h2(F.ax, x0, q1, median, q3,
+    weighted_boxplot_h2(F.ax, y0, q1, median, q3,
                         min,
                         max,
                         width=width,
-                        ec=UC.blue, lw=1.1)
+                        ec=UC.blue, lw=1.0)
+    F.ax.errorbar(x=median, y=y0,
+                  yerr=dy0,
+                  elinewidth=1.0, linewidth=0., markersize=0,
+                  capsize=width, capthick=1.0,
+                  color=UC.blue)
 
 F.fig.savefig(img_savedir + '/ftmc_vs_azicurrent.jpg',
               bbox_inches='tight')
 F.close()
+plt.close()
+
+
+# %% =========================================
+# 横軸: MLT / 縦軸: FTMC
+# ============================================
+F = ShareXaxis()
+F.fontsize = 23
+F.fontname = 'Liberation Sans Narrow'
+F.set_figparams(nrows=1, figsize=(7.0, 4.0), dpi='L')
+F.initialize()
+F.set_xaxis(label=r' MLT [hour]',
+            min=0, max=48,
+            ticks=np.linspace(0, 48, 17),
+            ticklabels=np.linspace(0, 48, 17, dtype=int),
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label=r'$M$ [10$^{-9}$ kg m$^{-2}$]',
+            min=0.0, max=0.25,
+            ticks=np.linspace(0, 25, 6)/100,
+            ticklabels=np.linspace(0, 25, 6)/100,
+            minor_num=5)
+lt_median = np.zeros(len(PJ_LIST))
+for i in range(len(PJ_LIST)):
+    lt_median[i] = local_time_moon(et_fp_0[i], TARGET_MOON)
+    y0 = lt_median[i]
+    min = ftmc_min_q1_median_q3_max_arr[i, 0]*1E+9
+    q1 = ftmc_min_q1_median_q3_max_arr[i, 1]*1E+9
+    median = ftmc_min_q1_median_q3_max_arr[i, 2]*1E+9
+    q3 = ftmc_min_q1_median_q3_max_arr[i, 3]*1E+9
+    max = ftmc_min_q1_median_q3_max_arr[i, 4]*1E+9
+    width = 0.3
+    weighted_boxplot2(F.ax, y0, q1, median, q3,
+                      min,
+                      max,
+                      width=width,
+                      ec=UC.blue, lw=1.1)
+    weighted_boxplot2(F.ax, y0+24.0, q1, median, q3,
+                      min,
+                      max,
+                      width=width,
+                      ec=UC.blue, lw=1.1)
+# LT=24.0
+F.ax.axvline(x=24.0, color=UC.gray, linewidth=0.75)
+
+F.ax.set_title(TARGET_MOON + r' FTMC',
+               fontsize=F.fontsize, weight='bold')
+
+F.fig.savefig(img_savedir + '/ftmc_vs_MLT.jpg',
+              bbox_inches='tight')
+F.close()
+plt.close()
+print('MLT:', lt_median)
 
 
 # %% =========================================
@@ -715,7 +825,7 @@ mu_i_default = 139.6    # default: 139.6 [nT]
 d_rj_default = 3.6      # default: 3.6 [RJ]
 # print(azi_currnet_0_ave[pj_select]/mu_i_default)
 Wave.Awave().update_Con2020(
-    current_coef=azi_currnet_0_ave[pj_select]/mu_i_default
+    current_coef=azi_currnet_0_ave[pj_select[0][0]]/mu_i_default
 )
 for i in range(r_A0_arr.size):
     r_A0 = r_A0_arr[i]
@@ -728,9 +838,9 @@ for i in range(r_A0_arr.size):
                                        np.radians(S3wlon_A0),
                                        0.0,
                                        S_A0,
-                                       Ai_best[pj_select],
-                                       ni_best[pj_select],
-                                       H_best[pj_select],
+                                       Ai_best[pj_select[0][0]],
+                                       ni_best[pj_select[0][0]],
+                                       H_best[pj_select[0][0]],
                                        -1
                                        )
 
@@ -742,9 +852,9 @@ for i in range(r_A0_arr.size):
                                        np.radians(S3wlon_A0),
                                        0.0,
                                        S_A0,
-                                       Ai_best[pj_select],
-                                       ni_best[pj_select],
-                                       H_best[pj_select],
+                                       Ai_best[pj_select[0][0]],
+                                       ni_best[pj_select[0][0]],
+                                       H_best[pj_select[0][0]],
                                        1
                                        )
 
