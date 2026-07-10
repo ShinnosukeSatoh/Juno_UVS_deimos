@@ -48,7 +48,7 @@ F.set_default()
 exdir = '006/20260626'
 TARGET_MOON = 'Ganymede'
 target_fp = ['MAW', 'TEB']
-PJ_num = [14]
+PJ_num = [32]
 hem = 'S'
 Ai_num = 3
 ni_num = 50
@@ -61,17 +61,17 @@ Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
 PJ_LIST = [3, 4, 5, 6, 7,
            8, 11, 12, 13, 14,
            16, 17, 19, 20, 21,
-           22, 25, 27,
+           22, 25, 27, 30, 32,
            ]
 HEM_LIST = ['S', 'both', 'S', 'both', 'S',
             'both', 'N', 'S', 'both', 'S',
             'S', 'S', 'S', 'N', 'S',
-            'N', 'S', 'both',
+            'N', 'S', 'both', 'S', 'S',
             ]
 EXNAME_LIST = ['101', '102', '103', '104', '105',
                '106', '107', '117', '109', '118',
                '111', '112', '113', '114', '119',
-               '120', '122', '123',
+               '120', '122', '123', '124', '125',
                ]
 
 
@@ -297,6 +297,16 @@ for i in range(len(PJ_LIST)):
         data_dir+'PJ'+str(PJ_LIST[i]).zfill(2)+'/'+TARGET_MOON[0]+'FP_info_v900km_2.txt')
     azi_currnet_2 = data[5, :]
     hem_ref = data[3, :]
+    if HEM_LIST[i] == 'N':
+        azi_currnet_0 = azi_currnet_0[np.where(hem_ref < 0)]
+        azi_currnet_1 = azi_currnet_1[np.where(hem_ref < 0)]
+        azi_currnet_2 = azi_currnet_2[np.where(hem_ref < 0)]
+        hem_ref = hem_ref[np.where(hem_ref < 0)]
+    elif HEM_LIST[i] == 'S':
+        azi_currnet_0 = azi_currnet_0[np.where(hem_ref > 0)]
+        azi_currnet_1 = azi_currnet_1[np.where(hem_ref > 0)]
+        azi_currnet_2 = azi_currnet_2[np.where(hem_ref > 0)]
+        hem_ref = hem_ref[np.where(hem_ref > 0)]
 
     # Viewing angle
     view = viewingangle(PJ_LIST[i], TARGET_MOON, 'MAW', HEM_LIST[i])
@@ -305,6 +315,10 @@ for i in range(len(PJ_LIST)):
     #     view = np.hstack((view, view_TEB))      # [deg]
     if EXNAME_LIST[i] not in ['117', '118', '119', '120']:
         view = np.hstack((view, view_TEB))      # [deg]
+    else:
+        azi_currnet_0 = azi_currnet_0[np.where(abs(hem_ref) == 1)]
+        azi_currnet_1 = azi_currnet_1[np.where(abs(hem_ref) == 1)]
+        azi_currnet_2 = azi_currnet_2[np.where(abs(hem_ref) == 1)]
     azi_currnet_0_ave[i] = np.average(
         azi_currnet_0[np.where(view <= 30.0)])
     azi_currnet_1_ave[i] = np.average(
@@ -368,7 +382,6 @@ for i in range(len(PJ_LIST)):
     area = dx_arr * dy_arr
     weight = area/np.median(area)
     FTMC_2d_select = FTMC_2d[:-1, :-1][np.where(z_value[:-1, :-1] < 11.8)]
-    print(FTMC_2d_select*1E+11)
     weight = weight[np.where(z_value[:-1, :-1] < 11.8)]
     fig_id = 'SS260707.002'
     F = ShareXaxis()
@@ -679,7 +692,6 @@ ni_2d = ni_3d[:, 1, :]
 H_1d = np.loadtxt('results/fit/'+exname+'/params_H.txt')
 H_3d = H_1d.reshape(ni_num, Ai_num, Ti_num)
 H_2d = H_3d[:, 1, :]
-print(H_best[pj_select], H_2d[min_idx])
 eqlead_est_best = np.zeros(et_fp.size)
 for i in range(et_fp.size):
     eqlead_est_3d = eqlead_est[i, :].reshape(ni_num, Ai_num, Ti_num)
@@ -701,9 +713,9 @@ TEB_dt_arr = np.zeros(r_A0_arr.size)
 
 mu_i_default = 139.6    # default: 139.6 [nT]
 d_rj_default = 3.6      # default: 3.6 [RJ]
-print(azi_currnet_0_ave[pj_select]/mu_i_default)
+# print(azi_currnet_0_ave[pj_select]/mu_i_default)
 Wave.Awave().update_Con2020(
-    current_coef=1.0707611810140776
+    current_coef=azi_currnet_0_ave[pj_select]/mu_i_default
 )
 for i in range(r_A0_arr.size):
     r_A0 = r_A0_arr[i]
@@ -775,10 +787,10 @@ for i in range(hem_obs.size):
                   linewidth=0., markersize=0,
                   elinewidth=0.8, color=color,
                   zorder=0.9)
-    F.ax.scatter(moon_S3wlon_obs[i], eqlead_est_best[i],
-                 color='k', s=1.1,
-                 marker='s',
-                 zorder=1.9)
+    # F.ax.scatter(moon_S3wlon_obs[i], eqlead_est_best[i],
+    #              color='k', s=1.1,
+    #              marker='s',
+    #              zorder=1.9)
 
 # Dummy
 labels = ['N MAW', 'S MAW', 'N TEB', 'S TEB']
