@@ -491,17 +491,6 @@ def S3EQ(fpwlon: float, fplat: float, hemisphere, MOON: str):
     # Search the System III index
     distance = (s3wlon[:-1]-fpwlon)**2 + (s3lat[:-1]-fplat)**2
 
-    """# Cartesian version
-    fp_r = math.cos(math.radians(fplat))
-    fp_x = fp_r*math.cos(math.radians(-fpwlon))
-    fp_y = fp_r*math.sin(math.radians(-fpwlon))
-    fp_z = math.sin(math.radians(fplat))
-    ref_r = np.cos(np.radians(s3lat[:-1]))
-    ref_x = ref_r*np.cos(np.radians(-s3wlon[:-1]))
-    ref_y = ref_r*np.sin(np.radians(-s3wlon[:-1]))
-    ref_z = np.sin(np.radians(s3lat[:-1]))
-    distance = (ref_x-fp_x)**2 + (ref_y-fp_y)**2 + (ref_z-fp_z)**2"""
-
     argsorted = np.argsort(distance, axis=0)
 
     s3_idx0 = argsorted[0]
@@ -951,6 +940,7 @@ def mode_select(H_1d, thickness_coef_or_azicurrent):
         view_TEB = viewingangle(PJ_LIST[0], TARGET_MOON, 'TEB', TARGET_HEM)
         if TARGET_FP == ['MAW', 'TEB']:
             view = np.hstack((view, view_TEB))      # [deg]
+        print('viewing angle [deg]:', view)
         thickness_coef_or_azicurrent_ave = np.average(
             thickness_coef_or_azicurrent[np.where(view <= 30.0)])
         current_coef = thickness_coef_or_azicurrent_ave/mu_i_default
@@ -1134,12 +1124,12 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     # Name of execution
-    exname = '006/20260626_142'
+    exname = '006/20260626_201'
 
     # Input about Juno observation
-    TARGET_MOON = 'Ganymede'
+    TARGET_MOON = 'Europa'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [35]
+    PJ_LIST = [4]
     TARGET_HEM = 'S'      # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     USE_BACKTRACED = True       # True for '005' and '1001'
@@ -1167,6 +1157,6 @@ if __name__ == '__main__':
     # Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 20
+    parallel = 10
 
     main()

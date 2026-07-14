@@ -36,7 +36,7 @@ F.set_default()
 
 
 # %% Input about Juno observation
-TARGET_MOON = 'Ganymede'
+TARGET_MOON = 'Europa'
 TARGET_FP = ['MAW', 'TEB']
 PJ_LIST = [1, 3]+np.arange(4, 68+1, 1).tolist()
 
@@ -66,23 +66,28 @@ if TARGET_MOON == 'Io':
     r_moon = 5.9*RJ
 elif TARGET_MOON == 'Europa':
     Psyn = Psyn_eu
-    PJ_LIST.pop(24-2)
-    PJ_LIST.pop(43-3)
-    PJ_LIST.pop(47-4)
-    PJ_LIST.pop(49-5)
-    PJ_LIST.pop(50-6)
-    PJ_LIST.pop(51-7)
-    PJ_LIST.pop(53-8)
-    PJ_LIST.pop(55-9)
-    PJ_LIST.pop(56-10)
-    PJ_LIST.pop(60-11)
-    PJ_LIST.pop(61-12)
-    PJ_LIST.pop(63-13)
-    PJ_LIST.pop(64-14)
-    PJ_LIST.pop(65-15)
-    PJ_LIST.pop(66-16)
-    PJ_LIST.pop(67-17)
-    PJ_LIST.pop(68-18)
+    PJ_LIST.pop(5-2)
+    PJ_LIST.pop(24-3)
+    PJ_LIST.pop(43-4)
+    PJ_LIST.pop(44-5)
+    PJ_LIST.pop(45-6)
+    PJ_LIST.pop(46-7)
+    PJ_LIST.pop(47-8)
+    PJ_LIST.pop(49-9)
+    PJ_LIST.pop(50-10)
+    PJ_LIST.pop(51-11)
+    PJ_LIST.pop(53-12)
+    PJ_LIST.pop(55-13)
+    PJ_LIST.pop(56-14)
+    PJ_LIST.pop(58-15)
+    PJ_LIST.pop(60-16)
+    PJ_LIST.pop(61-17)
+    PJ_LIST.pop(63-18)
+    PJ_LIST.pop(64-19)
+    PJ_LIST.pop(65-20)
+    PJ_LIST.pop(66-21)
+    PJ_LIST.pop(67-22)
+    PJ_LIST.pop(68-23)
     r_moon = 9.4*RJ
 elif TARGET_MOON == 'Ganymede':
     Psyn = Psyn_ga
@@ -199,7 +204,7 @@ def calc_azi_current_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi=139.6, mu_i_
     start_loop = time.time()
     print('Loop started.')
 
-    mui_azi_arr = np.arange(50.0, 200.0+1.0, 2.0)   # [nT]
+    mui_azi_arr = np.arange(50.0, 200.0+1.0, 1.0)   # [nT]
 
     # 中央値
     rho_eq_arr = np.zeros(mui_azi_arr.size)
@@ -254,9 +259,10 @@ def main():
     if FIT_TARGET == 'THICKNESS':
         PJ_list = [1, 3]+np.arange(4, 24, 1).tolist()
     for PJ in PJ_list:
-        if PJ < 24:
-            print('Go to the next PJ.')
-            continue
+        print('PJ'+str(PJ).zfill(2))
+        # if PJ < 49:
+        #     print('Go to the next PJ.')
+        #     continue
         j = 0
         wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, moon_S3wlon, et_fp, hem_fp, pj_fp = Obsresults(
             [PJ], TARGET_MOON, TARGET_FP, TARGET_HEM='both', FLIP=False
@@ -339,7 +345,7 @@ def main():
                 results_list = list(pool.starmap(calc_azi_current_loop, args))
 
         results_arr = np.array(results_list)
-        # print(results_arr.shape)      # >>> (XXX, 3)
+        print('results_arr.shape:', results_arr.shape)      # >>> (XXX, 3)
         bestfit_arr = results_arr[:, 0]      # 3.6*C [RJ]
         rho_eq_best_arr = results_arr[:, 1]          # [RJ]
         phi_eq_best_arr = np.mod(
@@ -371,7 +377,7 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     FIT_TARGET = 'AZI_CURRENT'      # 'AZI_CURRENT' or 'THICKNESS'
-    error_num = 1   # 0, 1, or 2
-    parallel = 20
+    error_num = 2   # 0, 1, or 2
+    parallel = 10
 
     main()
