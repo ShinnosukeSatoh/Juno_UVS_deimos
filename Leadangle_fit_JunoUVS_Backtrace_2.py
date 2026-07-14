@@ -1147,9 +1147,9 @@ if __name__ == '__main__':
     # Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 1000.0, 60, 'log'
 
     # Input about the paremeter space (Ganymede)
-    Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'
-    ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 50, 'log'
-    Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 3000.0, 60, 'log'
+    Ai_0, Ai_1, Ai_num, Ai_scale = 16.0, 20.0, 3, 'linear'
+    ni_0, ni_1, ni_num, ni_scale = 10.0, 800.0, 50, 'log'
+    Ti_0, Ti_1, Ti_num, Ti_scale = 20.0, 1000.0, 60, 'log'
 
     # Input about the paremeter space (Ga / SELECT_MODE = '3')
     # Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'
@@ -1157,6 +1157,6 @@ if __name__ == '__main__':
     # Ti_0, Ti_1, Ti_num, Ti_scale = 1.0, 200.0, 1, 'linear'
 
     # Number of parallel processes
-    parallel = 10
+    parallel = 16
 
     main()

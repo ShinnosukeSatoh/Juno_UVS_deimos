@@ -47,10 +47,10 @@ F.set_default()
 
 # %%
 exdir = '006/20260626'
-TARGET_MOON = 'Ganymede'
+TARGET_MOON = 'Europa'
 target_fp = ['MAW', 'TEB']
-PJ_num = [8]
-hem = 'N'
+PJ_num = [4]
+hem = 'S'
 Ai_num = 3
 ni_num = 50
 Ti_num = 60
@@ -58,31 +58,39 @@ Zi = 1.3                # Io: 1.3 / Eu: 1.4 / Ga: 1.3
 Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
 
 
-# %% Footprint obs. list (Ganymede)
-PJ_LIST = [3, 4, 5, 6, 7,
-           8, 11, 12, 13, 14,
-           16, 17, 19, 20, 21,
-           22, 25, 27, 30, 32,
-           34, 34, 35, 37, 38,
-           40, 41, 42, 46,  # 47,
-           50, 59, 60,
-           ]
-HEM_LIST = ['S', 'both', 'S', 'both', 'S',
-            'S', 'N', 'S', 'both', 'S',
-            'S', 'S', 'S', 'N', 'S',
-            'N', 'S', 'both', 'S', 'S',
-            'S', 'N', 'N', 'S', 'S',
-            'S', 'N', 'N', 'S',  # 'S',
-            'S', 'S', 'N',
-            ]
-EXNAME_LIST = ['101', '102', '103', '104', '105',
-               '140', '107', '117', '109', '118',
-               '111', '112', '113', '114', '119',
-               '120', '122', '123', '124', '125',
-               '127', '126', '141', '129', '130',
-               '131', '132', '133', '134',  # '135',
-               '136', '137', '138',
+# %% Footprint obs. list
+if TARGET_MOON == 'Europa':
+    PJ_LIST = [4, 7, 7,
                ]
+    HEM_LIST = ['S', 'N', 'S',
+                ]
+    EXNAME_LIST = ['201', '203', '204',
+                   ]
+elif TARGET_MOON == 'Ganymede':
+    PJ_LIST = [3, 4, 5, 6, 7,
+               8, 11, 12, 13, 14,
+               16, 17, 19, 20, 21,
+               22, 25, 27, 30, 32,
+               34, 34, 35, 37, 38,
+               40, 41, 42, 46,  # 47,
+               50, 59, 60,
+               ]
+    HEM_LIST = ['S', 'both', 'S', 'both', 'S',
+                'S', 'N', 'S', 'both', 'S',
+                'S', 'S', 'S', 'N', 'S',
+                'N', 'S', 'both', 'S', 'S',
+                'S', 'N', 'N', 'S', 'S',
+                'S', 'N', 'N', 'S',  # 'S',
+                'S', 'S', 'N',
+                ]
+    EXNAME_LIST = ['101', '102', '103', '104', '105',
+                   '140', '107', '117', '109', '118',
+                   '111', '112', '113', '114', '119',
+                   '120', '122', '123', '124', '125',
+                   '127', '126', '141', '129', '130',
+                   '131', '132', '133', '134',  # '135',
+                   '136', '137', '138',
+                   ]
 
 
 # %% Constants
@@ -106,14 +114,20 @@ if TARGET_MOON == 'Io':
     Psyn = Psyn_io
     r_moon = 5.9*RJ
     xticks = np.array([1, 10, 100, 500, 1000, 5000])
+    ni_min = 10.0
+    ni_max = 800.0
 elif TARGET_MOON == 'Europa':
     Psyn = Psyn_eu
     r_moon = 9.4*RJ
-    xticks = np.array([1, 10, 100, 500, 1000, 5000])
+    xticks = np.array([1, 10, 100, 500])
+    ni_min = 10.0
+    ni_max = 800.0
 elif TARGET_MOON == 'Ganymede':
     Psyn = Psyn_ga
     r_moon = 15.0*RJ
     xticks = np.array([1, 10, 100])
+    ni_min = 1, 0
+    ni_max = 100.0
 
 
 # %% Data from Connerney+2020: PJ index
@@ -360,7 +374,7 @@ for i in range(len(PJ_LIST)):
                     dpi='L')
     F.initialize()
     F.set_xaxis(label=r'$n_i$ [cm$^{-3}$]',
-                min=10, max=100,
+                min=ni_min, max=ni_max,
                 ticks=xticks,
                 ticklabels=xticks,
                 xscale='log')
