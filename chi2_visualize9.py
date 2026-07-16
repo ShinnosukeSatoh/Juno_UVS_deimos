@@ -49,7 +49,7 @@ F.set_default()
 exdir = '006/20260626'
 TARGET_MOON = 'Europa'
 target_fp = ['MAW', 'TEB']
-PJ_num = [4]
+PJ_num = [16]
 hem = 'S'
 Ai_num = 3
 ni_num = 50
@@ -60,11 +60,17 @@ Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
 
 # %% Footprint obs. list
 if TARGET_MOON == 'Europa':
-    PJ_LIST = [4, 7, 7,
+    PJ_LIST = [4, 7, 7, 8, 8,
+               9, 11, 12, 13, 14,
+               16,
                ]
-    HEM_LIST = ['S', 'N', 'S',
+    HEM_LIST = ['S', 'S', 'N', 'S', 'N',
+                'S', 'S', 'N', 'N', 'S',
+                'S',
                 ]
-    EXNAME_LIST = ['201', '203', '204',
+    EXNAME_LIST = ['201', '204', '203', '206', '205',
+                   '207', '208', '209', '210', '211',
+                   '213',
                    ]
 elif TARGET_MOON == 'Ganymede':
     PJ_LIST = [3, 4, 5, 6, 7,
@@ -119,15 +125,43 @@ if TARGET_MOON == 'Io':
 elif TARGET_MOON == 'Europa':
     Psyn = Psyn_eu
     r_moon = 9.4*RJ
-    xticks = np.array([1, 10, 100, 500])
+    xticks = np.array([10, 100, 800])
     ni_min = 10.0
     ni_max = 800.0
+    yticks = np.array([20, 100, 1000])
+    Ti_min = 20.0
+    Ti_max = 1000.0
+    eqlead_ticks = np.arange(0, 15+1, 5, dtype=int)
+    eqlead_min = -1
+    eqlead_max = 15
+    ftmc_ticks = np.linspace(0, 25, 6, dtype=int)/10
+    ftmc_min = np.min(ftmc_ticks)
+    ftmc_max = np.max(ftmc_ticks)
+    ftmc_bins = np.arange(0, 25.0+1, 0.5)/10
+    p_perp_ticks = np.linspace(0, 20.0, 5)
+    p_perp_min = np.min(p_perp_ticks)
+    p_perp_max = np.max(p_perp_ticks)
+    p_perp_bins = np.arange(0, 20.0+1, 0.5)
 elif TARGET_MOON == 'Ganymede':
     Psyn = Psyn_ga
     r_moon = 15.0*RJ
     xticks = np.array([1, 10, 100])
     ni_min = 1, 0
     ni_max = 100.0
+    yticks = np.array([10, 100, 1000, 3000])
+    Ti_min = np.min(yticks)
+    Ti_max = np.max(yticks)
+    eqlead_ticks = np.arange(0, 40+1, 10, dtype=int)
+    eqlead_min = -2
+    eqlead_max = 40
+    ftmc_ticks = np.linspace(0, 25, 6, dtype=int)/100
+    ftmc_min = np.min(ftmc_ticks)
+    ftmc_max = np.max(ftmc_ticks)
+    ftmc_bins = np.arange(0, 25.0+1, 0.5)/100
+    p_perp_ticks = np.linspace(0, 3.5, 8)
+    p_perp_min = np.min(p_perp_ticks)
+    p_perp_max = np.max(p_perp_ticks)
+    p_perp_bins = np.arange(0, 3.0+1, 0.2)
 
 
 # %% Data from Connerney+2020: PJ index
@@ -379,9 +413,9 @@ for i in range(len(PJ_LIST)):
                 ticklabels=xticks,
                 xscale='log')
     F.set_yaxis(ax_idx=0, label=r'$T_i$ [eV]',
-                min=10, max=3000,
-                ticks=np.array([10, 100, 1000, 3000]),
-                ticklabels=np.array([10, 100, 1000, 3000]),
+                min=Ti_min, max=Ti_max,
+                ticks=yticks,
+                ticklabels=yticks,
                 yscale='log')
     cn = F.ax.contour(x_value, y_value, z_value,
                       levels=[2.30, 6.17, 11.8],
@@ -431,29 +465,29 @@ for i in range(len(PJ_LIST)):
     F.set_figparams(nrows=1, figsize=(5.0, 3.5), ticksize=1.5,
                     dpi='L')
     F.initialize()
-    F.set_xaxis(label=r'FTMC [10$^{-11}$ kg m$^{-2}$]',
-                min=1, max=25,
-                ticks=np.linspace(0, 25, 6),
-                ticklabels=np.linspace(0, 25, 6),
+    F.set_xaxis(label=r'FTMC [10$^{-9}$ kg m$^{-2}$]',
+                min=ftmc_min, max=ftmc_max,
+                ticks=ftmc_ticks,
+                ticklabels=ftmc_ticks,
                 minor_num=5)
     F.set_yaxis(ax_idx=0, label='Counts [#]',
                 min=0, max=60,
                 ticks=np.arange(0, 60+1, 10),
                 ticklabels=np.arange(0, 60+1, 10),
                 minor_num=2)
-    _, bins, hpatches = F.ax.hist(FTMC_2d_select*1E+11,
-                                  bins=np.arange(0, 25.0+1, 0.5),
+    _, bins, hpatches = F.ax.hist(FTMC_2d_select*1E+9,
+                                  bins=ftmc_bins,
                                   weights=weight,
                                   color=UC.blue)
     quartile1, medians, quartile3 = weighted_percentile(data=FTMC_2d_select,
                                                         perc=[0.25, 0.5, 0.75],
                                                         weights=weight)
     weighted_boxplot_h2(F.ax, 57,
-                        quartile1*1E+11,
-                        medians*1E+11,
-                        quartile3*1E+11,
-                        np.min(FTMC_2d_select)*1E+11,
-                        np.max(FTMC_2d_select)*1E+11,
+                        quartile1*1E+9,
+                        medians*1E+9,
+                        quartile3*1E+9,
+                        np.min(FTMC_2d_select)*1E+9,
+                        np.max(FTMC_2d_select)*1E+9,
                         width=1.2)
     fig_title = TARGET_MOON + r' FTMC'
     fig_title += ' ('+pj_title+')'
@@ -471,7 +505,7 @@ for i in range(len(PJ_LIST)):
     ftmc_min_q1_median_q3_max_arr[i, 4] = np.max(FTMC_2d_select)
     print('FTMC [10^-9 kg m-2]:', ftmc_min_q1_median_q3_max_arr[i, :]*1E+9)
 
-    # Plasma pressure (T_para = T_perp)
+    # Plasma pressure [nPa] (T_para = T_perp)
     T_perp_3d = Ti_3d
     P_perp_3d = (ni_3d*1E+6)*T_perp_3d*(1.602176634*1E-19)  # [Pa]
     P_perp_3d = P_perp_3d*1E+9  # [nPa]
@@ -484,9 +518,9 @@ for i in range(len(PJ_LIST)):
                     dpi='L')
     F.initialize()
     F.set_xaxis(label=r'$P_{\perp}$ [Pa]',
-                min=0, max=1,
-                ticks=np.arange(0, 3.0+1, 0.5),
-                ticklabels=np.arange(0, 3.0+1, 0.5),
+                min=p_perp_min, max=p_perp_max,
+                ticks=p_perp_ticks,
+                ticklabels=p_perp_ticks,
                 minor_num=5)
     F.set_yaxis(ax_idx=0, label='Counts [#]',
                 min=0, max=60,
@@ -494,7 +528,7 @@ for i in range(len(PJ_LIST)):
                 ticklabels=np.arange(0, 60+1, 10),
                 minor_num=2)
     _, bins, hpatches = F.ax.hist(P_perp_2d_select,
-                                  bins=np.arange(0, 3.0+1, 0.2),
+                                  bins=p_perp_bins,
                                   weights=weight,
                                   color=UC.blue)
     quartile1, medians, quartile3 = weighted_percentile(data=P_perp_2d_select,
@@ -684,9 +718,9 @@ F.set_yaxis(ax_idx=0,
             minor_num=4)
 F.set_yaxis(ax_idx=1,
             label=r'$M$ [10$^{-9}$ kg m$^{-2}$]',
-            min=0.0, max=0.25,
-            ticks=np.linspace(0, 25, 6)/100,
-            ticklabels=np.linspace(0, 25, 6)/100,
+            min=ftmc_min, max=ftmc_max,
+            ticks=ftmc_ticks,
+            ticklabels=ftmc_ticks,
             minor_num=5)
 
 for i in range(len(PJ_LIST)):
@@ -801,15 +835,15 @@ F.set_yaxis(ax_idx=0,
             minor_num=4)
 F.set_yaxis(ax_idx=1,
             label=r'$M$ [10$^{-9}$ kg m$^{-2}$]',
-            min=0.0, max=0.25,
-            ticks=np.linspace(0, 25, 6)/100,
-            ticklabels=np.linspace(0, 25, 6)/100,
+            min=ftmc_min, max=ftmc_max,
+            ticks=ftmc_ticks,
+            ticklabels=ftmc_ticks,
             minor_num=5)
 F.set_yaxis(ax_idx=2,
             label=r'$P_{\perp}$ [nPa]',
-            min=0, max=3.5,
-            ticks=np.linspace(0, 3.5, 8),
-            ticklabels=np.linspace(0, 3.5, 8),
+            min=p_perp_min, max=p_perp_max,
+            ticks=p_perp_ticks,
+            ticklabels=p_perp_ticks,
             minor_num=5)
 
 for i in range(len(PJ_LIST)):
@@ -947,9 +981,9 @@ F.fontname = 'Liberation Sans Narrow'
 F.set_figparams(nrows=1, figsize=(5.4, 5.0), dpi='XL')
 F.initialize()
 F.set_xaxis(label=r'$M$ [10$^{-9}$ kg m$^{-2}$]',
-            min=0.0, max=0.25,
-            ticks=np.linspace(0, 25, 6)/100,
-            ticklabels=np.linspace(0, 25, 6)/100,
+            min=ftmc_min, max=ftmc_max,
+            ticks=ftmc_ticks,
+            ticklabels=ftmc_ticks,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'$\mu_0 I_{\varphi} / 2$ [nT]',
@@ -1022,7 +1056,7 @@ print("Parameters:", popt_li)
 label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
 label_tvalue = r'$t =$'+str(round(t_value, 2))
 label_pvalue = r'$p =$'+str(round(p_two_sided, 3))
-x_fit = np.linspace(0, 0.25, 100)
+x_fit = np.linspace(0, ftmc_max*1.2, 100)
 y_fit = fit_linear(popt_li, x_fit)
 F.ax.plot(x_fit, y_fit, color='k', zorder=0.1)
 
@@ -1084,9 +1118,9 @@ F.fontname = 'Liberation Sans Narrow'
 F.set_figparams(nrows=1, figsize=(5.4, 5.0), dpi='XL')
 F.initialize()
 F.set_xaxis(label=r'$P_{\perp}$ [nPa]',
-            min=0.0, max=3.5,
-            ticks=np.linspace(0, 3.5, 8),
-            ticklabels=np.linspace(0, 3.5, 8),
+            min=p_perp_min, max=p_perp_max,
+            ticks=p_perp_ticks,
+            ticklabels=p_perp_ticks,
             minor_num=5)
 F.set_yaxis(ax_idx=0,
             label=r'$\mu_0 I_{\varphi} / 2$ [nT]',
@@ -1159,7 +1193,7 @@ print("Parameters:", popt_li)
 label_corrcoef = r'$\rho =$'+str(round(correlation, 2))
 label_tvalue = r'$t =$'+str(round(t_value, 2))
 label_pvalue = r'$p =$'+str(round(p_two_sided, 3))
-x_fit = np.linspace(0, 4, 100)
+x_fit = np.linspace(0, p_perp_max*1.2, 100)
 y_fit = fit_linear(popt_li, x_fit)
 F.ax.plot(x_fit, y_fit, color='k', zorder=0.1)
 
@@ -1227,9 +1261,9 @@ F.set_xaxis(label=r' MLT [hour]',
             minor_num=3)
 F.set_yaxis(ax_idx=0,
             label=r'$M$ [10$^{-9}$ kg m$^{-2}$]',
-            min=0.0, max=0.25,
-            ticks=np.linspace(0, 25, 6)/100,
-            ticklabels=np.linspace(0, 25, 6)/100,
+            min=ftmc_min, max=ftmc_max,
+            ticks=ftmc_ticks,
+            ticklabels=ftmc_ticks,
             minor_num=5)
 lt_median = np.zeros(len(PJ_LIST))
 for i in range(len(PJ_LIST)):
@@ -1359,10 +1393,10 @@ F.set_xaxis(label=r'Moon System III longitude [deg]',
             ticklabels=np.arange(0, 360+1, 45),
             minor_num=3)
 F.set_yaxis(ax_idx=i, label=r'$\delta_{\rm eq}$ [deg]',
-            min=-2, max=40,
-            ticks=np.arange(0, 40+1, 10),
-            ticklabels=np.arange(0, 40+1, 10),
-            minor_num=10)
+            min=eqlead_min, max=eqlead_max,
+            ticks=eqlead_ticks,
+            ticklabels=eqlead_ticks,
+            minor_num=5)
 
 # Observations
 for i in range(hem_obs.size):
