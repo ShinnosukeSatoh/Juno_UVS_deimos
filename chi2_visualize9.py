@@ -952,7 +952,7 @@ F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=2, figsize=(7.5, 6.5), dpi='XL')
+F.set_figparams(nrows=3, figsize=(8.0, 9.5), dpi='XL')
 F.hspace = 0.15
 F.initialize()
 
@@ -978,22 +978,30 @@ F.set_xaxis(label='Date',
             ticklabels=xticklabels,
             minor_num=12,
             format='%Y-%m-%d')
-ticklabels = F.ax[1].get_xticklabels()
+ticklabels = F.ax[2].get_xticklabels()
 ticklabels[0].set_ha('center')
 F.set_yaxis(ax_idx=0,
             label=r'[A m$^{-1}$]',
-            min=0.007, max=0.2,
-            ticks=None,
-            ticklabels=None,
-            yscale='log')
+            min=0.0, max=0.18,
+            ticks=np.arange(0, 18+1, 3)/100,
+            ticklabels=np.arange(0, 18+1, 3)/100,
+            minor_num=3,)
 F.set_yaxis(ax_idx=1,
             label=r'$\Delta$ [A m$^{-1}$]',
-            min=0.001, max=0.2,
-            ticks=None,
-            ticklabels=None,
-            yscale='log')
+            min=-0.03, max=0.15,
+            ticks=np.arange(-3, 15+1, 3)/100,
+            ticklabels=np.arange(-3, 15+1, 3)/100,
+            minor_num=3,)
+F.set_yaxis(ax_idx=2,
+            label=r'$P_{\perp}$ [nPa]',
+            min=-0.3, max=3.6,
+            ticks=np.arange(0, 36+1, 6)/10,
+            ticklabels=np.arange(0, 36+1, 6)/10,
+            minor_num=3,)
 
 azi_current_total = np.zeros(len(PJ_LIST))
+new_medians_arr = np.zeros(len(PJ_LIST))
+new_iqrs_arr = np.zeros(len(PJ_LIST))
 for i in range(len(PJ_LIST)):
     d0 = datetime_fp_0[i]
 
@@ -1004,6 +1012,19 @@ for i in range(len(PJ_LIST)):
     q3 = ftmc_min_q1_median_q3_max_arr[i, 3]*1E+9
     max = ftmc_min_q1_median_q3_max_arr[i, 4]*1E+9
     width = datetime.timedelta(seconds=60*60*24*20)
+
+    # P_perp [nPa]
+    min = P_perp_min_q1_median_q3_max_arr[i, 0]
+    q1 = P_perp_min_q1_median_q3_max_arr[i, 1]
+    median = P_perp_min_q1_median_q3_max_arr[i, 2]
+    q3 = P_perp_min_q1_median_q3_max_arr[i, 3]
+    max = P_perp_min_q1_median_q3_max_arr[i, 4]
+    width = datetime.timedelta(seconds=60*60*24*20)
+    weighted_boxplot2(F.ax[2], d0, q1, median, q3,
+                      min,
+                      max,
+                      width=width,
+                      ec=UC.blue, lw=1.1)
 
     # Current constant
     y0 = azi_currnet_0_ave[i]
@@ -1081,8 +1102,25 @@ for i in range(len(PJ_LIST)):
                       q_C[0],
                       q_C[4],
                       width=width,
-                      ec=UC.orange, lw=1.1)
+                      ec=UC.blue, lw=1.1)
 
+    new_medians_arr[i] = q_C[2]
+    new_iqrs_arr[i] = q_C[3]-q_C[1]
+print('np.median(new_medians_arr):', np.median(new_medians_arr))
+print('np.median(new_iqrs_arr):', np.median(new_iqrs_arr))
+print((new_medians_arr-np.median(new_medians_arr))/np.median(new_iqrs_arr))
+F.ax[1].axhline(y=np.median(new_medians_arr),
+                color=UC.lightbeige, alpha=1.0, linewidth=1.5,
+                zorder=0.9)
+F.ax[1].fill_between(x=xticks,
+                     y1=np.median(new_medians_arr)+0.5*np.median(new_iqrs_arr),
+                     y2=np.median(new_medians_arr)-0.5*np.median(new_iqrs_arr),
+                     hatch='///', fc='w', ec=UC.lightbeige,
+                     linewidth=0, alpha=0.85,
+                     zorder=0.8)
+plt.rcParams["hatch.linewidth"] = 1.8
+
+# Total current density
 F.ax[0].plot(datetime_fp_0, azi_current_total,
              marker='s', color=UC.red, markersize=3,
              linewidth=1.0,
@@ -1098,21 +1136,21 @@ PJax.xaxis.set_minor_locator(FixedLocator(mdates.date2num(JUNO_PJ_TIMES)))
 PJax.tick_params('y', grid_zorder=-10)
 
 # Shades in each 5 perijove
-for i in range(2):
+for i in range(3):
     F.ax[i].axvspan(JUNO_PJ_TIMES[0], JUNO_PJ_TIMES[5],
-                    fc=UC.gray, ec=None, alpha=0.10)
+                    fc=UC.gray, ec=None, zorder=0.5, alpha=0.10)
     F.ax[i].axvspan(JUNO_PJ_TIMES[10], JUNO_PJ_TIMES[15],
-                    fc=UC.gray, ec=None, alpha=0.10)
+                    fc=UC.gray, ec=None, zorder=0.5, alpha=0.10)
     F.ax[i].axvspan(JUNO_PJ_TIMES[20], JUNO_PJ_TIMES[25],
-                    fc=UC.gray, ec=None, alpha=0.10)
+                    fc=UC.gray, ec=None, zorder=0.5, alpha=0.10)
     F.ax[i].axvspan(JUNO_PJ_TIMES[30], JUNO_PJ_TIMES[35],
-                    fc=UC.gray, ec=None, alpha=0.10)
+                    fc=UC.gray, ec=None, zorder=0.5, alpha=0.10)
     F.ax[i].axvspan(JUNO_PJ_TIMES[40], JUNO_PJ_TIMES[45],
-                    fc=UC.gray, ec=None, alpha=0.10)
+                    fc=UC.gray, ec=None, zorder=0.5, alpha=0.10)
     F.ax[i].axvspan(JUNO_PJ_TIMES[50], JUNO_PJ_TIMES[55],
-                    fc=UC.gray, ec=None, alpha=0.10)
+                    fc=UC.gray, ec=None, zorder=0.5, alpha=0.10)
     F.ax[i].axvspan(JUNO_PJ_TIMES[60], JUNO_PJ_TIMES[65],
-                    fc=UC.gray, ec=None, alpha=0.10)
+                    fc=UC.gray, ec=None, zorder=0.5, alpha=0.10)
 
 # Dummy
 F.ax[0].plot([d0, d0], [500000, 600000],
@@ -1123,15 +1161,15 @@ F.ax[0].plot([d0, d0], [550000, 650000],
              label=r'Centrifugal force term', zorder=2)
 
 legend = F.legend(ax_idx=0,
-                  ncol=1, markerscale=1.0,
-                  loc='lower right',
+                  ncol=2, markerscale=1.0,
+                  loc='upper center',
                   handlelength=0.1,
                   textcolor=False,
-                  fontsize_scale=0.63,
+                  fontsize_scale=0.65,
                   handletextpad=0.3)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0], d=0.7)
 
-F.fig.savefig(img_savedir + '/current_terms_timeseries.jpg',
+F.fig.savefig(img_savedir + '/current_terms_timeseries_linear.jpg',
               bbox_inches='tight')
 F.close()
 plt.close()
