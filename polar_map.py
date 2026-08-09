@@ -448,6 +448,64 @@ def leadangle_plot():
     return None
 
 
+# %% Select number of the RAWs to extract
+def extract_selected_RAW_table(num=10):
+    filename = 'data_'+TARGET_MOON[0]+'FP_interp_map_' + \
+        str(int(alt_ref[fp_alt_target]))+'km_'+retrieval+'.txt'
+    interp = np.loadtxt('results/reflect_2/'+exname+'/'+filename)
+    moon_s3_obs = interp[:, 0]
+
+    # Northern positions as a function of moon_s3_obs
+    north_pos_arr = np.zeros((moon_s3_obs.size, 1+(1+reflections+2)*2))
+
+    # j=1: colatitude [rad], j=2: w-longitude [rad]
+    # j=3: equatorial lead angle [rad]
+    pos_N_MAW = interp[:, 3]
+    pos_S_MAW = interp[:, 3*(1+reflections+2)+3]
+
+    # Reflections
+    k = 0
+    for i in range(1+reflections+2):
+        pos_N_fp_colat = interp[:, 3*i+1]     # FP colatitude [rad]
+        pos_N_fp_wlong = interp[:, 3*i+2]     # FP west longitude [rad]
+
+        if 90.0-np.degrees(pos_N_fp_colat[i]) >= 0:
+            if i == 0:
+                footprint_var_i = 'MAW'
+            elif i in [1+reflections+2-1, 1+reflections+2-2]:
+                footprint_var_i = 'TEB'
+            else:
+                footprint_var_i = 'RAW'
+            print('('+footprint_var_i+')', 90.0-np.degrees(pos_N_fp_colat[0]),
+                  np.degrees(pos_N_fp_wlong[0]))
+            north_pos_arr[:, 4*k+1] = pos_N_fp_colat
+            north_pos_arr[:, 4*k+2] = pos_N_fp_wlong
+            k += 1
+
+    # print(north_pos_arr[0, :])
+    k = 0
+    for i in range(1+reflections+2):
+        pos_S_fp_colat = interp[:, 3*(i+1+reflections+2)+1]
+        pos_S_fp_wlong = interp[:, 3*(i+1+reflections+2)+2]
+        if 90.0-np.degrees(pos_S_fp_colat[i]) >= 0:
+            if i == 0:
+                footprint_var_i = 'MAW'
+            elif i in [1+reflections+2-1, 1+reflections+2-2]:
+                footprint_var_i = 'TEB'
+            else:
+                footprint_var_i = 'RAW'
+            print('('+footprint_var_i+')', 90.0-np.degrees(pos_S_fp_colat[0]),
+                  np.degrees(pos_S_fp_wlong[0]))
+            north_pos_arr[:, 4*k+3] = pos_S_fp_colat
+            north_pos_arr[:, 4*k+4] = pos_S_fp_wlong
+            k += 1
+
+    north_pos_arr[:, 0] = moon_s3_obs
+    # print(north_pos_arr[0, :])
+
+    return north_pos_arr
+
+
 # %% Polar plot
 def polar_plot(fp_traced_arr,
                target_moon_s3_obs,
@@ -555,9 +613,9 @@ def polar_plot(fp_traced_arr,
                            )*math.cos(math.radians(360-target_wlon_fp))
         x_obs_4 = math.sin(math.radians(90-target_lat_fp-target_err_lat_fp)
                            )*math.cos(math.radians(360-target_wlon_fp))
-        y_obs_1 = math.sin(math.radians(90-target_lat_fp)) * \
+        y_obs_1 = math.sin(math.radians(90-target_lat_fp)) *\
             math.sin(math.radians(360-target_wlon_fp+target_err_wlon_fp))
-        y_obs_2 = math.sin(math.radians(90-target_lat_fp)) * \
+        y_obs_2 = math.sin(math.radians(90-target_lat_fp)) *\
             math.sin(math.radians(360-target_wlon_fp-target_err_wlon_fp))
         y_obs_3 = math.sin(math.radians(90-target_lat_fp+target_err_lat_fp)
                            )*math.sin(math.radians(360-target_wlon_fp))
@@ -681,6 +739,10 @@ def main():
 
     leadangle_plot()
 
+    north_pos_arr = extract_selected_RAW_table()
+    np.savetxt('results/reflect_2/'+exname+'/data_'+TARGET_MOON[0]+'FP_interp_map_'+str(int(alt_ref[fp_alt_target]))+'km_NRAW_table.txt',
+               north_pos_arr)
+
     if TARGET_ET is not False:
         _, _, _, _, _, _, moon_S3wlon0 = moonS3wlon_arr(
             TARGET_ET, moon=TARGET_MOON)
@@ -702,13 +764,13 @@ def main():
 # %% EXECUTE
 if __name__ == '__main__':
     # Name of execution
-    exname = '003/20250516_051'
+    exname = '003/20250516_054'
 
     # Input about Juno observation
     TARGET_MOON = 'Io'
     TARGET_FP = ['MAW']
-    PJ_LIST = [7]
-    TARGET_HEM = 'both'
+    PJ_LIST = [9]
+    TARGET_HEM = 'N'
     FLIP = False            # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
     Ai_num = 3
     ni_num = 50
@@ -721,7 +783,7 @@ if __name__ == '__main__':
                500.0, 400.0, 300.0, 200.0, 100.0,
                50.0, 10.0, 5.0]
     reflect_alt_target = -len(alt_ref)  # ALWAYS NEGATIVE!!!
-    fp_alt_target = -7                  # ALWAYS NEGATIVE!!!
+    fp_alt_target = -12                  # ALWAYS NEGATIVE!!!
     retrieval = 'hot'                 # 'best', 'hot', 'dense'
 
     # PJ03 2016-12-11T17:51:10

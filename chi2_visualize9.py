@@ -23,6 +23,7 @@ import Leadangle_wave as Wave
 from scipy.odr import ODR, Model, RealData
 from scipy.stats import spearmanr
 from scipy.stats import t
+from scipy.interpolate import PchipInterpolator
 
 from MyPlotRecipe.UniversalColor import UniversalColor
 from MyPlotRecipe.SharedX import ShareXaxis
@@ -47,10 +48,10 @@ F.set_default()
 
 # %%
 exdir = '006/20260626'
-TARGET_MOON = 'Europa'
+TARGET_MOON = 'Ganymede'
 target_fp = ['MAW', 'TEB']
-PJ_num = [16]
-hem = 'S'
+PJ_num = [6]
+hem = 'both'
 Ai_num = 3
 ni_num = 50
 Ti_num = 60
@@ -62,15 +63,27 @@ Te = 300.0              # Io: 6.0 [eV]/ Eu: 20.0 / Ga: 300.0
 if TARGET_MOON == 'Europa':
     PJ_LIST = [4, 7, 7, 8, 8,
                9, 11, 12, 13, 14,
-               16,
+               17, 18, 20, 22,
+               23, 25, 26, 27, 29,
+               30, 31, 32, 33, 34,
+               35, 36, 38, 41, 48,
+               62,
                ]
     HEM_LIST = ['S', 'S', 'N', 'S', 'N',
                 'S', 'S', 'N', 'N', 'S',
+                'both', 'S', 'both', 'N',
+                'S', 'S', 'both', 'N', 'both',
+                'S', 'S', 'S', 'S', 'S',
+                'S', 'N', 'S', 'S', 'S',
                 'S',
                 ]
     EXNAME_LIST = ['201', '204', '203', '206', '205',
-                   '207', '208', '209', '210', '211',
-                   '213',
+                   '207', '208', '220', '210', '211',
+                   '214', '215', '216', '218',
+                   '221', '222', '223', '224', '225',
+                   '226', '227', '229', '230', '231',
+                   '232', '233', '234', '235', '236',
+                   '237',
                    ]
 elif TARGET_MOON == 'Ganymede':
     PJ_LIST = [3, 4, 5, 6, 7,
@@ -146,7 +159,7 @@ elif TARGET_MOON == 'Ganymede':
     Psyn = Psyn_ga
     r_moon = 15.0*RJ
     xticks = np.array([1, 10, 100])
-    ni_min = 1, 0
+    ni_min = 1.0
     ni_max = 100.0
     yticks = np.array([10, 100, 1000, 3000])
     Ti_min = np.min(yticks)
@@ -312,6 +325,7 @@ datetime_fp_0 = []
 et_fp_0 = []
 ftmc_min_q1_median_q3_max_arr = np.zeros((len(PJ_LIST), 5))
 P_perp_min_q1_median_q3_max_arr = np.zeros((len(PJ_LIST), 5))
+azi_current_centrifugal_min_q1_median_q3_max_arr = np.zeros((len(PJ_LIST), 5))
 data_dir = 'data/Backtraced_AZI_CURRENT/'
 for i in range(len(PJ_LIST)):
     exname = exdir+'_'+EXNAME_LIST[i]
@@ -380,7 +394,7 @@ for i in range(len(PJ_LIST)):
     view_TEB = viewingangle(PJ_LIST[i], TARGET_MOON, 'TEB', HEM_LIST[i])
     # if target_fp == ['MAW', 'TEB']:
     #     view = np.hstack((view, view_TEB))      # [deg]
-    if EXNAME_LIST[i] not in ['117', '118', '119', '120']:
+    if EXNAME_LIST[i] not in ['117', '118', '119', '120', '220',]:
         view = np.hstack((view, view_TEB))      # [deg]
     else:
         azi_currnet_0 = azi_currnet_0[np.where(abs(hem_ref) == 1)]
@@ -556,6 +570,8 @@ for i in range(len(PJ_LIST)):
     P_perp_min_q1_median_q3_max_arr[i, 3] = quartile3
     P_perp_min_q1_median_q3_max_arr[i, 4] = np.max(P_perp_2d_select)
     print('P_perp [nPa]:', P_perp_min_q1_median_q3_max_arr[i, :])
+
+    # Azimuthal current centrifugal component [A m-1]
 
 
 # %% Juno's perijove times
@@ -929,6 +945,198 @@ F.close()
 plt.close()
 
 
+# %% ================================
+# 横軸: date / 縦軸: 電流の沿磁力線積分値
+# ===================================
+F = ShareXaxis()
+F.fontsize = 22
+F.fontname = 'Liberation Sans Narrow'
+
+F.set_figparams(nrows=2, figsize=(7.5, 6.5), dpi='XL')
+F.hspace = 0.15
+F.initialize()
+
+sxmin = '2016-01-01'
+sxmax = '2025-01-01'
+xmin = datetime.datetime.strptime(sxmin, '%Y-%m-%d')
+xmax = datetime.datetime.strptime(sxmax, '%Y-%m-%d')
+xticks = [datetime.datetime.strptime('2016-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2017-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2018-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2019-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2020-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2021-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2022-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2023-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2024-01-01', '%Y-%m-%d'),
+          datetime.datetime.strptime('2025-01-01', '%Y-%m-%d')]
+xticklabels = ['2016', '2017', '2018', '2019', '2020',
+               '2021', '2022', '2023', '2024', '2025']
+F.set_xaxis(label='Date',
+            min=xmin, max=xmax,
+            ticks=xticks,
+            ticklabels=xticklabels,
+            minor_num=12,
+            format='%Y-%m-%d')
+ticklabels = F.ax[1].get_xticklabels()
+ticklabels[0].set_ha('center')
+F.set_yaxis(ax_idx=0,
+            label=r'[A m$^{-1}$]',
+            min=0.007, max=0.2,
+            ticks=None,
+            ticklabels=None,
+            yscale='log')
+F.set_yaxis(ax_idx=1,
+            label=r'$\Delta$ [A m$^{-1}$]',
+            min=0.001, max=0.2,
+            ticks=None,
+            ticklabels=None,
+            yscale='log')
+
+azi_current_total = np.zeros(len(PJ_LIST))
+for i in range(len(PJ_LIST)):
+    d0 = datetime_fp_0[i]
+
+    # FTMC
+    min = ftmc_min_q1_median_q3_max_arr[i, 0]*1E+9
+    q1 = ftmc_min_q1_median_q3_max_arr[i, 1]*1E+9
+    median = ftmc_min_q1_median_q3_max_arr[i, 2]*1E+9
+    q3 = ftmc_min_q1_median_q3_max_arr[i, 3]*1E+9
+    max = ftmc_min_q1_median_q3_max_arr[i, 4]*1E+9
+    width = datetime.timedelta(seconds=60*60*24*20)
+
+    # Current constant
+    y0 = azi_currnet_0_ave[i]
+    dy0 = np.mean([abs(azi_currnet_0_ave[i]-azi_currnet_1_ave[i]),
+                   abs(azi_currnet_0_ave[i]-azi_currnet_2_ave[i])])
+
+    # Bz
+    jm.Con2020.Config(mu_i=y0)
+    Bx0, By0, Bz0 = jm.Internal.Field(r_moon/RJ, 0.0, 0.0)  # [nT]
+    Bx1, By1, Bz1 = jm.Con2020.Field(r_moon/RJ, 0.0, 0.0)   # [nT]
+    Bx = (Bx0+Bx1)*1E-9
+    By = (By0+By1)*1E-9
+    Bz = (Bz0+Bz1)*1E-9
+    azi_current_centrifugal = - \
+        (1/Bz)*r_moon*(OMGJ**2)*ftmc_min_q1_median_q3_max_arr[i, :]
+    azi_current_total[i] = ((y0*1E-9)/(MU0*r_moon/2))*(3.6*RJ*2)
+    d_azi_current_total = ((dy0*1E-9)/(MU0*r_moon/2))*(3.6*RJ*2)
+    F.ax[0].errorbar(x=d0, y=azi_current_total[i],
+                     yerr=d_azi_current_total,
+                     elinewidth=1.1, linewidth=0., markersize=0.,
+                     capsize=2.0, capthick=1.1,
+                     color=UC.red,)
+    weighted_boxplot2(F.ax[0], d0,
+                      azi_current_centrifugal[1],
+                      azi_current_centrifugal[2],
+                      azi_current_centrifugal[3],
+                      azi_current_centrifugal[0],
+                      azi_current_centrifugal[4],
+                      width=width,
+                      ec=UC.blue, lw=1.1)
+
+    # ==========================================
+    # Hot plasma pressure termの導出
+    # 1. パラメータ設定
+    # ==========================================
+    # 観測量 A
+    A_val = azi_current_total[i]
+    dA = d_azi_current_total
+
+    # 観測量 B の箱ヒゲ図の要約統計量（右に裾が長い非対称な分布の例）
+    # [最小値, Q1(25%), 中央値(50%), Q3(75%), 最大値]
+    B_stats = azi_current_centrifugal
+    percentiles = np.array([0.0, 0.25, 0.50, 0.75, 1.0])
+    # モンテカルロ試行回数
+    N = 100000
+
+    # ==========================================
+    # 2. B の分布サンプリング（逆関数法）
+    # ==========================================
+    # 0〜1の確率を表現する一様乱数
+    u = np.random.uniform(0, 1, size=N)
+
+    # 【手法2】滑らかな補間（PCHIP: 単調増加性を保ち自然な分布を作る・推奨）
+    pchip = PchipInterpolator(percentiles, B_stats)
+    B_sim = pchip(u)
+
+    # ==========================================
+    # 3. A の分布サンプリング & 差 C の算出
+    # ==========================================
+    # A は正規分布に従うと仮定してサンプリング
+    A_sim = np.random.normal(loc=A_val, scale=dA, size=N)
+
+    # 差 C = A - B を計算
+    C_sim = A_sim - B_sim
+
+    # ==========================================
+    # 4. 統計量の確認と要約
+    # ==========================================
+    q_C = np.percentile(C_sim, [2.5, 25, 50, 75, 97.5])
+
+    weighted_boxplot2(F.ax[1], d0,
+                      q_C[1],
+                      q_C[2],
+                      q_C[3],
+                      q_C[0],
+                      q_C[4],
+                      width=width,
+                      ec=UC.orange, lw=1.1)
+
+F.ax[0].plot(datetime_fp_0, azi_current_total,
+             marker='s', color=UC.red, markersize=3,
+             linewidth=1.0,
+             markeredgecolor='k', markerfacecolor='w',
+             zorder=2)
+
+# PJ numbers on the top horizontal axis
+PJax = F.ax[0].twiny()
+PJax.set_xlim(xmin, xmax)
+PJax.set_xticks(JUNO_PJ_TIMES[::5])
+PJax.set_xticklabels(JUNO_PJ_LABELS[::5])
+PJax.xaxis.set_minor_locator(FixedLocator(mdates.date2num(JUNO_PJ_TIMES)))
+PJax.tick_params('y', grid_zorder=-10)
+
+# Shades in each 5 perijove
+for i in range(2):
+    F.ax[i].axvspan(JUNO_PJ_TIMES[0], JUNO_PJ_TIMES[5],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[10], JUNO_PJ_TIMES[15],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[20], JUNO_PJ_TIMES[25],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[30], JUNO_PJ_TIMES[35],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[40], JUNO_PJ_TIMES[45],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[50], JUNO_PJ_TIMES[55],
+                    fc=UC.gray, ec=None, alpha=0.10)
+    F.ax[i].axvspan(JUNO_PJ_TIMES[60], JUNO_PJ_TIMES[65],
+                    fc=UC.gray, ec=None, alpha=0.10)
+
+# Dummy
+F.ax[0].plot([d0, d0], [500000, 600000],
+             color=UC.red, linewidth=3.0,
+             label=r'Total current', zorder=2)
+F.ax[0].plot([d0, d0], [550000, 650000],
+             color=UC.blue, linewidth=3.0,
+             label=r'Centrifugal force term', zorder=2)
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=0.1,
+                  textcolor=False,
+                  fontsize_scale=0.63,
+                  handletextpad=0.3)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0], d=0.7)
+
+F.fig.savefig(img_savedir + '/current_terms_timeseries.jpg',
+              bbox_inches='tight')
+F.close()
+plt.close()
+
+
 # %% ==================================
 # 横軸: Con2020 / 縦軸: Current constant
 # =====================================
@@ -1268,19 +1476,19 @@ F.set_yaxis(ax_idx=0,
 lt_median = np.zeros(len(PJ_LIST))
 for i in range(len(PJ_LIST)):
     lt_median[i] = local_time_moon(et_fp_0[i], TARGET_MOON)
-    y0 = lt_median[i]
+    x0 = lt_median[i]
     min = ftmc_min_q1_median_q3_max_arr[i, 0]*1E+9
     q1 = ftmc_min_q1_median_q3_max_arr[i, 1]*1E+9
     median = ftmc_min_q1_median_q3_max_arr[i, 2]*1E+9
     q3 = ftmc_min_q1_median_q3_max_arr[i, 3]*1E+9
     max = ftmc_min_q1_median_q3_max_arr[i, 4]*1E+9
     width = 0.3
-    weighted_boxplot2(F.ax, y0, q1, median, q3,
+    weighted_boxplot2(F.ax, x0, q1, median, q3,
                       min,
                       max,
                       width=width,
                       ec=UC.blue, lw=1.1)
-    weighted_boxplot2(F.ax, y0+24.0, q1, median, q3,
+    weighted_boxplot2(F.ax, x0+24.0, q1, median, q3,
                       min,
                       max,
                       width=width,
@@ -1296,6 +1504,55 @@ F.fig.savefig(img_savedir + '/ftmc_vs_MLT.jpg',
 F.close()
 plt.close()
 print('MLT:', lt_median)
+
+
+# %% =========================================
+# 横軸: MLT / 縦軸: Azimuthal current constant
+# ============================================
+F = ShareXaxis()
+F.fontsize = 23
+F.fontname = 'Liberation Sans Narrow'
+F.set_figparams(nrows=1, figsize=(7.0, 4.0), dpi='XL')
+F.initialize()
+F.set_xaxis(label=r' MLT [hour]',
+            min=0, max=48,
+            ticks=np.linspace(0, 48, 17),
+            ticklabels=np.linspace(0, 48, 17, dtype=int),
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label=r'$\mu_0 I_{\varphi} / 2$ [nT]',
+            min=50, max=250,
+            ticks=np.linspace(50, 250, 5),
+            ticklabels=np.linspace(50, 250, 5),
+            minor_num=5)
+lt_median = np.zeros(len(PJ_LIST))
+for i in range(len(PJ_LIST)):
+    y0 = azi_currnet_0_ave[i]
+    dy0 = np.mean([abs(azi_currnet_0_ave[i]-azi_currnet_1_ave[i]),
+                   abs(azi_currnet_0_ave[i]-azi_currnet_2_ave[i])])
+    lt_median[i] = local_time_moon(et_fp_0[i], TARGET_MOON)
+    x0 = lt_median[i]
+    for ii in range(2):
+        F.ax.errorbar(x=x0+24.0*ii, y=y0,
+                      yerr=dy0,
+                      elinewidth=1.1, linewidth=0., markersize=0,
+                      capsize=1.5, capthick=1.1,
+                      color=UC.blue)
+        F.ax.plot(x0+24.0*ii, y0,
+                  marker='s', color=UC.blue, markersize=3,
+                  linewidth=1.1,
+                  markeredgecolor='k', markerfacecolor='w',
+                  zorder=2)
+# LT=24.0
+F.ax.axvline(x=24.0, color=UC.gray, linewidth=0.75)
+
+F.ax.set_title(TARGET_MOON + r' FTMC',
+               fontsize=F.fontsize, weight='bold')
+
+F.fig.savefig(img_savedir + '/azicurrent_vs_MLT.jpg',
+              bbox_inches='tight')
+F.close()
+plt.close()
 
 
 # %% =========================================
