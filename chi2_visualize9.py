@@ -193,6 +193,14 @@ con20_mu_i_tot = np.array([150.1, 137.8, 127.2, 129.1, 130.1,
                            156.1, 141.4, 146.3])
 
 
+# %% Data from Connerney+2020: Radial current constant [MA]
+con20_mu_i_rho = np.array([35.2, 14.6, 7.7, 11.5, 20.8,
+                           20.2, 12.2, 21.1, 20.9, 10.7,
+                           26.26, 16.4, 12.0, 19.6, 12.0,
+                           13.6, 20.0, 12.8, 16.0, 17.3,
+                           9.9, 16.1, 10.3])
+
+
 # %% weighted_percentile
 def weighted_percentile(data, weights, perc):
     """
@@ -409,6 +417,7 @@ for i in range(len(PJ_LIST)):
     datetime_fp_0 += [spice.et2datetime(
         np.median(et_fp[np.where(view <= 30.0)]))]
     et_fp_0 += [np.median(et_fp[np.where(view <= 30.0)])]
+    print('Azimuthal current [nT]:', azi_currnet_0_ave[i])
 
     # Chi-squared map
     z_value = d_chi2_3d[:, 1, :].T
@@ -698,7 +707,7 @@ F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=2, figsize=(7.5, 6.5), dpi='XL')
+F.set_figparams(nrows=2, figsize=(8.0, 6.5), dpi='XL')
 F.hspace = 0.15
 F.initialize()
 
@@ -762,20 +771,22 @@ for i in range(len(PJ_LIST)):
                      yerr=dy0,
                      elinewidth=1.1, linewidth=0., markersize=0.,
                      capsize=2.0, capthick=1.1,
-                     color=UC.blue)
+                     color=UC.red)
 F.ax[0].plot(datetime_fp_0, azi_currnet_0_ave,
-             marker='s', color=UC.blue, markersize=3,
-             linewidth=1.0,
-             markeredgecolor='k', markerfacecolor='w', zorder=2)
+             marker='s', color=UC.red, markersize=3.4,
+             linewidth=1.1,
+             markeredgecolor='k', markerfacecolor='w',
+             zorder=2)
 
 # Azimuthal current constant from Connerney+ 2020
 selected_PJ_time = []
 for i in range(con20_pj_idx.size):
     selected_PJ_time += [JUNO_PJ_TIMES[con20_pj_idx[i]-1]]
 F.ax[0].plot(selected_PJ_time, con20_mu_i_tot,
-             marker='^', color=UC.red, markersize=4,
-             linewidth=1.0,
-             markeredgecolor='k', markerfacecolor='w', zorder=2)
+             marker='^', color='k', markersize=4.0,
+             linewidth=1.1,
+             markeredgecolor='k', markerfacecolor='w',
+             zorder=2)
 
 # PJ numbers on the top horizontal axis
 PJax = F.ax[0].twiny()
@@ -802,6 +813,25 @@ for i in range(2):
     F.ax[i].axvspan(JUNO_PJ_TIMES[60], JUNO_PJ_TIMES[65],
                     fc=UC.gray, ec=None, alpha=0.10)
 
+# Dummy
+F.ax[0].plot([d0, d0], [500000, 600000],
+             marker='s', color=UC.red, markersize=5,
+             linewidth=2.5, markeredgecolor='k', markerfacecolor='w',
+             label=r'This study', zorder=2)
+F.ax[0].plot([d0, d0], [550000, 650000],
+             marker='^', color='k', markersize=5.5,
+             linewidth=2.5, markeredgecolor='k', markerfacecolor='w',
+             label=r'Connerney+ 2020', zorder=2)
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=0.85,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0], d=0.7)
+
 F.fig.savefig(img_savedir + '/ftmc_timeseries.jpg',
               bbox_inches='tight')
 F.close()
@@ -815,7 +845,7 @@ F = ShareXaxis()
 F.fontsize = 22
 F.fontname = 'Liberation Sans Narrow'
 
-F.set_figparams(nrows=3, figsize=(7.5, 9.0), dpi='XL')
+F.set_figparams(nrows=3, figsize=(8.0, 9.5), dpi='XL')
 F.hspace = 0.15
 F.initialize()
 
@@ -899,20 +929,22 @@ for i in range(len(PJ_LIST)):
                      yerr=dy0,
                      elinewidth=1.1, linewidth=0., markersize=0.,
                      capsize=2.0, capthick=1.1,
-                     color=UC.blue)
+                     color=UC.red)
 F.ax[0].plot(datetime_fp_0, azi_currnet_0_ave,
-             marker='s', color=UC.blue, markersize=3,
-             linewidth=1.0,
-             markeredgecolor='k', markerfacecolor='w', zorder=2)
+             marker='s', color=UC.red, markersize=3.4,
+             linewidth=1.1,
+             markeredgecolor='k', markerfacecolor='w',
+             zorder=2)
 
 # Azimuthal current constant from Connerney+ 2020
 selected_PJ_time = []
 for i in range(con20_pj_idx.size):
     selected_PJ_time += [JUNO_PJ_TIMES[con20_pj_idx[i]-1]]
 F.ax[0].plot(selected_PJ_time, con20_mu_i_tot,
-             marker='^', color=UC.red, markersize=4,
-             linewidth=1.0,
-             markeredgecolor='k', markerfacecolor='w', zorder=2)
+             marker='^', color='k', markersize=4.0,
+             linewidth=1.1,
+             markeredgecolor='k', markerfacecolor='w',
+             zorder=2)
 
 # PJ numbers on the top horizontal axis
 PJax = F.ax[0].twiny()
@@ -938,6 +970,25 @@ for i in range(F.nrows):
                     fc=UC.gray, ec=None, alpha=0.10)
     F.ax[i].axvspan(JUNO_PJ_TIMES[60], JUNO_PJ_TIMES[65],
                     fc=UC.gray, ec=None, alpha=0.10)
+
+# Dummy
+F.ax[0].plot([d0, d0], [500000, 600000],
+             marker='s', color=UC.red, markersize=5,
+             linewidth=2.5, markeredgecolor='k', markerfacecolor='w',
+             label=r'This study', zorder=2)
+F.ax[0].plot([d0, d0], [550000, 650000],
+             marker='^', color='k', markersize=5.5,
+             linewidth=2.5, markeredgecolor='k', markerfacecolor='w',
+             label=r'Connerney+ 2020', zorder=2)
+
+legend = F.legend(ax_idx=0,
+                  ncol=1, markerscale=1.0,
+                  loc='lower right',
+                  handlelength=0.85,
+                  textcolor=False,
+                  fontsize_scale=0.65,
+                  handletextpad=0.4)
+legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0], d=0.7)
 
 F.fig.savefig(img_savedir + '/ftmc_timeseries_2.jpg',
               bbox_inches='tight')
@@ -1154,19 +1205,21 @@ for i in range(3):
 
 # Dummy
 F.ax[0].plot([d0, d0], [500000, 600000],
-             color=UC.red, linewidth=3.0,
+             marker='s', color=UC.red, markersize=5,
+             linewidth=2.5, markeredgecolor='k', markerfacecolor='w',
              label=r'Total current', zorder=2)
 F.ax[0].plot([d0, d0], [550000, 650000],
-             color=UC.blue, linewidth=3.0,
+             marker='s', color=UC.blue, markersize=5,
+             linewidth=2.5, markeredgecolor=UC.blue, markerfacecolor='w',
              label=r'Centrifugal force term', zorder=2)
 
 legend = F.legend(ax_idx=0,
                   ncol=2, markerscale=1.0,
                   loc='upper center',
-                  handlelength=0.1,
+                  handlelength=0.85,
                   textcolor=False,
                   fontsize_scale=0.65,
-                  handletextpad=0.3)
+                  handletextpad=0.35)
 legend_shadow(legend=legend, fig=F.fig, ax=F.ax[0], d=0.7)
 
 F.fig.savefig(img_savedir + '/current_terms_timeseries_linear.jpg',
