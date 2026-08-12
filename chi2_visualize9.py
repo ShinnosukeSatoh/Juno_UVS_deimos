@@ -329,6 +329,7 @@ Ai_best = np.zeros(len(PJ_LIST))
 azi_currnet_0_ave = np.zeros(len(PJ_LIST))
 azi_currnet_1_ave = np.zeros(len(PJ_LIST))
 azi_currnet_2_ave = np.zeros(len(PJ_LIST))
+moon_S3wlon_obs_median = np.zeros(len(PJ_LIST))
 datetime_fp_0 = []
 et_fp_0 = []
 ftmc_min_q1_median_q3_max_arr = np.zeros((len(PJ_LIST), 5))
@@ -351,6 +352,8 @@ for i in range(len(PJ_LIST)):
     sigma_obs = sigma_total
     # print('chi2_1d.shape:', chi2_1d.shape)
     # print('eqlead_est.shape:', eqlead_est.shape)
+
+    moon_S3wlon_obs_median[i] = np.median(moon_S3wlon_obs)
 
     chi2_3d = chi2_1d.reshape(ni_num, Ai_num, Ti_num)
     H_3d = H_1d.reshape(ni_num, Ai_num, Ti_num)
@@ -1641,6 +1644,107 @@ F.ax.set_title(TARGET_MOON + r' FTMC',
                fontsize=F.fontsize, weight='bold')
 
 F.fig.savefig(img_savedir + '/azicurrent_vs_MLT.jpg',
+              bbox_inches='tight')
+F.close()
+plt.close()
+
+
+# %% ========================================================
+# 横軸: MLT / 縦軸: Azimuthal current constant - Con2020 table
+# ===========================================================
+F = ShareXaxis()
+F.fontsize = 23
+F.fontname = 'Liberation Sans Narrow'
+F.set_figparams(nrows=1, figsize=(7.0, 4.0), dpi='XL')
+F.initialize()
+F.set_xaxis(label=r' MLT [hour]',
+            min=0, max=48,
+            ticks=np.linspace(0, 48, 17),
+            ticklabels=np.linspace(0, 48, 17, dtype=int),
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label=r'$\Delta (\mu_0 I_{\varphi} / 2)$ [nT]',
+            min=-80, max=120,
+            ticks=np.linspace(-80, 120, 6),
+            ticklabels=np.linspace(-80, 120, 6),
+            minor_num=4)
+lt_median = np.zeros(len(PJ_LIST))
+for i in range(len(PJ_LIST)):
+    y0 = azi_currnet_0_ave[i]
+    dy0 = np.mean([abs(azi_currnet_0_ave[i]-azi_currnet_1_ave[i]),
+                   abs(azi_currnet_0_ave[i]-azi_currnet_2_ave[i])])
+    lt_median[i] = local_time_moon(et_fp_0[i], TARGET_MOON)
+for i in range(len(PJ_LIST)):
+    if PJ_LIST[i] in con20_pj_idx:
+        x = lt_median[i]
+        y = con20_mu_i_tot[np.where(
+            con20_pj_idx == PJ_LIST[i])]-azi_currnet_0_ave[i]
+        dy = np.mean(np.array([abs(azi_currnet_0_ave[i]-azi_currnet_1_ave[i]),
+                               abs(azi_currnet_0_ave[i]-azi_currnet_2_ave[i])]))
+        for ii in range(2):
+            F.ax.plot(x+24.0*ii, y, marker='s', color=UC.red, markersize=4, linewidth=1.0,
+                      markeredgecolor='k', markerfacecolor='w', zorder=2)
+            F.ax.errorbar(x=x+24.0*ii, y=y,
+                          yerr=dy,
+                          elinewidth=1.0, linewidth=0., markersize=0,
+                          capsize=2.0, capthick=1.0, zorder=1.0,
+                          color=UC.blue)
+
+# LT=24.0
+F.ax.axvline(x=24.0, color=UC.gray, linewidth=0.75)
+
+F.ax.set_title(TARGET_MOON,
+               fontsize=F.fontsize, weight='bold')
+
+F.fig.savefig(img_savedir + '/con2020_vs_azicurrent_vs_MLT.jpg',
+              bbox_inches='tight')
+F.close()
+plt.close()
+
+
+# %% ==============================================================
+# 横軸: SIII wlon / 縦軸: Azimuthal current constant - Con2020 table
+# =================================================================
+F = ShareXaxis()
+F.fontsize = 23
+F.fontname = 'Liberation Sans Narrow'
+F.set_figparams(nrows=1, figsize=(7.0, 4.0), dpi='XL')
+F.initialize()
+F.set_xaxis(label=r'Moon System III longitude [deg]',
+            min=0, max=720,
+            ticks=np.linspace(0, 720, 9),
+            ticklabels=np.linspace(0, 720, 9, dtype=int),
+            minor_num=3)
+F.set_yaxis(ax_idx=0,
+            label=r'$\Delta (\mu_0 I_{\varphi} / 2)$ [nT]',
+            min=-80, max=120,
+            ticks=np.linspace(-80, 120, 6),
+            ticklabels=np.linspace(-80, 120, 6),
+            minor_num=4)
+
+for i in range(len(PJ_LIST)):
+    if PJ_LIST[i] in con20_pj_idx:
+        x = moon_S3wlon_obs_median[i]
+        y = con20_mu_i_tot[np.where(
+            con20_pj_idx == PJ_LIST[i])]-azi_currnet_0_ave[i]
+        dy = np.mean(np.array([abs(azi_currnet_0_ave[i]-azi_currnet_1_ave[i]),
+                               abs(azi_currnet_0_ave[i]-azi_currnet_2_ave[i])]))
+        for ii in range(2):
+            F.ax.plot(x+360*ii, y, marker='s', color=UC.red, markersize=4, linewidth=1.0,
+                      markeredgecolor='k', markerfacecolor='w', zorder=2)
+            F.ax.errorbar(x=x+360*ii, y=y,
+                          yerr=dy,
+                          elinewidth=1.0, linewidth=0., markersize=0,
+                          capsize=2.0, capthick=1.0, zorder=1.0,
+                          color=UC.blue)
+
+# SIIIwlon=360.0
+F.ax.axvline(x=360.0, color=UC.gray, linewidth=0.75)
+
+F.ax.set_title(TARGET_MOON,
+               fontsize=F.fontsize, weight='bold')
+
+F.fig.savefig(img_savedir + '/con2020_vs_azicurrent_vs_s3wlon.jpg',
               bbox_inches='tight')
 F.close()
 plt.close()
