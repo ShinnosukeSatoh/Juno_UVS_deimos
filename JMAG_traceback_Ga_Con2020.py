@@ -36,7 +36,7 @@ F.set_default()
 
 
 # %% Input about Juno observation
-TARGET_MOON = 'Europa'
+TARGET_MOON = 'Ganymede'
 TARGET_FP = ['MAW', 'TEB']
 PJ_LIST = [1, 3]+np.arange(4, 68+1, 1).tolist()
 
@@ -212,9 +212,10 @@ def calc_azi_current_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi=139.6, mu_i_
 
     for i in range(mui_azi_arr.size):
         # 磁場モデルの設定
+        mu_i_rho_default = 16.7
         d_rj_default = 3.6      # default: 3.6 [RJ]
         jm.Con2020.Config(mu_i=mui_azi_arr[i],
-                          i_rho=mu_i_rho,
+                          i_rho=mu_i_rho_default,
                           d__cs_half_thickness_rj=d_rj_default,
                           equation_type='analytic')
 
@@ -246,6 +247,37 @@ def calc_azi_current_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi=139.6, mu_i_
     return np.array([mui_azi_best, rho_eq, phi_eq])
 
 
+# Loop parameter is the mui_azi_arr[i]
+def calc_azi_current_loop_hy(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi=139.6, mu_i_rho=16.7):
+    # 磁場モデルの設定
+    mu_i_rho_default = 16.7
+    d_rj_default = 3.6      # default: 3.6 [RJ]
+    jm.Con2020.Config(mu_i=mu_i_azi,
+                      i_rho=mu_i_rho_default,
+                      d__cs_half_thickness_rj=d_rj_default,
+                      equation_type='hybrid')
+
+    # create trace objects, pass starting position(s) x0,y0,z0
+    T1 = jm.TraceField(x0, y0, z0,
+                       IntModel='jrm33', ExtModel='Con2020',
+                       MaxStep=0.0003,
+                       MaxLen=800000, ErrMax=0.000001)
+    x1 = T1.x[0][~np.isnan(T1.x[0])]    # [RJ]
+    y1 = T1.y[0][~np.isnan(T1.y[0])]    # [RJ]
+    z1 = T1.z[0][~np.isnan(T1.z[0])]    # [RJ]
+    rho = np.sqrt(x1**2 + y1**2 + z1**2)
+
+    # Satellite orbital plane
+    idx_z0 = np.argmin(np.abs(z1-moon_z0/RJ))
+
+    phi_eq = np.arctan2(y1[idx_z0], x1[idx_z0])  # East long. [rad]
+    rho_eq = rho[idx_z0]                         # Distance [RJ]
+
+    print('rho_eq [RJ]:', rho_eq)
+
+    return np.array([rho_eq, phi_eq])
+
+
 # %% Select moon synodic orbital period
 if TARGET_MOON == 'Ganymede':
     Psyn = con20_pj_idx
@@ -254,7 +286,7 @@ if TARGET_MOON == 'Ganymede':
 
 # %%
 def main():
-    if FIT_TARGET == 'AZI_CURRENT':
+    if FIT_TARGET in ['AZI_CURRENT', 'AZI_CURRENT_hy']:
         PJ_list = PJ_LIST
     if FIT_TARGET == 'THICKNESS':
         PJ_list = [1, 3]+np.arange(4, 24, 1).tolist()
@@ -332,6 +364,8 @@ def main():
                             con20_mu_i_rho[j]*np.ones(x0_fp.size),))
             with Pool(processes=8) as pool:
                 results_list = list(pool.starmap(calc_thickness_loop, args))
+            results_arr = np.array(results_list)
+            print('results_arr.shape:', results_arr.shape)      # >>> (XXX, 3)
 
         elif FIT_TARGET == 'AZI_CURRENT':
             args = list(zip(x0_fp,
@@ -343,9 +377,41 @@ def main():
                             np.ones(x0_fp.size),))
             with Pool(processes=parallel) as pool:
                 results_list = list(pool.starmap(calc_azi_current_loop, args))
+            results_arr = np.array(results_list)
+            print('results_arr.shape:', results_arr.shape)      # >>> (XXX, 3)
 
-        results_arr = np.array(results_list)
-        print('results_arr.shape:', results_arr.shape)      # >>> (XXX, 3)
+        elif FIT_TARGET == 'AZI_CURRENT_hy':
+            mui_azi_arr = np.arange(50.0, 200.0+1.0, 1.0)   # [nT]
+            print('x0_fp.size:', x0_fp.size)
+            results_arr = np.zeros((x0_fp.size, 3))
+            for k in range(x0_fp.size):
+                start_loop = time.time()
+                args = list(zip(x0_fp[k]*np.ones(mui_azi_arr.size),
+                                y0_fp[k]*np.ones(mui_azi_arr.size),
+                                z0_fp[k]*np.ones(mui_azi_arr.size),
+                                r_moon_arr[k]*np.ones(mui_azi_arr.size),
+                                moon_z0[k]*np.ones(mui_azi_arr.size),
+                                mui_azi_arr,
+                                16.7*np.ones(mui_azi_arr.size),))
+                with Pool(processes=parallel) as pool:
+                    results_list_hr = list(pool.starmap(
+                        calc_azi_current_loop_hy, args))
+                results_arr_hr = np.array(results_list_hr)
+                rho_eq_arr = results_arr_hr[:, 0]
+                phi_eq_arr = results_arr_hr[:, 1]
+                idx_rho_best = np.argmin(np.abs(rho_eq_arr-r_moon_arr[k]/RJ))
+                mui_azi_best = mui_azi_arr[idx_rho_best]
+                rho_eq = rho_eq_arr[idx_rho_best]   # Distance [RJ]
+                phi_eq = phi_eq_arr[idx_rho_best]   # East longitude [rad]
+                results_arr[k, 0] = mui_azi_best
+                results_arr[k, 1] = rho_eq
+                results_arr[k, 2] = phi_eq
+                print('-------- Loop time [sec]:',
+                      round(time.time()-start_loop, 4))
+                print('- Residual distance [RJ]:',
+                      round(rho_eq-r_moon_arr[k]/RJ, 3))
+                print('---------- Best fit [nT]:', round(mui_azi_best, 3))
+
         bestfit_arr = results_arr[:, 0]      # 3.6*C [RJ]
         rho_eq_best_arr = results_arr[:, 1]          # [RJ]
         phi_eq_best_arr = np.mod(
@@ -376,8 +442,9 @@ def main():
 if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
-    FIT_TARGET = 'AZI_CURRENT'      # 'AZI_CURRENT' or 'THICKNESS'
-    error_num = 2   # 0, 1, or 2
-    parallel = 10
+    # 'AZI_CURRENT' or 'AZI_CURRENT_hy' or 'THICKNESS'
+    FIT_TARGET = 'AZI_CURRENT'
+    error_num = 0   # 0, 1, or 2
+    parallel = 40
 
     main()
