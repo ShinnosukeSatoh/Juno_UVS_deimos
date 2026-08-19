@@ -214,6 +214,58 @@ def calc_azi_current_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi=139.6, mu_i_
         # 磁場モデルの設定
         mu_i_rho_default = 16.7
         d_rj_default = 3.6      # default: 3.6 [RJ]
+        jm.Internal.Config(Model='jrm33', Degree=13,
+                           CartesianIn=True, CartesianOut=True)
+        jm.Con2020.Config(mu_i=mui_azi_arr[i],
+                          i_rho=mu_i_rho_default,
+                          d__cs_half_thickness_rj=d_rj_default,
+                          equation_type='analytic')
+
+        # create trace objects, pass starting position(s) x0,y0,z0
+        T1 = jm.TraceField(x0, y0, z0,
+                           IntModel='jrm33', ExtModel='Con2020',
+                           MaxStep=0.0003,
+                           MaxLen=800000, ErrMax=0.000001)
+        x1 = T1.x[0][~np.isnan(T1.x[0])]    # [RJ]
+        y1 = T1.y[0][~np.isnan(T1.y[0])]    # [RJ]
+        z1 = T1.z[0][~np.isnan(T1.z[0])]    # [RJ]
+        rho = np.sqrt(x1**2 + y1**2 + z1**2)
+
+        # Satellite orbital plane
+        idx_z0 = np.argmin(np.abs(z1-moon_z0/RJ))
+
+        phi_eq_arr[i] = np.arctan2(y1[idx_z0], x1[idx_z0])  # East long. [rad]
+        rho_eq_arr[i] = rho[idx_z0]                         # Distance [RJ]
+        # z_eq = T1.z[0][idx_z0]
+
+    idx_rho_best = np.argmin(np.abs(rho_eq_arr-r_moon_obs/RJ))
+    mui_azi_best = mui_azi_arr[idx_rho_best]
+    rho_eq = rho_eq_arr[idx_rho_best]   # Distance [RJ]
+    phi_eq = phi_eq_arr[idx_rho_best]   # East longitude [rad]
+
+    print('-------- Loop time [sec]:', round(time.time()-start_loop, 4))
+    print('- Residual distance [RJ]:', round(rho_eq-r_moon_obs/RJ, 3))
+    print('---------- Best fit [nT]:', round(mui_azi_best, 3))
+    return np.array([mui_azi_best, rho_eq, phi_eq])
+
+
+# %% Derive the best fit magnetodisk thickness
+def calc_azi_current_18_loop(x0, y0, z0, r_moon_obs, moon_z0, mu_i_azi=139.6, mu_i_rho=16.7):
+    start_loop = time.time()
+    print('Loop started.')
+
+    mui_azi_arr = np.arange(50.0, 200.0+1.0, 1.0)   # [nT]
+
+    # 中央値
+    rho_eq_arr = np.zeros(mui_azi_arr.size)
+    phi_eq_arr = np.zeros(mui_azi_arr.size)
+
+    for i in range(mui_azi_arr.size):
+        # 磁場モデルの設定
+        mu_i_rho_default = 16.7
+        d_rj_default = 3.6      # default: 3.6 [RJ]
+        jm.Internal.Config(Model='jrm33', Degree=18,
+                           CartesianIn=True, CartesianOut=True)
         jm.Con2020.Config(mu_i=mui_azi_arr[i],
                           i_rho=mu_i_rho_default,
                           d__cs_half_thickness_rj=d_rj_default,
@@ -286,7 +338,7 @@ if TARGET_MOON == 'Ganymede':
 
 # %%
 def main():
-    if FIT_TARGET in ['AZI_CURRENT', 'AZI_CURRENT_hy']:
+    if FIT_TARGET in ['AZI_CURRENT', 'AZI_CURRENT_18', 'AZI_CURRENT_hy']:
         PJ_list = PJ_LIST
     if FIT_TARGET == 'THICKNESS':
         PJ_list = [1, 3]+np.arange(4, 24, 1).tolist()
@@ -380,6 +432,20 @@ def main():
             results_arr = np.array(results_list)
             print('results_arr.shape:', results_arr.shape)      # >>> (XXX, 3)
 
+        elif FIT_TARGET == 'AZI_CURRENT_18':
+            args = list(zip(x0_fp,
+                            y0_fp,
+                            z0_fp,
+                            r_moon_arr,
+                            moon_z0,
+                            np.ones(x0_fp.size),
+                            np.ones(x0_fp.size),))
+            with Pool(processes=parallel) as pool:
+                results_list = list(pool.starmap(
+                    calc_azi_current_18_loop, args))
+            results_arr = np.array(results_list)
+            print('results_arr.shape:', results_arr.shape)      # >>> (XXX, 3)
+
         elif FIT_TARGET == 'AZI_CURRENT_hy':
             mui_azi_arr = np.arange(50.0, 200.0+1.0, 1.0)   # [nT]
             print('x0_fp.size:', x0_fp.size)
@@ -443,8 +509,8 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     # 'AZI_CURRENT' or 'AZI_CURRENT_hy' or 'THICKNESS'
-    FIT_TARGET = 'AZI_CURRENT'
+    FIT_TARGET = 'AZI_CURRENT_18'
     error_num = 0   # 0, 1, or 2
-    parallel = 40
+    parallel = 10
 
     main()
