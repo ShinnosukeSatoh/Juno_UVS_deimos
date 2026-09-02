@@ -1,0 +1,695 @@
+""" Leadangle_fit_JunoUVS.py
+
+Created on Apr 8, 2025
+@author: Shin Satoh
+
+Description:
+Using the lead angle values measured in one single Perijove of Juno,
+this program iterates the Alfven wave tracing along the magnetic
+field line and estimate the transit time of the Alfven wave from the
+satellite to the auroral footprint.
+
+Version
+1.0.0 (Apr 8, 2025)
+1.1.0 (Apr 22, 2025)
+2.0.0 (Apr 28, 2025) TEB transit time
+2.0.1 (May 11, 2025) Local time
+2.0.2 (May 17, 2025) Select north or south (only for Io)
+
+"""
+# %% Import
+import spiceypy as spice
+import multiprocessing
+from multiprocessing import Pool
+# from numba import jit
+import numpy as np
+import math
+
+import Leadangle_wave as Wave
+import datetime
+import time
+# import os
+from scipy.io import readsav
+import JupiterMag as jm
+
+jm.Internal.Config(Model='jrm33', CartesianIn=True,
+                   CartesianOut=True, Degree=18)
+jm.Con2020.Config(equation_type='analytic')
+
+
+spice.furnsh('kernel/cassMetaK.txt')
+savpath = 'data/Satellite_FP_JRM33.sav'
+
+
+# %% Constants
+MU0 = 1.26E-6            # 真空中の透磁率
+AMU2KG = 1.66E-27        # 原子質量をkgに変換するファクタ [kg amu^-1]
+RJ = 71492E+3            # JUPITER RADIUS [m]
+MJ = 1.90E+27            # JUPITER MASS [kg]
+C = 2.99792E+8           # LIGHT SPEED [m/s]
+G = 6.67E-11             # 万有引力定数  [m^3 kg^-1 s^-2]
+e = 1.60218E-19          # 素電荷 [J]
+me = 9.10E-31            # 電子質量 [kg]
+
+Psyn_io = (12.89)*3600      # Moon's synodic period [sec]
+Psyn_eu = (11.22)*3600      # Moon's synodic period [sec]
+Psyn_ga = (10.53)*3600      # Moon's synodic period [sec]
+
+Fllen_io = 14.78*RJ     # Field line length [m]
+Fllen_eu = 24.22*RJ     # Field line length [m]
+Fllen_ga = 39.17*RJ     # Field line length [m]
+
+
+# %% Calculate position of the target moon using Spiceypy
+def spice_moonS3(et: float, MOON: str):
+    """
+    Args:
+        et (float): Time
+        MOON (str): Name of the target moon (IO/EUROPA/GANYMEDE)
+
+    Returns:
+        Tuple of \\
+        `posx` (float) \\
+        `posy` (float) \\
+        `posz` (float) \\
+        `posr` (float) \\
+        `postheta` (float) \\
+        `posphi` (float) \\
+        `S3wlon` (float) \\
+    """
+    # Juno's position seen from Jupiter in IAU_JUPITER coordinate.
+    _, lightTimes = spice.spkpos(
+        targ='JUNO', et=et, ref='IAU_JUPITER', abcorr='LT+S', obs='JUPITER'
+    )
+
+    # Moon's position seen from Jupiter in IAU_JUPITER coordinate.
+    pos, _ = spice.spkpos(
+        targ=MOON, et=et, ref='IAU_JUPITER', abcorr='none', obs='JUPITER'
+    )
+
+    # S3 right-hand coordinate [m]
+    posx, posy, posz = pos[0]*1E+3, pos[1]*1E+3, pos[2]*1E+3
+
+    posr = np.sqrt(posx**2 + posy**2 + posz**2)
+    postheta = np.arccos(posz/posr)
+    posphi = np.arctan2(posy, posx)
+    if posphi < 0:
+        S3wlon = np.degrees(-posphi)
+    else:
+        S3wlon = np.degrees(2*np.pi - posphi)
+
+    return posx, posy, posz, posr, postheta, posphi, S3wlon
+
+
+# %% Calculate local time of the moon
+def local_time_moon(et: float, MOON: str, abcorr='none'):
+    # Moon's position seen from Jupiter in IAU_JUPITER coordinate.
+    pos_moon, _ = spice.spkpos(
+        targ=MOON, et=et, ref='JUNO_JSO', abcorr=abcorr, obs='JUPITER'
+    )
+
+    # S3 right-hand coordinate [m]
+    x_moon = pos_moon[0]*1E+3
+    y_moon = pos_moon[1]*1E+3
+    z_moon = pos_moon[2]*1E+3
+
+    r_moon = np.sqrt(x_moon**2 + y_moon**2 + z_moon**2)
+    theta_moon = np.arccos(z_moon/r_moon)
+    phi_moon = np.arctan2(y_moon, x_moon)
+
+    local_time = (24.0*phi_moon)/(2*np.pi) + 12.0   # [hour]
+    # if local_time > 24:
+    #     local_time += -24
+
+    return local_time
+
+
+# %% Read the FP data
+def readFPdata(PJnum: int, target_moon: str, target_hem='both', FLIP=False):
+    """
+    Args:
+        `PJnum` (int): Perijove number \\
+        `moon` (str): Name of the target (Io/Europa/Ganymede) \\
+        `footprint` (str): `MAW` or `TEB` \\
+
+    Returns:
+        `wlon_fp` [deg] \\
+        `err_wlon_fp` [deg] \\
+        `lat_fp` [deg] \\
+        `err_lat_fp` [deg] \\
+        `wlon_moon` [deg] \\
+        `eq_lead` [deg] \\
+        `err_eq_lead` [deg] \\
+        `viewing_angle` [deg] \\
+        `PJ` \\
+        `et` \\
+        `hem` \\
+    """
+
+    datadir = 'data/n18_900km_Con2020_default/'
+    datapath = datadir+target_moon[0]+'FP_position_data.txt'
+    f_load = np.loadtxt(datapath,
+                        skiprows=1,
+                        delimiter=",",
+                        )
+
+    wlon_fp = f_load[:, 0]
+    err_wlon_fp = f_load[:, 1]
+    lat_fp = f_load[:, 2]
+    err_lat_fp = f_load[:, 3]
+    wlon_moon = f_load[:, 4]
+    eq_lead = f_load[:, 5]
+    err_eq_lead = f_load[:, 6]
+    viewing_angle = f_load[:, 7]
+    PJ = f_load[:, 8]
+    et = f_load[:, 9]
+    hem = f_load[:, 10]
+
+    # Select PJ
+    pj_select = np.where(PJ == PJnum)
+    wlon_fp = wlon_fp[pj_select]
+    err_wlon_fp = err_wlon_fp[pj_select]
+    lat_fp = lat_fp[pj_select]
+    err_lat_fp = err_lat_fp[pj_select]
+    wlon_moon = wlon_moon[pj_select]
+    eq_lead = eq_lead[pj_select]
+    err_eq_lead = err_eq_lead[pj_select]
+    viewing_angle = viewing_angle[pj_select]
+    PJ = PJ[pj_select]
+    et = et[pj_select]
+    hem = hem[pj_select]
+
+    # Select hemisphere
+    # North < 0 / South > 0
+    if target_hem == 'N':
+        hem_select = np.where(hem < 0)
+        wlon_fp = wlon_fp[hem_select]
+        err_wlon_fp = err_wlon_fp[hem_select]
+        lat_fp = lat_fp[hem_select]
+        err_lat_fp = err_lat_fp[hem_select]
+        wlon_moon = wlon_moon[hem_select]
+        eq_lead = eq_lead[hem_select]
+        err_eq_lead = err_eq_lead[hem_select]
+        viewing_angle = viewing_angle[hem_select]
+        PJ = PJ[hem_select]
+        et = et[hem_select]
+        hem = hem[hem_select]
+    elif target_hem == 'S':
+        hem_select = np.where(hem > 0)
+        wlon_fp = wlon_fp[hem_select]
+        err_wlon_fp = err_wlon_fp[hem_select]
+        lat_fp = lat_fp[hem_select]
+        err_lat_fp = err_lat_fp[hem_select]
+        wlon_moon = wlon_moon[hem_select]
+        eq_lead = eq_lead[hem_select]
+        err_eq_lead = err_eq_lead[hem_select]
+        viewing_angle = viewing_angle[hem_select]
+        PJ = PJ[hem_select]
+        et = et[hem_select]
+        hem = hem[hem_select]
+
+    if FLIP:
+        hem *= -1
+
+    return wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, wlon_moon, eq_lead, err_eq_lead, viewing_angle, PJ, et, hem
+
+
+# %% Read the savfile
+def read1savfile(PJnum: int, target_moon: str, target_fp: str, target_hem='both', FLIP=False):
+    """
+    Args:
+        `PJnum` (int): Perijove number \\
+        `moon` (str): Name of the target (Io/Europa/Ganymede) \\
+        `footprint` (str): `MAW` or `TEB` \\
+
+    Returns:
+        Tuple of \\
+        `wlon_MAW` (ndarray) \\
+        `wlon_TEB` (ndarray) \\
+        `err_wlon_MAW` (ndarray) \\
+        `err_wlon_TEB` (ndarray) \\
+        `lat_MAW` (ndarray) \\
+        `lat_TEB` (ndarray) \\
+        `err_lat_MAW` (ndarray) \\
+        `err_lat_TEB` (ndarray) \\
+        `wlon_moon` (ndarray) \\
+        `et` (ndarray) \\
+        `hem` (ndarray) \\
+    """
+
+    # Look for the file named
+    # `IFP_info_v900km_fixed.sav` for Io footprint
+    savpath = 'data/Output_v2_PJ01_PJ68/' + 'PJ' + \
+        str(PJnum).zfill(2)+'/'+target_moon[0]+'FP_info_v900km_fixed.sav'
+
+    # Read
+    savdata = readsav(savpath)
+
+    var = savdata['fp_info']
+
+    # 'MIDTIME_ET'を用いてスライス位置を決定する
+    MIDTIME_ET = np.array(var['MIDTIME_ET'][0])
+    idx = np.where(MIDTIME_ET > 0)
+
+    wlon_fp = np.array(var['LON_'+target_fp][0])[idx]
+    err_wlon_fp = np.array(var['LON_'+target_fp+'_ERROR'][0])[idx]
+    lat_fp = np.array(var['LAT_'+target_fp][0])[idx]
+    err_lat_fp = np.array(var['LAT_'+target_fp+'_ERROR'][0])[idx]
+    wlon_moon = np.array(var['SIII_LON'][0])[idx]
+    et = np.array(var['MIDTIME_ET'][0])[idx]
+    hem = var['HEMISPHERE'][0][idx]
+
+    # Extract MAWs (exclude values -999.)
+    fpvalues = np.where((wlon_fp > -100))
+    wlon_fp = wlon_fp[fpvalues]
+    err_wlon_fp = err_wlon_fp[fpvalues]
+    lat_fp = lat_fp[fpvalues]
+    err_lat_fp = err_lat_fp[fpvalues]
+    wlon_moon = wlon_moon[fpvalues]
+    et = et[fpvalues]
+    hem = hem[fpvalues]
+
+    # 磁場ベクトルに対する南北で判別する
+    # North -> -1 / South -> 1
+    # hem_N = np.where(hem == b'North')
+    # hem_S = np.where(hem == b'South')
+    # hem[hem_N] = -1
+    # hem[hem_S] = 1
+
+    # MAWとTEBの判別
+    hem_N = np.where(hem == b'North')
+    hem_S = np.where(hem == b'South')
+    if target_fp == 'MAW':
+        hem[hem_N] = -1
+        hem[hem_S] = 1
+        if FLIP is True:
+            hem[hem_N] = -101
+            hem[hem_S] = 101
+    elif target_fp == 'TEB':
+        hem[hem_N] = -101
+        hem[hem_S] = 101
+        if FLIP is True:
+            hem[hem_N] = -1
+            hem[hem_S] = -1
+
+    # 北半球もしくは南半球だけを取り出す
+    if target_hem == 'N':
+        wlon_fp = wlon_fp[hem_N]
+        err_wlon_fp = err_wlon_fp[hem_N]
+        lat_fp = lat_fp[hem_N]
+        err_lat_fp = err_lat_fp[hem_N]
+        wlon_moon = wlon_moon[hem_N]
+        et = et[hem_N]
+        hem = hem[hem_N]
+    elif target_hem == 'S':
+        wlon_fp = wlon_fp[hem_S]
+        err_wlon_fp = err_wlon_fp[hem_S]
+        lat_fp = lat_fp[hem_S]
+        err_lat_fp = err_lat_fp[hem_S]
+        wlon_moon = wlon_moon[hem_S]
+        et = et[hem_S]
+        hem = hem[hem_S]
+
+    return wlon_fp, err_wlon_fp, lat_fp, err_lat_fp, wlon_moon, et, hem
+
+
+# %% System III position of the target moon from et_fp array.
+def moonS3wlon_arr(et_fp, moon: str):
+    """
+    Return:
+    - moon_x0
+    - moon_y0
+    - moon_z0
+    - moon_r0
+    - moon_theta0 [rad]
+    - moon_phi0 [rad]
+    - moon_S3wlon0 [deg]
+    """
+    if moon == 'Io':
+        target = 'IO'
+    elif moon == 'Europa':
+        target = 'EUROPA'
+    elif moon == 'Ganymede':
+        target = 'GANYMEDE'
+
+    moon_x0 = np.zeros(et_fp.shape)
+    moon_y0 = np.zeros(et_fp.shape)
+    moon_z0 = np.zeros(et_fp.shape)
+    moon_r0 = np.zeros(et_fp.shape)
+    moon_theta0 = np.zeros(et_fp.shape)
+    moon_phi0 = np.zeros(et_fp.shape)
+    moon_S3wlon0 = np.zeros(et_fp.shape)
+    for i in range(et_fp.size):
+        x0, y0, z0, r0, theta0, phi0, S3wlon0 = spice_moonS3(
+            et=et_fp[i], MOON=target)
+        moon_x0[i] = x0
+        moon_y0[i] = y0
+        moon_z0[i] = z0
+        moon_r0[i] = r0
+        moon_theta0[i] = theta0
+        moon_phi0[i] = phi0
+        moon_S3wlon0[i] = S3wlon0
+    return moon_x0, moon_y0, moon_z0, moon_r0, moon_theta0, moon_phi0, moon_S3wlon0
+
+
+# %% Calculate launch site of the Alfven waves
+def Alfven_launch_site(et_fp, eqlead_fp, moon):
+    t1_arr = np.zeros(et_fp.size)
+
+    if moon == 'Io':
+        Psyn = Psyn_io
+    elif moon == 'Europa':
+        Psyn = Psyn_eu
+    elif moon == 'Ganymede':
+        Psyn = Psyn_ga
+
+    for i in range(et_fp.size):
+        t0 = spice.et2datetime(et_fp[i])
+        omg_syn = 360/Psyn  # [deg/sec]
+        tau_A = -eqlead_fp[i]/omg_syn  # Alfven travel time [sec]
+        dt = datetime.timedelta(seconds=tau_A)
+        t1_arr[i] = spice.datetime2et(t0+dt)
+
+    x, y, z, r, theta, phi, S3wlon = moonS3wlon_arr(t1_arr, moon)
+
+    return x, y, z, r, theta, phi, S3wlon
+
+
+# %% Calculate the plasma sheet scale height
+def scaleheight(Ai, Zi, Ti, Te):
+    """
+    Args:
+        These are parameters of ions in the plasma sheet
+        `Ai` : Ion mass [amu]
+        `Zi` : Ion charge [C]
+        `Ti` : Ion temperature [eV]
+        `Te` : Electron temperature [eV]
+
+    Returns:
+        H : Scale height of the plasma sheet [m] \\
+    """
+    H = 0.64*RJ*np.sqrt((Ti/Ai)*(1+(Zi*Te/Ti)))     # [m]
+    # H = 0.64*RJ*np.sqrt((Ti/Ai))
+    return H
+
+
+# %% Function to be in loop
+def calc(Ai, ni, Hp, r_A0, S3wlon_A0, z_A0, hem, S_A0=0):
+    tau, _, _, _ = Wave.Awave().trace3(
+        r_A0,
+        np.radians(S3wlon_A0),
+        z_A0,
+        S_A0,
+        Ai,
+        ni,
+        Hp,
+        hem
+    )
+    return tau
+
+
+# %% Calculate the error for west longitude of the moon
+def eqwlong_err(Psyn, dt):
+
+    err = dt*360.0/Psyn     # [deg]
+
+    return err
+
+
+# %% Convert eV to speed in [m s-1]
+def eV2speed(energy):
+    """
+    energy: [eV]
+    """
+    J = e*energy    # [J]
+    v = math.sqrt(J/(0.5*me))     # [m s-1]
+    return v
+
+
+# %% Transit time of TEB from one to the other hemisphere.
+def TEB_transit(r_moon, s3wlon, target_moon, length=False):
+    if target_moon == 'Io':
+        v_e = C
+        Fllen_alt = Fllen_io
+    elif target_moon == 'Europa':
+        TEB_en = 3600.0  # TEB ENERGY [eV]
+        v_e = eV2speed(TEB_en)
+        Fllen_alt = Fllen_eu
+    elif target_moon == 'Ganymede':
+        TEB_en = 1000.0  # TEB ENERGY [eV]
+        v_e = eV2speed(TEB_en)
+        Fllen_alt = Fllen_ga
+
+    phi = math.radians(360.0-200.0)    # [rad]
+    x0 = (r_moon/RJ)*np.cos(phi)        # [RJ]
+    y0 = (r_moon/RJ)*np.sin(phi)        # [RJ]
+    z0 = 0                              # [RJ]
+
+    """# Position is always in RJ
+    T2 = jm.TraceField(x0, y0, z0, Verbose=True,
+                       IntModel='jrm33',
+                       ExtModel='Con2020',
+                       MaxLen=600000,
+                       MaxStep=0.0003,
+                       InitStep=0.00001,
+                       MinStep=0.00001)
+
+    Fllen = T2.equator.fllen*RJ
+    if Fllen > 50*RJ:
+        print('Field line is longer than 50 RJ. Use alternate length.')
+        Fllen = Fllen_alt
+    elif Fllen < 2*RJ:
+        print('Field line is too short. Use alternate length.')
+        Fllen = Fllen_alt"""
+
+    Fllen = Fllen_alt
+    transit_time = Fllen/v_e      # [sec]
+
+    if length:
+        print('Field line length [RJ]:', Fllen/RJ)
+
+    return transit_time
+
+
+# %% Create argument mesh and make them 1d vectors
+def create_argmesh(a0=1, a1=2, a_num=3, a_scale='linear',
+                   b0=1, b1=2, b_num=3, b_scale='linear',
+                   c0=-99.9, c1=-98.0, c_num=0, c_scale='linear'):
+    # パラメータ空間の作成
+    a_arr = 0     # 1st parameter
+    b_arr = 0     # 2nd parameter
+    c_arr = 0     # 3rd parameter
+
+    if a_scale == 'linear':
+        a_arr = np.linspace(a0, a1, a_num)
+    elif a_scale == 'log':
+        a_arr = np.linspace(np.log(a0), np.log(a1), a_num)
+        a_arr = np.exp(a_arr)
+
+    if b_num == 1:
+        a_1d = a_arr
+        b_1d = b0*np.ones(a_num)
+        c_1d = -999.9
+        # print('b_num == 1')
+
+    elif b_num > 1:
+        if b_scale == 'linear':
+            b_arr = np.linspace(b0, b1, b_num)
+        elif b_scale == 'log':
+            b_arr = np.linspace(np.log(b0), np.log(b1), b_num)
+            b_arr = np.exp(b_arr)
+
+        if c_num == 1:
+            a_mesh, b_mesh = np.meshgrid(a_arr, b_arr)
+            a_1d = a_mesh.reshape(int(a_arr.size*b_arr.size))
+            b_1d = b_mesh.reshape(int(a_arr.size*b_arr.size))
+            c_1d = c0*np.ones(int(a_arr.size*b_arr.size))
+            # print('c_num == 1')
+        elif c_num > 1:
+            if c_scale == 'linear':
+                c_arr = np.linspace(c0, c1, c_num)
+            elif c_scale == 'log':
+                c_arr = np.linspace(np.log(c0), np.log(c1), c_num)
+                c_arr = np.exp(c_arr)
+
+            a_mesh, b_mesh, c_mesh = np.meshgrid(a_arr, b_arr, c_arr)
+            # -> shape is like (b_arr.size, a_arr.size, c_arr.size)
+
+            a_1d = a_mesh.reshape(int(a_arr.size*b_arr.size*c_arr.size))
+            b_1d = b_mesh.reshape(int(a_arr.size*b_arr.size*c_arr.size))
+            c_1d = c_mesh.reshape(int(a_arr.size*b_arr.size*c_arr.size))
+        else:
+            a_mesh, b_mesh = np.meshgrid(a_arr, b_arr)
+            a_1d = a_mesh.reshape(int(a_arr.size*b_arr.size))
+            b_1d = b_mesh.reshape(int(a_arr.size*b_arr.size))
+            c_1d = -999.9
+
+    return a_1d, b_1d, c_1d, a_arr, b_arr, c_arr
+
+
+# %% Main function
+def main():
+    # Select moon synodic orbital period
+    if TARGET_MOON == 'Io':
+        Psyn = Psyn_io
+        Zi = 1.3    # ION CHARGE [C]
+        Te = 6.0    # ELECTRON TEMPERATURE [eV]
+    elif TARGET_MOON == 'Europa':
+        Psyn = Psyn_eu
+        Zi = 1.4    # ION CHARGE [C]
+        Te = 20.0   # ELECTRON TEMPERATURE [eV]
+    elif TARGET_MOON == 'Ganymede':
+        Psyn = Psyn_ga
+        Zi = 1.3    # ION CHARGE [C]
+        Te = 300.0  # ELECTRON TEMPERATURE [eV]
+
+    _, _, _, _, moon_S3wlon, eqlead_fp, eqlead_fp_0, _, _, et_fp, hem_fp = readFPdata(PJ_LIST[0],
+                                                                                      TARGET_MOON,
+                                                                                      TARGET_HEM,
+                                                                                      FLIP)
+
+    # Moon position when the Alfven waves launched (Time: t0-tau_A)
+    _, _, z_A0, r_A0, _, _, S3wlon_A0 = Alfven_launch_site(et_fp,
+                                                           eqlead_fp,
+                                                           TARGET_MOON)
+
+    # パラメータ空間(meshgrid → 1d)の作成
+    Ai_1d, ni_1d, Ti_1d, _, _, _ = create_argmesh(Ai_0, Ai_1, Ai_num, Ai_scale,
+                                                  ni_0, ni_1, ni_num, ni_scale,
+                                                  Ti_0, Ti_1, Ti_num, Ti_scale)
+    H_1d = scaleheight(Ai=Ai_1d, Zi=Zi, Ti=Ti_1d, Te=Te)
+    arg_size = Ai_1d.size
+
+    # 衛星本体の経度: Juno spin中の変位 (どのデータに対しても一定値)
+    sigma_x = eqwlong_err(Psyn, dt=22.5)  # [deg]
+
+    # 注意: iは観測データ点のインデックス
+    i_size = et_fp.size
+    y_obs = np.zeros((i_size, arg_size))
+    sigma_total = np.zeros((i_size, arg_size))
+    sigma_y = np.zeros(i_size)
+    y_estimate = np.zeros((i_size, arg_size))
+    print('PJ number:', PJ_LIST)
+    print('Target moon:', TARGET_MOON)
+    print('Target fp:', TARGET_FP)
+    print('Target hemisphere:', TARGET_HEM)
+    if FLIP is True:
+        print('MAW -> TEB (flipped)')
+    print('Number of data points used/total:', i_size, '/', et_fp.size)
+    print('Param space shape:', ni_num, Ai_num, Ti_num)
+    start_all = time.time()
+
+    for i in range(i_size):
+        start_1loop = time.time()
+
+        S_A0 = Wave.Awave().tracefield(r_A0[i],
+                                       np.radians(S3wlon_A0[i]),
+                                       z_A0[i]
+                                       )
+
+        args = list(zip(
+            Ai_1d,
+            ni_1d,
+            H_1d,
+            r_A0[i]*np.ones(arg_size),
+            S3wlon_A0[i]*np.ones(arg_size),
+            z_A0[i]*np.ones(arg_size),
+            hem_fp[i]*np.ones(arg_size),
+            S_A0*np.ones(arg_size)
+        ))
+        with Pool(processes=parallel) as pool:
+            results_list = list(pool.starmap(calc, args))
+        tau = np.array(results_list)    # [sec]
+
+        if (hem_fp[i] == 101) or (hem_fp[i] == -101):
+            tau += TEB_transit(r_A0[i], S3wlon_A0[i], TARGET_MOON, length=True)
+
+        print(str(i).zfill(2),
+              '- Loop time [sec]:',
+              round(time.time()-start_1loop, 4),
+              '//',
+              'Radial distance [RJ]:',
+              r_A0[i]/RJ)
+
+        y_obs[i, :] = eqlead_fp[i]*np.ones(arg_size)
+        # sigma_y[i] = eqlead_fp_0[i]
+        # sigma_total[i, :] = sigma_y[i]*np.ones(arg_size)
+        # !!!!!
+        # !!!!!
+        # !!!!! 積分時間中に衛星本体の経度が変化することを考慮したsigma
+        sigma_y[i] = eqlead_fp_0[i]+sigma_x
+        sigma_total[i, :] = sigma_y[i]*np.ones(arg_size)
+        # !!!!!
+        # !!!!!
+        # !!!!!
+        y_estimate[i, :] = tau*360/Psyn
+        # print('Diff in eqlead:', (y_obs[i, :]-y_estimate[i, :]))
+
+    print('--- Total time [sec]:', round(time.time()-start_all, 4))
+
+    # Chi square value
+    chi2 = np.sum(((y_obs-y_estimate)/sigma_total)**2, axis=0)
+    # !!!!!
+    # !!!!!
+    chi2 = chi2/(i_size-3)
+    # !!!!!
+    # !!!!!
+    np.savetxt('results/fit/'+exname+'/params_chi2.txt',
+               chi2)
+    np.savetxt('results/fit/'+exname+'/params_Ai.txt',
+               Ai_1d)
+    np.savetxt('results/fit/'+exname+'/params_ni.txt',
+               ni_1d)
+    np.savetxt('results/fit/'+exname+'/params_Ti.txt',
+               Ti_1d)
+    np.savetxt('results/fit/'+exname+'/params_H.txt',
+               H_1d)
+    np.savetxt('results/fit/'+exname+'/eqlead_est.txt',
+               y_estimate)
+    np.savetxt('results/fit/'+exname+'/eqlead_obs.txt',
+               eqlead_fp)
+    np.savetxt('results/fit/'+exname+'/sigma_y.txt',
+               sigma_y)
+    np.savetxt('results/fit/'+exname+'/hems_obs.txt',
+               hem_fp)
+    np.savetxt('results/fit/'+exname+'/moon_S3wlon_obs.txt',
+               moon_S3wlon)
+    np.savetxt('results/fit/'+exname+'/et_obs.txt',
+               et_fp)
+
+    print('Output shape:')
+    print('--- chi2.shape:', chi2.shape)
+    print('--- Ai_1d.shape:', Ai_1d.shape)
+    print('--- ni_1d.shape:', ni_1d.shape)
+    print('--- Ti_1d.shape:', Ti_1d.shape)
+    print('--- y_estimate.shape:', y_estimate.shape)
+
+
+# %% EXECUTE
+if __name__ == '__main__':
+    multiprocessing.set_start_method('fork', force=True)
+
+    # Name of execution
+    exname = '007/20260831_022'
+
+    # Input about Juno observation
+    TARGET_MOON = 'Ganymede'
+    TARGET_FP = ['MAW', 'TEB']
+    PJ_LIST = [25]
+    TARGET_HEM = 'S'      # 'both', 'N', or 'S'
+    FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
+
+    # Input about the paremeter space (Io)
+    # Ai_0, Ai_1, Ai_num, Ai_scale = 20.0, 24.0, 3, 'linear'
+    # ni_0, ni_1, ni_num, ni_scale = 500.0, 5000.0, 50, 'log'
+    # Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 1000.0, 60, 'log'
+
+    # Input about the paremeter space (Ganymede)
+    Ai_0, Ai_1, Ai_num, Ai_scale = 12.0, 16.0, 3, 'linear'
+    ni_0, ni_1, ni_num, ni_scale = 1.0, 100.0, 50, 'log'
+    Ti_0, Ti_1, Ti_num, Ti_scale = 10.0, 3000.0, 60, 'log'
+
+    # Number of parallel processes
+    parallel = 36
+
+    main()
