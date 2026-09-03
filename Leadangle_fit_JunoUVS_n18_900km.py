@@ -670,13 +670,13 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     # Name of execution
-    exname = '007/20260831_022'
+    exname = '007/20260831_023'
 
     # Input about Juno observation
     TARGET_MOON = 'Ganymede'
     TARGET_FP = ['MAW', 'TEB']
-    PJ_LIST = [25]
-    TARGET_HEM = 'S'      # 'both', 'N', or 'S'
+    PJ_LIST = [27]
+    TARGET_HEM = 'both'   # 'both', 'N', or 'S'
     FLIP = False          # ALWAYS FALSE! Flip the flag (TEB <-> MAW)
 
     # Input about the paremeter space (Io)
